@@ -542,6 +542,21 @@
     "three_quarter": "3/4",
     "full": "Full"
   },
+  "staffGate": {
+    "title": "Staff Access",
+    "subtitle": "Authorized personnel only",
+    "notice": "This area is restricted to Malibora Truck Clinic staff. Enter your access code to continue.",
+    "codeLabel": "Staff Access Code",
+    "verify": "Verify & Continue",
+    "success": "Access granted!",
+    "invalid": "Invalid access code.",
+    "error": "Verification failed. Try again.",
+    "locked": "Too many attempts. Please wait.",
+    "tooManyAttempts": "Too many failed attempts. Locked for 60 seconds.",
+    "lockedMessage": "Access temporarily locked. Please wait before trying again.",
+    "attemptsLeft": "attempts remaining",
+    "contactAdmin": "Don't have the code? Contact your manager."
+  },
   "client": {
     "nav": {
       "home": "Home",

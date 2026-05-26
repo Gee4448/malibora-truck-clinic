@@ -131,10 +131,15 @@ export default function Login() {
             </button>
           </form>
 
-          <p className="text-center text-sm text-gray-500 mt-6">
+          <p className="text-center text-sm text-gray-500 mt-4">
             {t('auth.noAccount')}{' '}
             <Link to="/admin/register" className="text-blue-600 hover:text-blue-700 font-medium">
               {t('auth.register')}
+            </Link>
+          </p>
+          <p className="text-center mt-3">
+            <Link to="/" className="text-sm text-gray-400 hover:text-gray-600 transition">
+              &larr; {t('common.back')}
             </Link>
           </p>
         </div>

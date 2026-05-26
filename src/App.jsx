@@ -8,6 +8,7 @@ import ClientLayout from './components/layout/ClientLayout'
 import LandingPage from './pages/LandingPage'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import StaffGate from './pages/StaffGate'
 import Dashboard from './pages/Dashboard'
 import Customers from './pages/Customers'
 import Vehicles from './pages/Vehicles'
@@ -95,6 +96,43 @@ function ClientProtectedRoute({ children }) {
   return children
 }
 
+// Staff Verified Route — requires access code before showing login/register
+function StaffVerifiedRoute({ children }) {
+  const { user, loading } = useAuth()
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-blue-900">
+        <div className="animate-spin w-10 h-10 border-4 border-white border-t-transparent rounded-full"></div>
+      </div>
+    )
+  }
+
+  // If already logged in, go to admin
+  if (user) {
+    return <Navigate to="/admin" replace />
+  }
+
+  // Check if staff access code was verified this session
+  const verified = sessionStorage.getItem('malibora_staff_verified')
+  const verifiedAt = sessionStorage.getItem('malibora_staff_verified_at')
+
+  // Verification expires after 30 minutes
+  const EXPIRY_MS = 30 * 60 * 1000
+  const isExpired = verifiedAt && (Date.now() - parseInt(verifiedAt)) > EXPIRY_MS
+
+  if (!verified || isExpired) {
+    // Clear expired verification
+    if (isExpired) {
+      sessionStorage.removeItem('malibora_staff_verified')
+      sessionStorage.removeItem('malibora_staff_verified_at')
+    }
+    return <Navigate to="/admin/gate" replace />
+  }
+
+  return children
+}
+
 // Client Public Route (redirect to dashboard if logged in)
 function ClientPublicRoute({ children }) {
   const { customer, loading } = useClient()
@@ -150,9 +188,12 @@ function App() {
               </Route>
             </Route>
 
-            {/* Admin auth routes */}
-            <Route path="/admin/login" element={<PublicRoute><Login /></PublicRoute>} />
-            <Route path="/admin/register" element={<PublicRoute><Register /></PublicRoute>} />
+            {/* Staff access gate */}
+            <Route path="/admin/gate" element={<StaffGate />} />
+
+            {/* Admin auth routes — protected by staff access code */}
+            <Route path="/admin/login" element={<StaffVerifiedRoute><Login /></StaffVerifiedRoute>} />
+            <Route path="/admin/register" element={<StaffVerifiedRoute><Register /></StaffVerifiedRoute>} />
 
             {/* Admin protected routes */}
             <Route path="/admin" element={<ProtectedRoute><Layout /></ProtectedRoute>}>

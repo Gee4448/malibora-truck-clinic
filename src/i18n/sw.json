@@ -542,6 +542,21 @@
     "three_quarter": "3/4",
     "full": "Imejaa"
   },
+  "staffGate": {
+    "title": "Mlango wa Wafanyakazi",
+    "subtitle": "Wafanyakazi wenye ruhusa tu",
+    "notice": "Eneo hili ni la wafanyakazi wa Malibora Truck Clinic pekee. Weka nambari yako ya siri kuendelea.",
+    "codeLabel": "Nambari ya Siri ya Wafanyakazi",
+    "verify": "Thibitisha na Endelea",
+    "success": "Ruhusa imetolewa!",
+    "invalid": "Nambari ya siri si sahihi.",
+    "error": "Uthibitishaji umeshindikana. Jaribu tena.",
+    "locked": "Majaribio mengi. Tafadhali subiri.",
+    "tooManyAttempts": "Majaribio mengi yameshindikana. Imefungwa kwa sekunde 60.",
+    "lockedMessage": "Ufikiaji umefungwa kwa muda. Tafadhali subiri kabla ya kujaribu tena.",
+    "attemptsLeft": "majaribio yaliyobaki",
+    "contactAdmin": "Huna nambari ya siri? Wasiliana na meneja wako."
+  },
   "client": {
     "nav": {
       "home": "Nyumbani",

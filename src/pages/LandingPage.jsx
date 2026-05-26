@@ -54,7 +54,7 @@ export default function LandingPage() {
               {t('landing.clientPortal')}
             </Link>
             <Link
-              to="/admin/login"
+              to="/admin/gate"
               className="hidden sm:inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-medium bg-white/10 text-white hover:bg-white/20 transition-colors"
             >
               {t('landing.staffLogin')}
@@ -178,7 +178,7 @@ export default function LandingPage() {
                 <Link to="/client" className="block hover:text-white transition-colors">
                   {t('landing.clientPortal')}
                 </Link>
-                <Link to="/admin/login" className="block hover:text-white transition-colors">
+                <Link to="/admin/gate" className="block hover:text-white transition-colors">
                   {t('landing.staffLogin')}
                 </Link>
               </div>
