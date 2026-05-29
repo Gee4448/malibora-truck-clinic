@@ -5,7 +5,7 @@ import { useClient } from '../../contexts/ClientAuthContext'
 import { supabase, formatDate } from '../../lib/supabase'
 import {
   ClipboardList, Clock, CheckCircle2, Wrench,
-  AlertTriangle, XCircle, ArrowRight
+  AlertTriangle, XCircle, ArrowRight, Send
 } from 'lucide-react'
 
 export default function ClientServices() {
@@ -34,7 +34,7 @@ export default function ClientServices() {
     }
   }
 
-  const activeStatuses = ['open', 'in_progress', 'waiting_parts', 'pre_job_card', 'pending_approval']
+  const activeStatuses = ['customer_request', 'open', 'in_progress', 'waiting_parts', 'pre_job_card', 'pending_approval']
   const filtered = filter === 'active'
     ? jobs.filter(j => activeStatuses.includes(j.status))
     : filter === 'completed'
@@ -42,6 +42,7 @@ export default function ClientServices() {
     : jobs
 
   const statusConfig = {
+    customer_request: { icon: Send, color: 'text-pink-600', bg: 'bg-pink-100', border: 'border-pink-200' },
     pre_job_card: { icon: ClipboardList, color: 'text-purple-600', bg: 'bg-purple-100', border: 'border-purple-200' },
     pending_approval: { icon: AlertTriangle, color: 'text-orange-600', bg: 'bg-orange-100', border: 'border-orange-200' },
     open: { icon: Clock, color: 'text-blue-600', bg: 'bg-blue-100', border: 'border-blue-200' },

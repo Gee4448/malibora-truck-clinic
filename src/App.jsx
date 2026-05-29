@@ -32,6 +32,8 @@ import ClientServiceDetail from './pages/client/ClientServiceDetail'
 import ClientInvoices from './pages/client/ClientInvoices'
 import ClientInvoiceView from './pages/client/ClientInvoiceView'
 import ClientProfile from './pages/client/ClientProfile'
+import ClientRegister from './pages/client/ClientRegister'
+import ClientNewRequest from './pages/client/ClientNewRequest'
 import './styles/index.css'
 
 // Protected Route component
@@ -75,7 +77,7 @@ function PublicRoute({ children }) {
   return children
 }
 
-// Client Protected Route
+// Client Protected Route — only approved customers can access the portal
 function ClientProtectedRoute({ children }) {
   const { customer, loading } = useClient()
 
@@ -89,7 +91,7 @@ function ClientProtectedRoute({ children }) {
     )
   }
 
-  if (!customer) {
+  if (!customer || customer.status !== 'approved') {
     return <Navigate to="/client" replace />
   }
 
@@ -177,6 +179,7 @@ function App() {
             {/* Client portal routes */}
             <Route path="/client">
               <Route index element={<ClientPublicRoute><ClientLogin /></ClientPublicRoute>} />
+              <Route path="register" element={<ClientPublicRoute><ClientRegister /></ClientPublicRoute>} />
               <Route element={<ClientProtectedRoute><ClientLayout /></ClientProtectedRoute>}>
                 <Route path="dashboard" element={<ClientDashboard />} />
                 <Route path="vehicles" element={<ClientVehicles />} />
@@ -184,6 +187,7 @@ function App() {
                 <Route path="services/:id" element={<ClientServiceDetail />} />
                 <Route path="invoices" element={<ClientInvoices />} />
                 <Route path="invoices/:id" element={<ClientInvoiceView />} />
+                <Route path="new-request" element={<ClientNewRequest />} />
                 <Route path="profile" element={<ClientProfile />} />
               </Route>
             </Route>

@@ -2,14 +2,17 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useLanguage } from '../contexts/LanguageContext'
 import { supabase, formatDate } from '../lib/supabase'
-import { Plus, Search, Phone, Mail, Car, Edit2, Trash2, X, ChevronDown } from 'lucide-react'
+import { useAuth } from '../contexts/AuthContext'
+import { Plus, Search, Phone, Mail, Car, Edit2, Trash2, X, ChevronDown, CheckCircle2, XCircle, Globe, MapPin } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function Customers() {
   const { t } = useLanguage()
+  const { profile } = useAuth()
   const [customers, setCustomers] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState({
@@ -46,6 +49,8 @@ export default function Customers() {
         if (error) throw error
         toast.success(t('customers.updated'))
       } else {
+        payload.status = 'approved'
+        payload.registered_via = 'walk_in'
         const { error } = await supabase.from('customers').insert(payload)
         if (error) throw error
         toast.success(t('customers.added'))
@@ -91,11 +96,42 @@ export default function Customers() {
     setEditingId(null)
   }
 
-  const filtered = customers.filter(c =>
-    c.full_name?.toLowerCase().includes(search.toLowerCase()) ||
-    c.phone?.includes(search) ||
-    c.company_name?.toLowerCase().includes(search.toLowerCase())
-  )
+  const handleApprove = async (id) => {
+    try {
+      const { error } = await supabase.from('customers').update({
+        status: 'approved',
+        approved_by: profile?.id,
+        approved_at: new Date().toISOString(),
+      }).eq('id', id)
+      if (error) throw error
+      toast.success(t('customers.approved'))
+      fetchCustomers()
+    } catch (err) {
+      toast.error(err.message)
+    }
+  }
+
+  const handleReject = async (id) => {
+    if (!confirm(t('customers.rejectConfirm'))) return
+    try {
+      const { error } = await supabase.from('customers').update({ status: 'rejected' }).eq('id', id)
+      if (error) throw error
+      toast.success(t('customers.rejected'))
+      fetchCustomers()
+    } catch (err) {
+      toast.error(err.message)
+    }
+  }
+
+  const filtered = customers
+    .filter(c => statusFilter === 'all' || c.status === statusFilter)
+    .filter(c =>
+      c.full_name?.toLowerCase().includes(search.toLowerCase()) ||
+      c.phone?.includes(search) ||
+      c.company_name?.toLowerCase().includes(search.toLowerCase())
+    )
+
+  const pendingCount = customers.filter(c => c.status === 'pending').length
 
   return (
     <div className="space-y-4">
@@ -109,6 +145,26 @@ export default function Customers() {
           <Plus className="w-4 h-4" />
           {t('customers.addNew')}
         </button>
+      </div>
+
+      {/* Status Filter Tabs */}
+      <div className="flex gap-2 flex-wrap">
+        {['all', 'pending', 'approved'].map((f) => (
+          <button
+            key={f}
+            onClick={() => setStatusFilter(f)}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+              statusFilter === f
+                ? 'bg-blue-700 text-white'
+                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            {t(`customers.statusFilter.${f}`)}
+            {f === 'pending' && pendingCount > 0 && (
+              <span className="ml-1.5 px-1.5 py-0.5 bg-orange-500 text-white text-xs rounded-full">{pendingCount}</span>
+            )}
+          </button>
+        ))}
       </div>
 
       {/* Search */}
@@ -139,6 +195,7 @@ export default function Customers() {
                   <th className="text-left p-3 font-medium text-gray-600">{t('customers.name')}</th>
                   <th className="text-left p-3 font-medium text-gray-600">{t('customers.phone')}</th>
                   <th className="text-left p-3 font-medium text-gray-600 hidden md:table-cell">{t('customers.company')}</th>
+                  <th className="text-left p-3 font-medium text-gray-600 hidden md:table-cell">{t('common.type')}</th>
                   <th className="text-left p-3 font-medium text-gray-600 hidden lg:table-cell">{t('customers.vehicles')}</th>
                   <th className="text-left p-3 font-medium text-gray-600 hidden lg:table-cell">{t('common.created')}</th>
                   <th className="text-right p-3 font-medium text-gray-600">{t('common.actions')}</th>
@@ -148,9 +205,18 @@ export default function Customers() {
                 {filtered.map((customer) => (
                   <tr key={customer.id} className="hover:bg-gray-50">
                     <td className="p-3">
-                      <Link to={`/customers/${customer.id}`} className="font-medium text-blue-700 hover:text-blue-800">
-                        {customer.full_name}
-                      </Link>
+                      <div className="flex items-center gap-2">
+                        <Link to={`/admin/customers/${customer.id}`} className="font-medium text-blue-700 hover:text-blue-800">
+                          {customer.full_name}
+                        </Link>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                          customer.status === 'pending' ? 'bg-orange-100 text-orange-700' :
+                          customer.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                          'bg-green-100 text-green-700'
+                        }`}>
+                          {t(`customers.status${customer.status ? customer.status.charAt(0).toUpperCase() + customer.status.slice(1) : 'Approved'}`)}
+                        </span>
+                      </div>
                       {customer.email && (
                         <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
                           <Mail className="w-3 h-3" /> {customer.email}
@@ -163,6 +229,13 @@ export default function Customers() {
                       </span>
                     </td>
                     <td className="p-3 hidden md:table-cell text-gray-600">{customer.company_name || '-'}</td>
+                    <td className="p-3 hidden md:table-cell">
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                        customer.registered_via === 'online' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'
+                      }`}>
+                        {customer.registered_via === 'online' ? t('customers.registeredOnline') : t('customers.registeredWalkIn')}
+                      </span>
+                    </td>
                     <td className="p-3 hidden lg:table-cell">
                       <span className="flex items-center gap-1 text-gray-600">
                         <Car className="w-3 h-3" /> {customer.vehicles?.[0]?.count || 0}
@@ -171,6 +244,18 @@ export default function Customers() {
                     <td className="p-3 hidden lg:table-cell text-gray-500 text-xs">{formatDate(customer.created_at)}</td>
                     <td className="p-3 text-right">
                       <div className="flex items-center justify-end gap-1">
+                        {customer.status === 'pending' && (
+                          <>
+                            <button onClick={() => handleApprove(customer.id)}
+                              className="p-1.5 rounded hover:bg-green-50" title={t('customers.approve')}>
+                              <CheckCircle2 className="w-4 h-4 text-green-600" />
+                            </button>
+                            <button onClick={() => handleReject(customer.id)}
+                              className="p-1.5 rounded hover:bg-red-50" title={t('customers.reject')}>
+                              <XCircle className="w-4 h-4 text-red-500" />
+                            </button>
+                          </>
+                        )}
                         <button onClick={() => handleEdit(customer)} className="p-1.5 rounded hover:bg-gray-100" title="Edit">
                           <Edit2 className="w-4 h-4 text-gray-500" />
                         </button>

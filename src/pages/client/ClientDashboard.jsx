@@ -5,7 +5,7 @@ import { useClient } from '../../contexts/ClientAuthContext'
 import { supabase, formatTZS, formatDate } from '../../lib/supabase'
 import {
   Truck, ClipboardList, FileText, ArrowRight,
-  Clock, CheckCircle2, Wrench, AlertTriangle
+  Clock, CheckCircle2, Wrench, AlertTriangle, Send
 } from 'lucide-react'
 
 export default function ClientDashboard() {
@@ -25,7 +25,7 @@ export default function ClientDashboard() {
         supabase.from('vehicles').select('id').eq('customer_id', customer.id),
         supabase.from('job_cards').select('*, vehicles(registration_number, make, model)')
           .eq('customer_id', customer.id)
-          .in('status', ['open', 'in_progress', 'waiting_parts', 'pre_job_card', 'pending_approval'])
+          .in('status', ['customer_request', 'open', 'in_progress', 'waiting_parts', 'pre_job_card', 'pending_approval'])
           .order('created_at', { ascending: false }),
         supabase.from('invoices').select('id')
           .eq('customer_id', customer.id)
@@ -46,6 +46,7 @@ export default function ClientDashboard() {
   }
 
   const statusConfig = {
+    customer_request: { icon: Send, color: 'text-pink-600', bg: 'bg-pink-100' },
     pre_job_card: { icon: ClipboardList, color: 'text-purple-600', bg: 'bg-purple-100' },
     pending_approval: { icon: AlertTriangle, color: 'text-orange-600', bg: 'bg-orange-100' },
     open: { icon: Clock, color: 'text-blue-600', bg: 'bg-blue-100' },
@@ -73,6 +74,21 @@ export default function ClientDashboard() {
           {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
         </p>
       </div>
+
+      {/* Report Problem Button */}
+      <Link
+        to="/client/new-request"
+        className="flex items-center gap-3 bg-white rounded-xl border-2 border-dashed border-blue-300 p-4 hover:border-blue-500 hover:bg-blue-50 transition-colors active:scale-[0.99]"
+      >
+        <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
+          <Send className="w-5 h-5 text-blue-600" />
+        </div>
+        <div>
+          <p className="font-semibold text-gray-900 text-sm">{t('client.dashboard.reportProblem')}</p>
+          <p className="text-xs text-gray-500">{t('client.newRequest.requestType')}</p>
+        </div>
+        <ArrowRight className="w-4 h-4 text-gray-400 ml-auto" />
+      </Link>
 
       {/* Quick Stats */}
       <div className="grid grid-cols-3 gap-3">

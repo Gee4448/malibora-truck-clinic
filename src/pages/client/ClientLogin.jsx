@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { useClient } from '../../contexts/ClientAuthContext'
-import { Truck, Phone, ArrowRight, Globe, AlertCircle } from 'lucide-react'
+import { Truck, Phone, ArrowRight, Globe, AlertCircle, Clock, XCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function ClientLogin() {
@@ -24,7 +24,13 @@ export default function ClientLogin() {
       toast.success(t('client.login.success'))
       navigate('/client/dashboard')
     } catch (err) {
-      setError(t('client.login.notFound'))
+      if (err.message === 'pending_approval') {
+        setError('pending')
+      } else if (err.message === 'rejected') {
+        setError('rejected')
+      } else {
+        setError('not_found')
+      }
     } finally {
       setLoading(false)
     }
@@ -78,10 +84,30 @@ export default function ClientLogin() {
               />
             </div>
 
-            {error && (
+            {error === 'pending' && (
+              <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                <Clock className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-amber-800">{t('client.login.statusPending')}</p>
+                  <p className="text-xs text-amber-600 mt-1">{t('client.login.statusPendingHint')}</p>
+                </div>
+              </div>
+            )}
+
+            {error === 'rejected' && (
+              <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl">
+                <XCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-red-800">{t('client.login.statusRejected')}</p>
+                  <p className="text-xs text-red-600 mt-1">{t('client.login.statusRejectedHint')}</p>
+                </div>
+              </div>
+            )}
+
+            {error === 'not_found' && (
               <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl">
                 <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-                <p className="text-sm text-red-700">{error}</p>
+                <p className="text-sm text-red-700">{t('client.login.notFound')}</p>
               </div>
             )}
 
@@ -101,11 +127,18 @@ export default function ClientLogin() {
             </button>
           </form>
 
-          <div className="mt-6 pt-4 border-t border-gray-100 text-center">
-            <p className="text-xs text-gray-400">{t('client.login.help')}</p>
-            <a href="tel:+255123456789" className="text-sm text-blue-600 font-medium hover:text-blue-700">
-              {t('client.login.callSupport')}
-            </a>
+          <div className="mt-6 pt-4 border-t border-gray-100 text-center space-y-2">
+            <div>
+              <p className="text-xs text-gray-400">{t('client.login.noAccount')}</p>
+              <Link to="/client/register" className="text-sm text-blue-600 font-medium hover:text-blue-700">
+                {t('client.login.registerLink')}
+              </Link>
+            </div>
+            <div>
+              <a href="tel:+255123456789" className="text-xs text-gray-400 hover:text-gray-600">
+                {t('client.login.callSupport')}
+              </a>
+            </div>
           </div>
         </div>
       </div>

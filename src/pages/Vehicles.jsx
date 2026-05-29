@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useLanguage } from '../contexts/LanguageContext'
 import { supabase, formatDate } from '../lib/supabase'
-import { Plus, Search, Edit2, Trash2, X, Truck } from 'lucide-react'
+import { Plus, Search, Edit2, Trash2, X, Truck, Hash } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function Vehicles() {
@@ -24,14 +24,20 @@ export default function Vehicles() {
     fetchCustomers()
   }, [])
 
+  const generateVehicleId = (index) => `VEH-${String(index).padStart(3, '0')}`
+
   const fetchVehicles = async () => {
     try {
       const { data, error } = await supabase
         .from('vehicles')
         .select('*, customers(full_name, phone)')
-        .order('created_at', { ascending: false })
+        .order('created_at', { ascending: true })
       if (error) throw error
-      setVehicles(data || [])
+      const withIds = (data || []).map((v, i) => ({
+        ...v,
+        vehicle_id: generateVehicleId(i + 1),
+      }))
+      setVehicles(withIds.reverse())
     } catch (err) {
       toast.error(t('vehicles.loadError'))
     } finally {
@@ -98,6 +104,7 @@ export default function Vehicles() {
   }
 
   const filtered = vehicles.filter(v =>
+    v.vehicle_id?.toLowerCase().includes(search.toLowerCase()) ||
     v.registration_number?.toLowerCase().includes(search.toLowerCase()) ||
     v.make?.toLowerCase().includes(search.toLowerCase()) ||
     v.customers?.full_name?.toLowerCase().includes(search.toLowerCase())
@@ -141,6 +148,7 @@ export default function Vehicles() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="text-left p-3 font-medium text-gray-600">Vehicle ID</th>
                   <th className="text-left p-3 font-medium text-gray-600">{t('vehicles.regNumber')}</th>
                   <th className="text-left p-3 font-medium text-gray-600">{t('vehicles.make')} / {t('vehicles.model')}</th>
                   <th className="text-left p-3 font-medium text-gray-600 hidden md:table-cell">{t('vehicles.owner')}</th>
@@ -153,6 +161,12 @@ export default function Vehicles() {
                 {filtered.map((v) => (
                   <tr key={v.id} className="hover:bg-gray-50">
                     <td className="p-3">
+                      <span className="inline-flex items-center gap-1 text-xs font-bold text-blue-700 bg-blue-50 px-2 py-1 rounded-md">
+                        <Hash className="w-3 h-3" />
+                        {v.vehicle_id}
+                      </span>
+                    </td>
+                    <td className="p-3">
                       <span className="font-medium text-gray-900 flex items-center gap-1.5">
                         <Truck className="w-4 h-4 text-gray-400" />
                         {v.registration_number}
@@ -160,7 +174,7 @@ export default function Vehicles() {
                     </td>
                     <td className="p-3 text-gray-700">{v.make} {v.model} {v.year ? `(${v.year})` : ''}</td>
                     <td className="p-3 hidden md:table-cell">
-                      <Link to={`/customers/${v.customer_id}`} className="text-blue-600 hover:text-blue-700">
+                      <Link to={`/admin/customers/${v.customer_id}`} className="text-blue-600 hover:text-blue-700">
                         {v.customers?.full_name}
                       </Link>
                     </td>

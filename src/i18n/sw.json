@@ -43,7 +43,9 @@
     "totalRevenue": "Mapato Jumla",
     "recentJobs": "Kadi za Kazi za Hivi Karibuni",
     "lowStock": "Vipuri Vichache",
-    "pendingInvoices": "Ankara Zinazosubiri"
+    "pendingInvoices": "Ankara Zinazosubiri",
+    "pendingApprovals": "Idhini Zinazosubiri",
+    "customerRequests": "Maombi ya Wateja"
   },
   "customers": {
     "title": "Wateja",
@@ -66,7 +68,23 @@
     "loadError": "Hitilafu kupakia wateja",
     "updated": "Mteja amebadilishwa",
     "added": "Mteja ameongezwa",
-    "deleted": "Mteja amefutwa"
+    "deleted": "Mteja amefutwa",
+    "statusFilter": {
+      "all": "Wote",
+      "pending": "Wanasubiri Idhini",
+      "approved": "Walioidhinishwa"
+    },
+    "statusPending": "Inasubiri",
+    "statusApproved": "Imeidhinishwa",
+    "statusRejected": "Imekataliwa",
+    "approve": "Idhinisha",
+    "reject": "Kataa",
+    "approved": "Mteja ameidhinishwa!",
+    "rejected": "Mteja amekataliwa",
+    "rejectConfirm": "Kataa usajili wa mteja huyu?",
+    "registeredOnline": "Mtandaoni",
+    "registeredWalkIn": "Ametembelea",
+    "location": "Eneo"
   },
   "vehicles": {
     "title": "Magari",
@@ -148,7 +166,8 @@
       "in_progress": "Inaendelea",
       "waiting_parts": "Inasubiri Vipuri",
       "completed": "Imekamilika",
-      "cancelled": "Imefutwa"
+      "cancelled": "Imefutwa",
+      "customer_request": "Ombi la Mteja"
     },
     "priorities": {
       "low": "Chini",
@@ -210,8 +229,26 @@
       "sent": "Imetumwa",
       "approved": "Imeidhinishwa",
       "paid": "Imelipwa",
-      "cancelled": "Imefutwa"
-    }
+      "cancelled": "Imefutwa",
+      "negotiating": "Mazungumzo"
+    },
+    "negotiation": "Mazungumzo",
+    "negotiationPlaceholder": "Andika ujumbe wako...",
+    "sendMessage": "Tuma",
+    "noMessages": "Hakuna ujumbe bado",
+    "depositRequired": "Amana Inahitajika",
+    "depositPercentage": "Asilimia ya Amana",
+    "depositAmount": "Kiasi cha Amana",
+    "remainingBalance": "Salio Linalobaki",
+    "agreeToProforma": "Nakubaliana na Proforma Hii",
+    "agreeConfirm": "Una uhakika unataka kukubali proforma hii?",
+    "agreed": "Umekubali tarehe",
+    "customerAgreed": "Mteja amekubali",
+    "setDeposit": "Weka Amana",
+    "depositSaved": "Mipangilio ya amana imehifadhiwa",
+    "receipt": "Risiti ya Malipo",
+    "depositPaid": "Amana Imelipwa",
+    "messageSent": "Ujumbe umetumwa"
   },
   "inventory": {
     "title": "Vipuri",
@@ -575,7 +612,58 @@
       "success": "Karibu tena!",
       "notFound": "Hakuna akaunti iliyopatikana na nambari hii. Tafadhali wasiliana na Malibora Truck Clinic.",
       "help": "Huna akaunti?",
-      "callSupport": "Piga simu kwa msaada"
+      "callSupport": "Piga simu kwa msaada",
+      "noAccount": "Huna akaunti?",
+      "registerLink": "Jisajili hapa",
+      "statusPending": "Usajili wako unasubiri idhini.",
+      "statusPendingHint": "Meneja atakagua usajili wako. Tafadhali subiri.",
+      "statusRejected": "Usajili wako haukuidhinishwa.",
+      "statusRejectedHint": "Tafadhali wasiliana na Malibora Truck Clinic kwa maelezo zaidi."
+    },
+    "register": {
+      "title": "Tengeneza Akaunti",
+      "subtitle": "Jisajili kupata mfumo wetu wa huduma",
+      "stepPersonal": "Taarifa Binafsi",
+      "stepVehicle": "Gari",
+      "nameLabel": "Jina Kamili",
+      "companyLabel": "Jina la Kampuni",
+      "phoneLabel": "Nambari ya Simu (WhatsApp)",
+      "emailLabel": "Barua Pepe",
+      "addressLabel": "Anwani",
+      "locationLabel": "Eneo",
+      "locationPlaceholder": "mfano Ubungo, Dar es Salaam",
+      "next": "Endelea",
+      "vehicleTitle": "Sajili Gari Lako",
+      "vehicleSubtitle": "Ongeza angalau gari moja kukamilisha usajili",
+      "vehicleType": "Aina ya Gari",
+      "makeLabel": "Chapa",
+      "modelLabel": "Modeli",
+      "plateLabel": "Nambari ya Usajili",
+      "engineTypeLabel": "Aina ya Injini",
+      "chassisLabel": "Nambari ya Chasi",
+      "axlesLabel": "Idadi ya Axle",
+      "fuelTypeLabel": "Aina ya Mafuta",
+      "submit": "Jisajili",
+      "fillRequired": "Tafadhali jaza sehemu zote zinazohitajika",
+      "phoneExists": "Nambari hii ya simu imesajiliwa tayari. Tafadhali ingia.",
+      "error": "Usajili umeshindikana. Tafadhali jaribu tena.",
+      "successTitle": "Usajili Umewasilishwa!",
+      "pendingMessage": "Usajili wako unakaguliwa na timu yetu. Utaweza kuingia baada ya kuidhinishwa.",
+      "contactInfo": "Maswali? Piga simu:",
+      "backToLogin": "Rudi Kuingia",
+      "hasAccount": "Una akaunti tayari?",
+      "loginLink": "Ingia",
+      "types": {
+        "truck": "Lori",
+        "trailer": "Trela",
+        "car": "Gari"
+      },
+      "fuels": {
+        "diesel": "Dizeli",
+        "petrol": "Petroli",
+        "electric": "Umeme",
+        "hybrid": "Mseto"
+      }
     },
     "dashboard": {
       "welcome": "Karibu",
@@ -585,11 +673,49 @@
       "activeServicesTitle": "Huduma Zinazoendelea",
       "viewAll": "Angalia zote",
       "noActiveServices": "Hakuna huduma zinazoendelea",
-      "allGood": "Magari yako yote yako katika hali nzuri!"
+      "allGood": "Magari yako yote yako katika hali nzuri!",
+      "reportProblem": "Ripoti Tatizo"
+    },
+    "newRequest": {
+      "title": "Ripoti Tatizo",
+      "selectVehicle": "Chagua Gari",
+      "requestType": "Unahitaji nini?",
+      "knownProblem": "Ninajua tatizo",
+      "needInspection": "Nahitaji ukaguzi",
+      "describeIssue": "Eleza Tatizo",
+      "descriptionPlaceholder": "Kuna tatizo gani na gari lako?",
+      "location": "Eneo Lako (kwa ukaguzi wa eneo)",
+      "locationPlaceholder": "mfano Ubungo, Dar es Salaam",
+      "submit": "Wasilisha Ombi",
+      "success": "Ombi limewasilishwa!",
+      "noVehicles": "Tafadhali ongeza gari kwanza",
+      "fillRequired": "Tafadhali jaza sehemu zote zinazohitajika"
     },
     "vehicles": {
       "title": "Magari Yangu",
-      "noVehicles": "Hakuna magari yaliyosajiliwa bado"
+      "noVehicles": "Hakuna magari yaliyosajiliwa bado",
+      "addVehicle": "Ongeza Gari",
+      "vehicleType": "Aina ya Gari",
+      "make": "Chapa",
+      "model": "Modeli",
+      "plateNumber": "Nambari ya Usajili",
+      "engineType": "Aina ya Injini",
+      "chassisNumber": "Nambari ya Chasi",
+      "axles": "Idadi ya Axle",
+      "fuelType": "Aina ya Mafuta",
+      "added": "Gari limeongezwa!",
+      "addError": "Imeshindikana kuongeza gari",
+      "types": {
+        "truck": "Lori",
+        "trailer": "Trela",
+        "car": "Gari"
+      },
+      "fuels": {
+        "diesel": "Dizeli",
+        "petrol": "Petroli",
+        "electric": "Umeme",
+        "hybrid": "Mseto"
+      }
     },
     "services": {
       "title": "Historia ya Huduma",
@@ -609,7 +735,13 @@
         "all": "Zote",
         "unpaid": "Hazijalipwa",
         "paid": "Zimelipwa"
-      }
+      },
+      "negotiation": "Ongea na Malibora",
+      "agree": "Nakubali",
+      "agreeConfirm": "Thibitisha unakubali proforma hii?",
+      "agreed": "Umekubali proforma hii",
+      "depositInfo": "Amana Inahitajika",
+      "receipt": "Risiti ya Malipo"
     },
     "profile": {
       "title": "Wasifu Wangu",

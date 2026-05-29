@@ -28,7 +28,7 @@ export function ClientAuthProvider({ children }) {
         .select('*')
         .eq('id', customerId)
         .single()
-      if (error || !data) {
+      if (error || !data || data.status === 'rejected') {
         localStorage.removeItem('malibora_client')
         setCustomer(null)
       } else {
@@ -56,9 +56,71 @@ export function ClientAuthProvider({ children }) {
       throw new Error('not_found')
     }
 
+    if (data.status === 'pending') {
+      throw new Error('pending_approval')
+    }
+
+    if (data.status === 'rejected') {
+      throw new Error('rejected')
+    }
+
     setCustomer(data)
     localStorage.setItem('malibora_client', JSON.stringify({ id: data.id, phone: data.phone }))
     return data
+  }, [])
+
+  const registerCustomer = useCallback(async (customerData, vehicleData) => {
+    const normalized = customerData.phone.replace(/\s+/g, '').replace(/^0/, '+255')
+
+    const { data: existing } = await supabase
+      .from('customers')
+      .select('id')
+      .or(`phone.eq.${customerData.phone},phone.eq.${normalized}`)
+      .limit(1)
+      .maybeSingle()
+
+    if (existing) {
+      throw new Error('phone_exists')
+    }
+
+    const payload = {
+      full_name: customerData.full_name,
+      phone: normalized,
+      email: customerData.email || null,
+      company_name: customerData.company_name || null,
+      address: customerData.address || null,
+      location: customerData.location || null,
+      status: 'pending',
+      registered_via: 'online',
+    }
+
+    const { data: customer, error: custErr } = await supabase
+      .from('customers')
+      .insert(payload)
+      .select()
+      .single()
+
+    if (custErr) throw custErr
+
+    const vPayload = {
+      customer_id: customer.id,
+      vehicle_type: vehicleData.vehicle_type,
+      make: vehicleData.make,
+      model: vehicleData.model || null,
+      registration_number: vehicleData.registration_number,
+      engine_type: vehicleData.engine_type || null,
+      chassis_number: vehicleData.chassis_number || null,
+      axles: vehicleData.axles || null,
+      fuel_type: vehicleData.fuel_type,
+    }
+
+    const { error: vehErr } = await supabase
+      .from('vehicles')
+      .insert(vPayload)
+
+    if (vehErr) throw vehErr
+
+    return customer
   }, [])
 
   const logout = useCallback(() => {
@@ -67,7 +129,7 @@ export function ClientAuthProvider({ children }) {
   }, [])
 
   return (
-    <ClientAuthContext.Provider value={{ customer, loading, loginWithPhone, logout, refreshCustomer }}>
+    <ClientAuthContext.Provider value={{ customer, loading, loginWithPhone, logout, refreshCustomer, registerCustomer }}>
       {children}
     </ClientAuthContext.Provider>
   )

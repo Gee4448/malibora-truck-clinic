@@ -10,6 +10,7 @@ import {
   AlertTriangle,
   ArrowRight,
   TrendingUp,
+  UserCheck,
 } from 'lucide-react'
 
 export default function Dashboard() {
@@ -20,6 +21,8 @@ export default function Dashboard() {
     inProgress: 0,
     completedToday: 0,
     totalRevenue: 0,
+    pendingApprovals: 0,
+    customerRequests: 0,
   })
   const [recentJobs, setRecentJobs] = useState([])
   const [lowStock, setLowStock] = useState([])
@@ -37,11 +40,21 @@ export default function Dashboard() {
         .select('status, created_at')
 
       const today = new Date().toISOString().split('T')[0]
+
+      const { count: pendingCount } = await supabase
+        .from('customers')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'pending')
+
+      const customerRequestCount = jobs?.filter(j => j.status === 'customer_request').length || 0
+
       setStats({
         openJobs: jobs?.filter(j => j.status === 'open').length || 0,
         inProgress: jobs?.filter(j => j.status === 'in_progress').length || 0,
         completedToday: jobs?.filter(j => j.status === 'completed' && j.date_completed?.startsWith(today)).length || 0,
-        totalRevenue: 0, // Will calc from invoices
+        totalRevenue: 0,
+        pendingApprovals: pendingCount || 0,
+        customerRequests: customerRequestCount,
       })
 
       // Fetch recent jobs
@@ -86,11 +99,16 @@ export default function Dashboard() {
   }
 
   const statCards = [
-    { label: t('dashboard.openJobs'), value: stats.openJobs, icon: ClipboardList, color: 'blue', to: '/job-cards?status=open' },
-    { label: t('dashboard.inProgress'), value: stats.inProgress, icon: Clock, color: 'yellow', to: '/job-cards?status=in_progress' },
-    { label: t('dashboard.completedToday'), value: stats.completedToday, icon: CheckCircle2, color: 'green', to: '/job-cards?status=completed' },
-    ...(canViewInternal ? [{ label: t('dashboard.totalRevenue'), value: formatTZS(stats.totalRevenue), icon: TrendingUp, color: 'purple', to: '/reports' }] : []),
+    { label: t('dashboard.openJobs'), value: stats.openJobs, icon: ClipboardList, color: 'blue', to: '/admin/job-cards?status=open' },
+    { label: t('dashboard.inProgress'), value: stats.inProgress, icon: Clock, color: 'yellow', to: '/admin/job-cards?status=in_progress' },
+    { label: t('dashboard.completedToday'), value: stats.completedToday, icon: CheckCircle2, color: 'green', to: '/admin/job-cards?status=completed' },
+    ...(canViewInternal ? [{ label: t('dashboard.totalRevenue'), value: formatTZS(stats.totalRevenue), icon: TrendingUp, color: 'purple', to: '/admin/reports' }] : []),
+    ...(stats.pendingApprovals > 0 ? [{ label: t('dashboard.pendingApprovals'), value: stats.pendingApprovals, icon: UserCheck, color: 'orange', to: '/admin/customers' }] : []),
   ]
+
+  const colorMapExtra = {
+    orange: { bg: 'bg-orange-100', text: 'text-orange-600' },
+  }
 
   const statusColors = {
     open: 'bg-blue-100 text-blue-700',
@@ -98,6 +116,9 @@ export default function Dashboard() {
     waiting_parts: 'bg-orange-100 text-orange-700',
     completed: 'bg-green-100 text-green-700',
     cancelled: 'bg-red-100 text-red-700',
+    customer_request: 'bg-pink-100 text-pink-700',
+    pre_job_card: 'bg-purple-100 text-purple-700',
+    pending_approval: 'bg-orange-100 text-orange-700',
   }
 
   if (loading) {
@@ -135,8 +156,8 @@ export default function Dashboard() {
                   {typeof card.value === 'number' ? card.value : card.value}
                 </p>
               </div>
-              <div className={`w-12 h-12 rounded-xl ${colorMap[card.color].bg} flex items-center justify-center`}>
-                <card.icon className={`w-6 h-6 ${colorMap[card.color].text}`} />
+              <div className={`w-12 h-12 rounded-xl ${(colorMap[card.color] || colorMapExtra[card.color]).bg} flex items-center justify-center`}>
+                <card.icon className={`w-6 h-6 ${(colorMap[card.color] || colorMapExtra[card.color]).text}`} />
               </div>
             </div>
           </Link>
@@ -157,7 +178,7 @@ export default function Dashboard() {
               <p className="p-5 text-gray-500 text-sm">{t('common.noData')}</p>
             ) : (
               recentJobs.map((job) => (
-                <Link key={job.id} to={`/job-cards/${job.id}`} className="flex items-center justify-between p-4 hover:bg-gray-50">
+                <Link key={job.id} to={`/admin/job-cards/${job.id}`} className="flex items-center justify-between p-4 hover:bg-gray-50">
                   <div>
                     <p className="text-sm font-medium text-gray-900">{job.job_number}</p>
                     <p className="text-xs text-gray-500">

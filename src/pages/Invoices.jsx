@@ -67,6 +67,7 @@ export default function Invoices() {
     draft: 'bg-gray-100 text-gray-600',
     sent: 'bg-blue-100 text-blue-700',
     approved: 'bg-green-100 text-green-700',
+    negotiating: 'bg-amber-100 text-amber-700',
     paid: 'bg-emerald-100 text-emerald-700',
     cancelled: 'bg-red-100 text-red-700',
   }
@@ -130,7 +131,7 @@ export default function Invoices() {
                 {filtered.map((inv) => (
                   <tr key={inv.id} className="hover:bg-gray-50">
                     <td className="p-3">
-                      <Link to={`/invoices/${inv.id}`} className="font-medium text-blue-700 hover:text-blue-800">
+                      <Link to={`/admin/invoices/${inv.id}`} className="font-medium text-blue-700 hover:text-blue-800">
                         {inv.invoice_number}
                       </Link>
                     </td>
@@ -141,7 +142,7 @@ export default function Invoices() {
                     </td>
                     <td className="p-3 text-gray-700">{inv.customers?.full_name}</td>
                     <td className="p-3 hidden md:table-cell">
-                      <Link to={`/job-cards/${inv.job_card_id}`} className="text-blue-600 hover:text-blue-700 text-xs">
+                      <Link to={`/admin/job-cards/${inv.job_card_id}`} className="text-blue-600 hover:text-blue-700 text-xs">
                         {inv.job_cards?.job_number}
                       </Link>
                     </td>
@@ -161,7 +162,7 @@ export default function Invoices() {
                     <td className="p-3 hidden lg:table-cell text-gray-500 text-xs">{formatDate(inv.created_at)}</td>
                     <td className="p-3 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <Link to={`/invoices/${inv.id}`} className="p-1.5 rounded hover:bg-blue-50">
+                        <Link to={`/admin/invoices/${inv.id}`} className="p-1.5 rounded hover:bg-blue-50">
                           <Eye className="w-4 h-4 text-blue-600" />
                         </Link>
                         {inv.status !== 'paid' && inv.status !== 'cancelled' && (

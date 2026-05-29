@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useLanguage } from '../contexts/LanguageContext'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase, formatTZS, formatDate } from '../lib/supabase'
-import { ArrowLeft, Printer, Download, MessageCircle, CheckCircle, CreditCard } from 'lucide-react'
+import { ArrowLeft, Printer, Download, MessageCircle, CheckCircle, CreditCard, Send, MessageSquare, Save } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { generateInvoicePDF } from '../lib/pdf'
 
@@ -17,6 +17,10 @@ export default function InvoiceDetail() {
   const [loading, setLoading] = useState(true)
   const [paymentForm, setPaymentForm] = useState({ method: 'cash', reference: '' })
   const [showPayment, setShowPayment] = useState(false)
+  const [messages, setMessages] = useState([])
+  const [newMessage, setNewMessage] = useState('')
+  const [sendingMessage, setSendingMessage] = useState(false)
+  const [depositPct, setDepositPct] = useState(70)
 
   useEffect(() => { fetchInvoice() }, [id])
 
@@ -44,6 +48,15 @@ export default function InvoiceDetail() {
         .eq('job_card_id', data.job_card_id)
         .order('item_type, created_at')
       setItems(jobItems || [])
+      setDepositPct(data.deposit_percentage || 70)
+
+      // Fetch negotiation messages
+      const { data: msgs } = await supabase
+        .from('invoice_negotiations')
+        .select('*')
+        .eq('invoice_id', data.id)
+        .order('created_at', { ascending: true })
+      setMessages(msgs || [])
     } catch (err) {
       toast.error(t('invoices.loadError'))
       navigate('/admin/invoices')
@@ -96,10 +109,46 @@ export default function InvoiceDetail() {
   if (!invoice) return null
 
   const typeLabels = { proforma: t('invoices.proforma'), final: t('invoices.final'), internal: t('invoices.internal') }
+  const handleSendStaffMessage = async () => {
+    if (!newMessage.trim()) return
+    setSendingMessage(true)
+    try {
+      const { error } = await supabase.from('invoice_negotiations').insert({
+        invoice_id: invoice.id,
+        sender_type: 'staff',
+        message: newMessage.trim(),
+      })
+      if (error) throw error
+      setNewMessage('')
+      toast.success(t('invoices.messageSent'))
+      fetchInvoice()
+    } catch (err) {
+      toast.error(err.message)
+    } finally {
+      setSendingMessage(false)
+    }
+  }
+
+  const handleSaveDeposit = async () => {
+    try {
+      const depositAmt = Number(invoice.total_amount) * depositPct / 100
+      const { error } = await supabase.from('invoices').update({
+        deposit_percentage: depositPct,
+        deposit_amount: depositAmt,
+      }).eq('id', invoice.id)
+      if (error) throw error
+      toast.success(t('invoices.depositSaved'))
+      fetchInvoice()
+    } catch (err) {
+      toast.error(err.message)
+    }
+  }
+
   const statusColors = {
     draft: 'bg-gray-100 text-gray-600',
     sent: 'bg-blue-100 text-blue-700',
     approved: 'bg-green-100 text-green-700',
+    negotiating: 'bg-amber-100 text-amber-700',
     paid: 'bg-emerald-100 text-emerald-700',
     cancelled: 'bg-red-100 text-red-700',
   }
@@ -173,7 +222,7 @@ export default function InvoiceDetail() {
             <p className="font-semibold text-gray-900">{invoice.job_cards?.vehicles?.registration_number}</p>
             <p className="text-sm text-gray-600">{invoice.job_cards?.vehicles?.make} {invoice.job_cards?.vehicles?.model}</p>
             {invoice.job_cards?.vehicles?.year && <p className="text-sm text-gray-600">Year: {invoice.job_cards.vehicles.year}</p>}
-            <p className="text-sm text-gray-600 mt-1">Job: <Link to={`/job-cards/${invoice.job_card_id}`} className="text-blue-600">{invoice.job_cards?.job_number}</Link></p>
+            <p className="text-sm text-gray-600 mt-1">Job: <Link to={`/admin/job-cards/${invoice.job_card_id}`} className="text-blue-600">{invoice.job_cards?.job_number}</Link></p>
           </div>
         </div>
 
@@ -319,6 +368,81 @@ export default function InvoiceDetail() {
           <p className="mt-1">Asante kwa kuchagua Malibora Truck Clinic</p>
         </div>
       </div>
+
+      {/* Deposit Controls (no-print) */}
+      {invoice.invoice_type === 'proforma' && invoice.status !== 'paid' && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 no-print">
+          <h3 className="text-sm font-semibold text-amber-800 mb-3">{t('invoices.setDeposit')}</h3>
+          <div className="flex items-center gap-3">
+            <select value={depositPct} onChange={e => setDepositPct(Number(e.target.value))}
+              className="px-3 py-2 border border-amber-300 rounded-lg bg-white text-sm focus:ring-2 focus:ring-amber-500 outline-none">
+              <option value={50}>50%</option>
+              <option value={70}>70%</option>
+            </select>
+            <span className="text-sm text-amber-800">
+              = {formatTZS(Number(invoice.total_amount) * depositPct / 100)}
+            </span>
+            <button onClick={handleSaveDeposit}
+              className="flex items-center gap-1.5 px-3 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm font-medium">
+              <Save className="w-3.5 h-3.5" /> {t('common.save')}
+            </button>
+          </div>
+          {invoice.customer_agreed_at && (
+            <p className="text-xs text-green-700 mt-2 flex items-center gap-1">
+              <CheckCircle className="w-3 h-3" /> {t('invoices.customerAgreed')} — {formatDate(invoice.customer_agreed_at)}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Negotiation Thread (no-print) */}
+      {invoice.invoice_type === 'proforma' && (
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden no-print">
+          <div className="p-4 border-b border-gray-100 flex items-center gap-2">
+            <MessageSquare className="w-4 h-4 text-gray-500" />
+            <h3 className="text-sm font-semibold text-gray-700">{t('invoices.negotiation')}</h3>
+            {messages.length > 0 && <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">{messages.length}</span>}
+          </div>
+          <div className="p-4 space-y-3 max-h-64 overflow-y-auto">
+            {messages.length === 0 ? (
+              <p className="text-center text-xs text-gray-400 py-4">{t('invoices.noMessages')}</p>
+            ) : (
+              messages.map((msg) => (
+                <div key={msg.id} className={`flex ${msg.sender_type === 'staff' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[80%] rounded-xl px-3 py-2 ${
+                    msg.sender_type === 'staff' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-800'
+                  }`}>
+                    <p className="text-[10px] font-medium mb-0.5 ${msg.sender_type === 'staff' ? 'text-blue-200' : 'text-gray-500'}">
+                      {msg.sender_type === 'staff' ? 'Staff' : 'Customer'}
+                    </p>
+                    <p className="text-sm">{msg.message}</p>
+                    <p className={`text-[10px] mt-1 ${msg.sender_type === 'staff' ? 'text-blue-200' : 'text-gray-400'}`}>
+                      {formatDate(msg.created_at)}
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          <div className="p-3 border-t border-gray-100 flex gap-2">
+            <input
+              type="text"
+              value={newMessage}
+              onChange={e => setNewMessage(e.target.value)}
+              placeholder={t('invoices.negotiationPlaceholder')}
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              onKeyDown={e => { if (e.key === 'Enter' && newMessage.trim()) handleSendStaffMessage() }}
+            />
+            <button
+              onClick={handleSendStaffMessage}
+              disabled={!newMessage.trim() || sendingMessage}
+              className="px-3 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800 transition disabled:opacity-40"
+            >
+              <Send className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Payment Modal */}
       {showPayment && (

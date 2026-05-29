@@ -112,6 +112,7 @@ export default function JobCards() {
   }
 
   const statusColors = {
+    customer_request: 'bg-pink-100 text-pink-700',
     pre_job_card: 'bg-purple-100 text-purple-700',
     pending_approval: 'bg-amber-100 text-amber-700',
     open: 'bg-blue-100 text-blue-700',
@@ -157,7 +158,7 @@ export default function JobCards() {
             className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white" />
         </div>
         <div className="flex gap-2 overflow-x-auto pb-1">
-          {['all', 'pre_job_card', 'open', 'in_progress', 'waiting_parts', 'completed'].map(s => (
+          {['all', 'customer_request', 'pre_job_card', 'open', 'in_progress', 'waiting_parts', 'completed'].map(s => (
             <button key={s} onClick={() => setStatusFilter(s)}
               className={`px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition ${
                 statusFilter === s ? 'bg-blue-700 text-white' : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
@@ -184,7 +185,7 @@ export default function JobCards() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 flex-wrap">
-                    <Link to={`/job-cards/${job.id}`} className="text-lg font-bold text-blue-700 hover:text-blue-800">
+                    <Link to={`/admin/job-cards/${job.id}`} className="text-lg font-bold text-blue-700 hover:text-blue-800">
                       {job.job_number}
                     </Link>
                     <span className={`text-xs px-2 py-1 rounded-full font-medium ${statusColors[job.status]}`}>
@@ -215,7 +216,7 @@ export default function JobCards() {
                       {formatTZS(calcJobTotal(job.job_card_items))}
                     </span>
                   )}
-                  <Link to={`/job-cards/${job.id}`}
+                  <Link to={`/admin/job-cards/${job.id}`}
                     className="p-2 rounded-lg hover:bg-blue-50 text-blue-600" title="View">
                     <Eye className="w-4 h-4" />
                   </Link>

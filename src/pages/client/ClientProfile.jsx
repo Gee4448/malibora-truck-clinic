@@ -12,8 +12,9 @@ export default function ClientProfile() {
     full_name: customer?.full_name || '',
     phone: customer?.phone || '',
     email: customer?.email || '',
-    company: customer?.company || '',
+    company_name: customer?.company_name || '',
     address: customer?.address || '',
+    location: customer?.location || '',
   })
   const [saving, setSaving] = useState(false)
 
@@ -26,8 +27,9 @@ export default function ClientProfile() {
           full_name: form.full_name,
           phone: form.phone,
           email: form.email,
-          company: form.company,
+          company_name: form.company_name,
           address: form.address,
+          location: form.location,
         })
         .eq('id', customer.id)
 
@@ -45,8 +47,9 @@ export default function ClientProfile() {
     { key: 'full_name', icon: User, label: t('client.profile.name'), type: 'text' },
     { key: 'phone', icon: Phone, label: t('client.profile.phone'), type: 'tel' },
     { key: 'email', icon: Mail, label: t('client.profile.email'), type: 'email' },
-    { key: 'company', icon: Building2, label: t('client.profile.company'), type: 'text' },
+    { key: 'company_name', icon: Building2, label: t('client.profile.company'), type: 'text' },
     { key: 'address', icon: MapPin, label: t('client.profile.address'), type: 'text' },
+    { key: 'location', icon: MapPin, label: t('client.register.locationLabel') || 'Location', type: 'text' },
   ]
 
   return (
@@ -61,7 +64,7 @@ export default function ClientProfile() {
           </span>
         </div>
         <h2 className="text-lg font-bold text-gray-900">{customer?.full_name}</h2>
-        {customer?.company && <p className="text-sm text-gray-500">{customer.company}</p>}
+        {customer?.company_name && <p className="text-sm text-gray-500">{customer.company_name}</p>}
       </div>
 
       {/* Form */}

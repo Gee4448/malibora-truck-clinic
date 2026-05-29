@@ -43,7 +43,9 @@
     "totalRevenue": "Total Revenue",
     "recentJobs": "Recent Job Cards",
     "lowStock": "Low Stock Alert",
-    "pendingInvoices": "Pending Invoices"
+    "pendingInvoices": "Pending Invoices",
+    "pendingApprovals": "Pending Approvals",
+    "customerRequests": "Customer Requests"
   },
   "customers": {
     "title": "Customers",
@@ -66,7 +68,23 @@
     "loadError": "Error loading customers",
     "updated": "Customer updated",
     "added": "Customer added",
-    "deleted": "Customer deleted"
+    "deleted": "Customer deleted",
+    "statusFilter": {
+      "all": "All",
+      "pending": "Pending Approval",
+      "approved": "Approved"
+    },
+    "statusPending": "Pending",
+    "statusApproved": "Approved",
+    "statusRejected": "Rejected",
+    "approve": "Approve",
+    "reject": "Reject",
+    "approved": "Customer approved!",
+    "rejected": "Customer rejected",
+    "rejectConfirm": "Reject this customer's registration?",
+    "registeredOnline": "Online",
+    "registeredWalkIn": "Walk-in",
+    "location": "Location"
   },
   "vehicles": {
     "title": "Vehicles",
@@ -148,7 +166,8 @@
       "in_progress": "In Progress",
       "waiting_parts": "Waiting Parts",
       "completed": "Completed",
-      "cancelled": "Cancelled"
+      "cancelled": "Cancelled",
+      "customer_request": "Customer Request"
     },
     "priorities": {
       "low": "Low",
@@ -210,8 +229,26 @@
       "sent": "Sent",
       "approved": "Approved",
       "paid": "Paid",
-      "cancelled": "Cancelled"
-    }
+      "cancelled": "Cancelled",
+      "negotiating": "Negotiating"
+    },
+    "negotiation": "Negotiation",
+    "negotiationPlaceholder": "Type your message...",
+    "sendMessage": "Send",
+    "noMessages": "No messages yet",
+    "depositRequired": "Deposit Required",
+    "depositPercentage": "Deposit Percentage",
+    "depositAmount": "Deposit Amount",
+    "remainingBalance": "Remaining Balance",
+    "agreeToProforma": "I Agree to This Proforma",
+    "agreeConfirm": "Are you sure you want to agree to this proforma?",
+    "agreed": "You agreed on",
+    "customerAgreed": "Customer agreed",
+    "setDeposit": "Set Deposit",
+    "depositSaved": "Deposit settings saved",
+    "receipt": "Payment Receipt",
+    "depositPaid": "Deposit Paid",
+    "messageSent": "Message sent"
   },
   "inventory": {
     "title": "Parts Inventory",
@@ -575,7 +612,58 @@
       "success": "Welcome back!",
       "notFound": "No account found with this phone number. Please contact Malibora Truck Clinic.",
       "help": "Don't have an account?",
-      "callSupport": "Call us for help"
+      "callSupport": "Call us for help",
+      "noAccount": "Don't have an account?",
+      "registerLink": "Register here",
+      "statusPending": "Your registration is pending approval.",
+      "statusPendingHint": "The manager will review your registration. Please wait.",
+      "statusRejected": "Your registration was not approved.",
+      "statusRejectedHint": "Please contact Malibora Truck Clinic for more information."
+    },
+    "register": {
+      "title": "Create Account",
+      "subtitle": "Register to access our service portal",
+      "stepPersonal": "Personal Info",
+      "stepVehicle": "Vehicle",
+      "nameLabel": "Full Name",
+      "companyLabel": "Company Name",
+      "phoneLabel": "Phone Number (WhatsApp)",
+      "emailLabel": "Email Address",
+      "addressLabel": "Address",
+      "locationLabel": "Location",
+      "locationPlaceholder": "e.g. Ubungo, Dar es Salaam",
+      "next": "Next",
+      "vehicleTitle": "Register Your Vehicle",
+      "vehicleSubtitle": "Add at least one vehicle to complete registration",
+      "vehicleType": "Vehicle Type",
+      "makeLabel": "Make / Brand",
+      "modelLabel": "Model",
+      "plateLabel": "Plate Number",
+      "engineTypeLabel": "Engine Type",
+      "chassisLabel": "Chassis Number",
+      "axlesLabel": "Number of Axles",
+      "fuelTypeLabel": "Fuel Type",
+      "submit": "Register",
+      "fillRequired": "Please fill in all required fields",
+      "phoneExists": "This phone number is already registered. Please log in.",
+      "error": "Registration failed. Please try again.",
+      "successTitle": "Registration Submitted!",
+      "pendingMessage": "Your registration is being reviewed by our team. You will be able to log in once approved.",
+      "contactInfo": "Questions? Call us:",
+      "backToLogin": "Back to Login",
+      "hasAccount": "Already have an account?",
+      "loginLink": "Sign In",
+      "types": {
+        "truck": "Truck",
+        "trailer": "Trailer",
+        "car": "Car"
+      },
+      "fuels": {
+        "diesel": "Diesel",
+        "petrol": "Petrol",
+        "electric": "Electric",
+        "hybrid": "Hybrid"
+      }
     },
     "dashboard": {
       "welcome": "Welcome",
@@ -585,11 +673,49 @@
       "activeServicesTitle": "Active Services",
       "viewAll": "View all",
       "noActiveServices": "No active services",
-      "allGood": "All your vehicles are in good shape!"
+      "allGood": "All your vehicles are in good shape!",
+      "reportProblem": "Report a Problem"
+    },
+    "newRequest": {
+      "title": "Report a Problem",
+      "selectVehicle": "Select Vehicle",
+      "requestType": "What do you need?",
+      "knownProblem": "I know the problem",
+      "needInspection": "I need an inspection",
+      "describeIssue": "Describe the Issue",
+      "descriptionPlaceholder": "What is wrong with your vehicle?",
+      "location": "Your Location (for on-site inspection)",
+      "locationPlaceholder": "e.g. Ubungo, Dar es Salaam",
+      "submit": "Submit Request",
+      "success": "Request submitted!",
+      "noVehicles": "Please add a vehicle first",
+      "fillRequired": "Please fill in all required fields"
     },
     "vehicles": {
       "title": "My Vehicles",
-      "noVehicles": "No vehicles registered yet"
+      "noVehicles": "No vehicles registered yet",
+      "addVehicle": "Add Vehicle",
+      "vehicleType": "Vehicle Type",
+      "make": "Make / Brand",
+      "model": "Model",
+      "plateNumber": "Plate Number",
+      "engineType": "Engine Type",
+      "chassisNumber": "Chassis Number",
+      "axles": "Number of Axles",
+      "fuelType": "Fuel Type",
+      "added": "Vehicle added!",
+      "addError": "Failed to add vehicle",
+      "types": {
+        "truck": "Truck",
+        "trailer": "Trailer",
+        "car": "Car"
+      },
+      "fuels": {
+        "diesel": "Diesel",
+        "petrol": "Petrol",
+        "electric": "Electric",
+        "hybrid": "Hybrid"
+      }
     },
     "services": {
       "title": "Service History",
@@ -609,7 +735,13 @@
         "all": "All",
         "unpaid": "Unpaid",
         "paid": "Paid"
-      }
+      },
+      "negotiation": "Chat with Malibora",
+      "agree": "I Agree",
+      "agreeConfirm": "Confirm you agree to this proforma?",
+      "agreed": "You agreed to this proforma",
+      "depositInfo": "Deposit Required",
+      "receipt": "Payment Receipt"
     },
     "profile": {
       "title": "My Profile",
