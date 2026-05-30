@@ -8,6 +8,32 @@ import toast from 'react-hot-toast'
 const VEHICLE_TYPES = ['truck', 'trailer', 'car']
 const FUEL_TYPES = ['diesel', 'petrol', 'electric', 'hybrid']
 
+const TRUCK_MAKES = [
+  'Scania', 'Volvo', 'MAN', 'Mercedes-Benz', 'DAF', 'Iveco',
+  'Hino', 'Isuzu', 'Mitsubishi Fuso', 'TATA', 'Ashok Leyland',
+  'Sinotruk (HOWO)', 'FAW', 'Shacman', 'Dongfeng', 'Foton',
+  'UD Trucks', 'Renault Trucks', 'Kenworth', 'Freightliner',
+]
+
+const TRUCK_MODELS = {
+  'Scania': ['R450', 'R500', 'R520', 'G410', 'P380', 'S730'],
+  'Volvo': ['FH16', 'FH12', 'FM12', 'FM440', 'FMX', 'VNL'],
+  'MAN': ['TGX', 'TGS', 'TGM', 'TGL'],
+  'Mercedes-Benz': ['Actros', 'Axor', 'Atego', 'Arocs'],
+  'DAF': ['XF', 'CF', 'LF'],
+  'Iveco': ['Stralis', 'Trakker', 'Eurocargo'],
+  'Hino': ['500 Series', '700 Series', '300 Series'],
+  'Isuzu': ['FVZ', 'FRR', 'FSR', 'NQR', 'NPR'],
+  'Mitsubishi Fuso': ['Super Great', 'Fighter', 'Canter'],
+  'TATA': ['Prima', 'LPT 1618', 'LPT 2518', 'Signa'],
+  'Sinotruk (HOWO)': ['A7', 'T7H', 'T5G', 'ZZ3257'],
+  'FAW': ['J6P', 'J5K', 'JH6'],
+  'Shacman': ['X3000', 'F3000', 'H3000'],
+}
+
+const ENGINE_TYPES = ['Diesel Turbo', 'Diesel', 'Diesel Intercooler', 'Petrol', 'CNG', 'LPG']
+const AXLE_OPTIONS = [{ value: '2', label: '2' }, { value: '3', label: '3' }, { value: '4', label: '4' }, { value: '5', label: '5' }, { value: '6', label: '6+' }]
+
 export default function ClientVehicles() {
   const { t } = useLanguage()
   const { customer } = useClient()
@@ -15,6 +41,9 @@ export default function ClientVehicles() {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [customMake, setCustomMake] = useState(false)
+  const [customModel, setCustomModel] = useState(false)
+  const [customEngine, setCustomEngine] = useState(false)
   const [form, setForm] = useState({
     vehicle_type: 'truck', make: '', model: '', registration_number: '',
     engine_type: '', chassis_number: '', axles: '', fuel_type: 'diesel'
@@ -42,6 +71,7 @@ export default function ClientVehicles() {
   const resetForm = () => {
     setForm({ vehicle_type: 'truck', make: '', model: '', registration_number: '',
       engine_type: '', chassis_number: '', axles: '', fuel_type: 'diesel' })
+    setCustomMake(false); setCustomModel(false); setCustomEngine(false)
   }
 
   const handleAddVehicle = async (e) => {
@@ -162,16 +192,45 @@ export default function ClientVehicles() {
                   ))}
                 </select>
               </div>
+              {/* Make */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('client.vehicles.make')} *</label>
-                <input type="text" value={form.make} onChange={e => setForm({...form, make: e.target.value})} required
-                  placeholder="e.g. Scania, Volvo, MAN"
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" />
+                {customMake ? (
+                  <div className="flex gap-2">
+                    <input type="text" value={form.make} onChange={e => setForm({...form, make: e.target.value})} required
+                      placeholder={t('client.register.typeMake')}
+                      className="flex-1 px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" />
+                    <button type="button" onClick={() => { setCustomMake(false); setForm(f => ({...f, make: '', model: ''})); setCustomModel(false) }}
+                      className="px-3 py-2 text-xs border border-gray-300 rounded-xl hover:bg-gray-50 text-gray-500">{t('client.register.backToList')}</button>
+                  </div>
+                ) : (
+                  <select value={form.make} onChange={e => {
+                    if (e.target.value === '__other__') { setCustomMake(true); setForm(f => ({...f, make: '', model: ''})); setCustomModel(true); }
+                    else { setForm(f => ({...f, make: e.target.value, model: ''})); setCustomModel(false); }
+                  }} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                    <option value="">{t('client.register.selectMake')}</option>
+                    {TRUCK_MAKES.map(m => <option key={m} value={m}>{m}</option>)}
+                    <option value="__other__">{t('client.register.otherMake')}</option>
+                  </select>
+                )}
               </div>
+              {/* Model */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('client.vehicles.model')}</label>
-                <input type="text" value={form.model} onChange={e => setForm({...form, model: e.target.value})}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" />
+                {customModel || customMake || !TRUCK_MODELS[form.make] ? (
+                  <input type="text" value={form.model} onChange={e => setForm({...form, model: e.target.value})}
+                    placeholder={t('client.register.typeModel')}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" />
+                ) : (
+                  <select value={form.model} onChange={e => {
+                    if (e.target.value === '__other__') { setCustomModel(true); setForm(f => ({...f, model: ''})); }
+                    else setForm(f => ({...f, model: e.target.value}));
+                  }} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                    <option value="">{t('client.register.selectModel')}</option>
+                    {(TRUCK_MODELS[form.make] || []).map(m => <option key={m} value={m}>{m}</option>)}
+                    <option value="__other__">{t('client.register.otherModel')}</option>
+                  </select>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('client.vehicles.plateNumber')} *</label>
@@ -179,20 +238,41 @@ export default function ClientVehicles() {
                   placeholder="e.g. T 123 ABC" style={{ textTransform: 'uppercase' }}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" />
               </div>
+              {/* Engine Type */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('client.vehicles.engineType')}</label>
-                <input type="text" value={form.engine_type} onChange={e => setForm({...form, engine_type: e.target.value})}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" />
+                {customEngine ? (
+                  <div className="flex gap-2">
+                    <input type="text" value={form.engine_type} onChange={e => setForm({...form, engine_type: e.target.value})}
+                      placeholder={t('client.register.typeEngine')}
+                      className="flex-1 px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" />
+                    <button type="button" onClick={() => { setCustomEngine(false); setForm(f => ({...f, engine_type: ''})) }}
+                      className="px-3 py-2 text-xs border border-gray-300 rounded-xl hover:bg-gray-50 text-gray-500">{t('client.register.backToList')}</button>
+                  </div>
+                ) : (
+                  <select value={form.engine_type} onChange={e => {
+                    if (e.target.value === '__other__') { setCustomEngine(true); setForm(f => ({...f, engine_type: ''})); }
+                    else setForm(f => ({...f, engine_type: e.target.value}));
+                  }} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                    <option value="">{t('client.register.selectEngine')}</option>
+                    {ENGINE_TYPES.map(e => <option key={e} value={e}>{e}</option>)}
+                    <option value="__other__">{t('client.register.otherEngine')}</option>
+                  </select>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('client.vehicles.chassisNumber')}</label>
                 <input type="text" value={form.chassis_number} onChange={e => setForm({...form, chassis_number: e.target.value})}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" />
               </div>
+              {/* Axles */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('client.vehicles.axles')}</label>
-                <input type="number" value={form.axles} onChange={e => setForm({...form, axles: e.target.value})}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" />
+                <select value={form.axles} onChange={e => setForm({...form, axles: e.target.value})}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                  <option value="">{t('client.register.selectAxles')}</option>
+                  {AXLE_OPTIONS.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('client.vehicles.fuelType')}</label>
