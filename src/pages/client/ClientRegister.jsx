@@ -12,27 +12,46 @@ const VEHICLE_TYPES = ['truck', 'trailer', 'car']
 const FUEL_TYPES = ['diesel', 'petrol', 'electric', 'hybrid']
 
 const TRUCK_MAKES = [
-  'Scania', 'Volvo', 'MAN', 'Mercedes-Benz', 'DAF', 'Iveco',
-  'Hino', 'Isuzu', 'Mitsubishi Fuso', 'TATA', 'Ashok Leyland',
-  'Sinotruk (HOWO)', 'FAW', 'Shacman', 'Dongfeng', 'Foton',
-  'UD Trucks', 'Renault Trucks', 'Kenworth', 'Freightliner',
+  'Scania', 'Volvo', 'DAF', 'MAN', 'Shacman', 'Mercedes-Benz', 'Iveco',
+  'Renault Trucks', 'FAW', 'Hino', 'Isuzu', 'Mitsubishi Fuso',
+  'Sinotruk', 'Dongfeng', 'Foton', 'JAC', 'Beiben', 'TATA',
 ]
 
 const TRUCK_MODELS = {
-  'Scania': ['R450', 'R500', 'R520', 'G410', 'P380', 'S730'],
+  'Scania': [
+    '93', '113', '143', '94', '114', '124', '144', '164',
+    'P230', 'P310', 'P380', 'G420',
+    'R420', 'R440', 'R480', 'R500', 'R560', 'R620', 'R650', 'R730', 'R770',
+  ],
   'Volvo': ['FH16', 'FH12', 'FM12', 'FM440', 'FMX', 'VNL'],
+  'DAF': ['XF', 'CF', 'LF', 'XG', 'XG+'],
   'MAN': ['TGX', 'TGS', 'TGM', 'TGL'],
+  'Shacman': ['X3000', 'F3000', 'H3000', 'X6000'],
   'Mercedes-Benz': ['Actros', 'Axor', 'Atego', 'Arocs'],
-  'DAF': ['XF', 'CF', 'LF'],
-  'Iveco': ['Stralis', 'Trakker', 'Eurocargo'],
+  'Iveco': ['Stralis', 'Trakker', 'Eurocargo', 'S-Way'],
+  'Renault Trucks': ['T', 'C', 'D', 'K', 'Master'],
+  'FAW': ['J6P', 'J5K', 'JH6', 'J7'],
   'Hino': ['500 Series', '700 Series', '300 Series'],
-  'Isuzu': ['FVZ', 'FRR', 'FSR', 'NQR', 'NPR'],
+  'Isuzu': ['FVZ', 'FRR', 'FSR', 'NQR', 'NPR', 'GIGA'],
   'Mitsubishi Fuso': ['Super Great', 'Fighter', 'Canter'],
+  'Sinotruk': ['A7', 'T7H', 'T5G', 'ZZ3257', 'E7G'],
+  'Dongfeng': ['KL', 'KX', 'KR', 'Captain'],
+  'Foton': ['Auman', 'Aumark', 'Ollin'],
+  'JAC': ['N-Series', 'K-Series', 'Gallop', 'Shuailing'],
+  'Beiben': ['V3', 'V3ET', 'NG80', 'V3 ETX'],
   'TATA': ['Prima', 'LPT 1618', 'LPT 2518', 'Signa'],
-  'Sinotruk (HOWO)': ['A7', 'T7H', 'T5G', 'ZZ3257'],
-  'FAW': ['J6P', 'J5K', 'JH6'],
-  'Shacman': ['X3000', 'F3000', 'H3000'],
 }
+
+const TRAILER_MAKES = ['BPW', 'ROR', 'SAF']
+
+const TRAILER_MODELS = {
+  'BPW': ['Flatbed', 'Tipper', 'Tanker', 'Lowbed', 'Skeletal', 'Side Curtain', 'Box Body'],
+  'ROR': ['Flatbed', 'Tipper', 'Tanker', 'Lowbed', 'Skeletal', 'Side Curtain', 'Box Body'],
+  'SAF': ['Flatbed', 'Tipper', 'Tanker', 'Lowbed', 'Skeletal', 'Side Curtain', 'Box Body'],
+}
+
+const getMakes = (type) => type === 'trailer' ? TRAILER_MAKES : TRUCK_MAKES
+const getModels = (type) => type === 'trailer' ? TRAILER_MODELS : TRUCK_MODELS
 
 const ENGINE_TYPES = [
   'Diesel Turbo', 'Diesel', 'Diesel Intercooler',
@@ -237,7 +256,10 @@ export default function ClientRegister() {
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">
                     {t('client.register.vehicleType')} *
                   </label>
-                  <select name="vehicle_type" value={vehicleForm.vehicle_type} onChange={handleVehicleChange}
+                  <select name="vehicle_type" value={vehicleForm.vehicle_type} onChange={(e) => {
+                      setVehicleForm(prev => ({ ...prev, vehicle_type: e.target.value, make: '', model: '' }));
+                      setCustomMake(false); setCustomModel(false);
+                    }}
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-900 bg-white">
                     {VEHICLE_TYPES.map(type => (
                       <option key={type} value={type}>{t(`client.register.types.${type}`)}</option>
@@ -264,7 +286,7 @@ export default function ClientRegister() {
                       else { handleVehicleChange(e); setVehicleForm(prev => ({...prev, model: ''})); setCustomModel(false); }
                     }} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-900 bg-white">
                       <option value="">{t('client.register.selectMake')}</option>
-                      {TRUCK_MAKES.map(m => <option key={m} value={m}>{m}</option>)}
+                      {getMakes(vehicleForm.vehicle_type).map(m => <option key={m} value={m}>{m}</option>)}
                       <option value="__other__">{t('client.register.otherMake')}</option>
                     </select>
                   )}
@@ -275,7 +297,7 @@ export default function ClientRegister() {
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">
                     {t('client.register.modelLabel')}
                   </label>
-                  {customModel || customMake || !TRUCK_MODELS[vehicleForm.make] ? (
+                  {customModel || customMake || !getModels(vehicleForm.vehicle_type)[vehicleForm.make] ? (
                     <input name="model" value={vehicleForm.model} onChange={handleVehicleChange}
                       placeholder={t('client.register.typeModel')}
                       className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-900" />
@@ -285,7 +307,7 @@ export default function ClientRegister() {
                       else handleVehicleChange(e);
                     }} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-900 bg-white">
                       <option value="">{t('client.register.selectModel')}</option>
-                      {(TRUCK_MODELS[vehicleForm.make] || []).map(m => <option key={m} value={m}>{m}</option>)}
+                      {(getModels(vehicleForm.vehicle_type)[vehicleForm.make] || []).map(m => <option key={m} value={m}>{m}</option>)}
                       <option value="__other__">{t('client.register.otherModel')}</option>
                     </select>
                   )}
