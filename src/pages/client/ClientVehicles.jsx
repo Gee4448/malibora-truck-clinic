@@ -50,7 +50,13 @@ const TRAILER_MODELS = {
 const getMakes = (type) => type === 'trailer' ? TRAILER_MAKES : TRUCK_MAKES
 const getModels = (type) => type === 'trailer' ? TRAILER_MODELS : TRUCK_MODELS
 
-const ENGINE_TYPES = ['Diesel Turbo', 'Diesel', 'Diesel Intercooler', 'Petrol', 'CNG', 'LPG']
+const ENGINE_TYPES = [
+  'Diesel', 'Diesel Turbo', 'Diesel Turbo Intercooler',
+  'Common Rail Diesel', 'Euro 3 Diesel', 'Euro 4 Diesel', 'Euro 5 Diesel', 'Euro 6 Diesel',
+  'Petrol', 'Petrol Turbo', 'Petrol Hybrid',
+  'CNG', 'LNG', 'LPG',
+  'Diesel-Electric Hybrid', 'Electric', 'Hydrogen Fuel Cell',
+]
 const AXLE_OPTIONS = [{ value: '2', label: '2' }, { value: '3', label: '3' }, { value: '4', label: '4' }, { value: '5', label: '5' }, { value: '6', label: '6+' }]
 
 export default function ClientVehicles() {

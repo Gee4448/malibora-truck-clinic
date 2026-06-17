@@ -530,6 +530,12 @@
     "allApproved": "All items approved!",
     "failedUpdate": "Failed to update"
   },
+  "install": {
+    "title": "Install Malibora App",
+    "description": "Add to your home screen for quick access and offline use",
+    "button": "Install",
+    "dismiss": "Not now"
+  },
   "landing": {
     "clientPortal": "Customer Portal",
     "staffLogin": "Staff Login",
@@ -633,8 +639,11 @@
       "locationLabel": "Location",
       "locationPlaceholder": "e.g. Ubungo, Dar es Salaam",
       "next": "Next",
-      "vehicleTitle": "Register Your Vehicle",
+      "vehicleTitle": "Register Your Vehicles",
       "vehicleSubtitle": "Add at least one vehicle to complete registration",
+      "addAnotherVehicle": "Add Another Vehicle",
+      "removeVehicle": "Remove",
+      "vehicleNumber": "Vehicle {number}",
       "vehicleType": "Vehicle Type",
       "makeLabel": "Make / Brand",
       "modelLabel": "Model",

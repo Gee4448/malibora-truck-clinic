@@ -39,23 +39,23 @@ export default function LandingPage() {
               <p className="text-blue-200 text-xs">{t('app.tagline')}</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={() => switchLanguage(locale === 'en' ? 'sw' : 'en')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-white/10 hover:bg-white/20 transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium bg-white/10 hover:bg-white/20 transition-colors"
             >
               <Globe className="w-4 h-4" />
               {locale === 'en' ? 'SW' : 'EN'}
             </button>
             <Link
               to="/client"
-              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-medium bg-white text-blue-900 hover:bg-blue-50 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-medium bg-white text-blue-900 hover:bg-blue-50 transition-colors"
             >
               {t('landing.clientPortal')}
             </Link>
             <Link
               to="/admin/gate"
-              className="hidden sm:inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-medium bg-white/10 text-white hover:bg-white/20 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-medium bg-white/10 text-white hover:bg-white/20 transition-colors"
             >
               {t('landing.staffLogin')}
             </Link>

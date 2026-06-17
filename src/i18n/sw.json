@@ -530,6 +530,12 @@
     "allApproved": "Vipengele vyote vimeidhinishwa!",
     "failedUpdate": "Imeshindikana kubadilisha"
   },
+  "install": {
+    "title": "Sakinisha Programu ya Malibora",
+    "description": "Ongeza kwenye skrini yako ya nyumbani kwa ufikiaji wa haraka",
+    "button": "Sakinisha",
+    "dismiss": "Si sasa"
+  },
   "landing": {
     "clientPortal": "Mlango wa Mteja",
     "staffLogin": "Ingia kwa Wafanyakazi",
@@ -633,8 +639,11 @@
       "locationLabel": "Eneo",
       "locationPlaceholder": "mfano Ubungo, Dar es Salaam",
       "next": "Endelea",
-      "vehicleTitle": "Sajili Gari Lako",
+      "vehicleTitle": "Sajili Magari Yako",
       "vehicleSubtitle": "Ongeza angalau gari moja kukamilisha usajili",
+      "addAnotherVehicle": "Ongeza Gari Jingine",
+      "removeVehicle": "Ondoa",
+      "vehicleNumber": "Gari {number}",
       "vehicleType": "Aina ya Gari",
       "makeLabel": "Chapa",
       "modelLabel": "Modeli",

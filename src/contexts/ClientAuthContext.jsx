@@ -3,6 +3,33 @@ import { supabase } from '../lib/supabase'
 
 const ClientAuthContext = createContext()
 
+// Non-atomic fallback used only when the atomic RPC (migration 003) is not yet
+// deployed. Preserves the previous two-step behaviour so a deploy without the
+// migration still works; remove once 003 is applied everywhere.
+async function legacyRegister(normalizedPhone, customerPayload, vehiclesPayload) {
+  const { data: existing } = await supabase
+    .from('customers')
+    .select('id')
+    .eq('phone', normalizedPhone)
+    .limit(1)
+    .maybeSingle()
+  if (existing) throw new Error('phone_exists')
+
+  const { data: customer, error: custErr } = await supabase
+    .from('customers')
+    .insert({ ...customerPayload, status: 'pending', registered_via: 'online' })
+    .select()
+    .single()
+  if (custErr) throw custErr
+
+  const { error: vehErr } = await supabase
+    .from('vehicles')
+    .insert(vehiclesPayload.map(v => ({ ...v, customer_id: customer.id })))
+  if (vehErr) throw vehErr
+
+  return customer
+}
+
 export function ClientAuthProvider({ children }) {
   const [customer, setCustomer] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -71,56 +98,44 @@ export function ClientAuthProvider({ children }) {
 
   const registerCustomer = useCallback(async (customerData, vehicleData) => {
     const normalized = customerData.phone.replace(/\s+/g, '').replace(/^0/, '+255')
+    const vehicles = Array.isArray(vehicleData) ? vehicleData : [vehicleData]
 
-    const { data: existing } = await supabase
-      .from('customers')
-      .select('id')
-      .or(`phone.eq.${customerData.phone},phone.eq.${normalized}`)
-      .limit(1)
-      .maybeSingle()
-
-    if (existing) {
-      throw new Error('phone_exists')
-    }
-
-    const payload = {
+    const customerPayload = {
       full_name: customerData.full_name,
       phone: normalized,
       email: customerData.email || null,
       company_name: customerData.company_name || null,
       address: customerData.address || null,
       location: customerData.location || null,
-      status: 'pending',
-      registered_via: 'online',
     }
 
-    const { data: customer, error: custErr } = await supabase
-      .from('customers')
-      .insert(payload)
-      .select()
-      .single()
+    const vehiclesPayload = vehicles.map(v => ({
+      vehicle_type: v.vehicle_type,
+      make: v.make,
+      model: v.model || null,
+      registration_number: v.registration_number,
+      engine_type: v.engine_type || null,
+      chassis_number: v.chassis_number || null,
+      axles: v.axles || null,
+      fuel_type: v.fuel_type,
+    }))
 
-    if (custErr) throw custErr
+    // Atomic path: one transactional RPC (migration 003) so a failed vehicle
+    // insert can't orphan a pending customer and lock the user out on retry.
+    const { data, error } = await supabase.rpc('register_customer_with_vehicles', {
+      customer_data: customerPayload,
+      vehicles_data: vehiclesPayload,
+    })
 
-    const vPayload = {
-      customer_id: customer.id,
-      vehicle_type: vehicleData.vehicle_type,
-      make: vehicleData.make,
-      model: vehicleData.model || null,
-      registration_number: vehicleData.registration_number,
-      engine_type: vehicleData.engine_type || null,
-      chassis_number: vehicleData.chassis_number || null,
-      axles: vehicleData.axles || null,
-      fuel_type: vehicleData.fuel_type,
-    }
+    if (!error) return data
+    if (error.message?.includes('phone_exists')) throw new Error('phone_exists')
 
-    const { error: vehErr } = await supabase
-      .from('vehicles')
-      .insert(vPayload)
+    // Graceful fallback when migration 003 has not been applied yet.
+    const fnMissing = error.code === 'PGRST202'
+      || error.message?.includes('register_customer_with_vehicles')
+    if (!fnMissing) throw error
 
-    if (vehErr) throw vehErr
-
-    return customer
+    return legacyRegister(normalized, customerPayload, vehiclesPayload)
   }, [])
 
   const logout = useCallback(() => {

@@ -34,6 +34,7 @@ import ClientInvoiceView from './pages/client/ClientInvoiceView'
 import ClientProfile from './pages/client/ClientProfile'
 import ClientRegister from './pages/client/ClientRegister'
 import ClientNewRequest from './pages/client/ClientNewRequest'
+import InstallPrompt from './components/common/InstallPrompt'
 import './styles/index.css'
 
 // Protected Route component
@@ -160,6 +161,7 @@ function App() {
       <LanguageProvider>
         <AuthProvider>
           <ClientAuthProvider>
+          <InstallPrompt />
           <Toaster
             position="top-right"
             toastOptions={{

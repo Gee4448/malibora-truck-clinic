@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { useClient } from '../../contexts/ClientAuthContext'
 import {
   Truck, Globe, User, Building2, Phone, Mail, MapPin,
-  ArrowRight, ArrowLeft, CheckCircle2, Clock
+  ArrowRight, ArrowLeft, CheckCircle2, Clock, Plus, Trash2
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -54,8 +54,11 @@ const getMakes = (type) => type === 'trailer' ? TRAILER_MAKES : TRUCK_MAKES
 const getModels = (type) => type === 'trailer' ? TRAILER_MODELS : TRUCK_MODELS
 
 const ENGINE_TYPES = [
-  'Diesel Turbo', 'Diesel', 'Diesel Intercooler',
-  'Petrol', 'CNG', 'LPG',
+  'Diesel', 'Diesel Turbo', 'Diesel Turbo Intercooler',
+  'Common Rail Diesel', 'Euro 3 Diesel', 'Euro 4 Diesel', 'Euro 5 Diesel', 'Euro 6 Diesel',
+  'Petrol', 'Petrol Turbo', 'Petrol Hybrid',
+  'CNG', 'LNG', 'LPG',
+  'Diesel-Electric Hybrid', 'Electric', 'Hydrogen Fuel Cell',
 ]
 
 const AXLE_OPTIONS = [
@@ -69,29 +72,34 @@ const AXLE_OPTIONS = [
 export default function ClientRegister() {
   const { t, locale, switchLanguage } = useLanguage()
   const { registerCustomer } = useClient()
-  const navigate = useNavigate()
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
-  const [customMake, setCustomMake] = useState(false)
-  const [customModel, setCustomModel] = useState(false)
-  const [customEngine, setCustomEngine] = useState(false)
+
+  const emptyVehicle = () => ({
+    vehicle_type: 'truck', make: '', model: '', registration_number: '',
+    engine_type: '', chassis_number: '', axles: '', fuel_type: 'diesel',
+    _customMake: false, _customModel: false, _customEngine: false,
+  })
 
   const [customerForm, setCustomerForm] = useState({
     full_name: '', company_name: '', phone: '', email: '', address: '', location: ''
   })
 
-  const [vehicleForm, setVehicleForm] = useState({
-    vehicle_type: 'truck', make: '', model: '', registration_number: '',
-    engine_type: '', chassis_number: '', axles: '', fuel_type: 'diesel'
-  })
+  const [vehicles, setVehicles] = useState([emptyVehicle()])
 
   const handleCustomerChange = (e) => {
     setCustomerForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
-  const handleVehicleChange = (e) => {
-    setVehicleForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
+  const updateVehicle = (index, updates) => {
+    setVehicles(prev => prev.map((v, i) => i === index ? { ...v, ...updates } : v))
+  }
+
+  const addVehicle = () => setVehicles(prev => [...prev, emptyVehicle()])
+
+  const removeVehicle = (index) => {
+    if (vehicles.length > 1) setVehicles(prev => prev.filter((_, i) => i !== index))
   }
 
   const goToStep2 = (e) => {
@@ -105,18 +113,22 @@ export default function ClientRegister() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!vehicleForm.make.trim() || !vehicleForm.registration_number.trim()) {
+    const invalid = vehicles.some(v => !v.make.trim() || !v.registration_number.trim())
+    if (invalid) {
       toast.error(t('client.register.fillRequired'))
       return
     }
 
     setLoading(true)
     try {
-      await registerCustomer(customerForm, {
-        ...vehicleForm,
-        registration_number: vehicleForm.registration_number.toUpperCase(),
-        axles: vehicleForm.axles ? parseInt(vehicleForm.axles) : null,
-      })
+      // _customMake/_customModel/_customEngine are UI-only flags; registerCustomer
+      // whitelists DB columns, so they are ignored downstream.
+      const vehiclePayloads = vehicles.map((v) => ({
+        ...v,
+        registration_number: v.registration_number.toUpperCase(),
+        axles: v.axles ? parseInt(v.axles) : null,
+      }))
+      await registerCustomer(customerForm, vehiclePayloads)
       setSuccess(true)
     } catch (err) {
       toast.error(err.message === 'phone_exists'
@@ -252,122 +264,23 @@ export default function ClientRegister() {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-3.5">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    {t('client.register.vehicleType')} *
-                  </label>
-                  <select name="vehicle_type" value={vehicleForm.vehicle_type} onChange={(e) => {
-                      setVehicleForm(prev => ({ ...prev, vehicle_type: e.target.value, make: '', model: '' }));
-                      setCustomMake(false); setCustomModel(false);
-                    }}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-900 bg-white">
-                    {VEHICLE_TYPES.map(type => (
-                      <option key={type} value={type}>{t(`client.register.types.${type}`)}</option>
-                    ))}
-                  </select>
-                </div>
+                {vehicles.map((veh, idx) => (
+                  <VehicleFormBlock
+                    key={idx}
+                    index={idx}
+                    vehicle={veh}
+                    total={vehicles.length}
+                    updateVehicle={updateVehicle}
+                    removeVehicle={removeVehicle}
+                    t={t}
+                  />
+                ))}
 
-                {/* Make / Brand */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    {t('client.register.makeLabel')} *
-                  </label>
-                  {customMake ? (
-                    <div className="flex gap-2">
-                      <input name="make" value={vehicleForm.make} onChange={handleVehicleChange} required
-                        placeholder={t('client.register.typeMake')}
-                        className="flex-1 px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-900" />
-                      <button type="button" onClick={() => { setCustomMake(false); setVehicleForm(prev => ({...prev, make: '', model: ''})); setCustomModel(false) }}
-                        className="px-3 py-2 text-xs border border-gray-300 rounded-xl hover:bg-gray-50 text-gray-500">{t('client.register.backToList')}</button>
-                    </div>
-                  ) : (
-                    <select name="make" value={vehicleForm.make} onChange={(e) => {
-                      if (e.target.value === '__other__') { setCustomMake(true); setVehicleForm(prev => ({...prev, make: '', model: ''})); setCustomModel(true); }
-                      else { handleVehicleChange(e); setVehicleForm(prev => ({...prev, model: ''})); setCustomModel(false); }
-                    }} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-900 bg-white">
-                      <option value="">{t('client.register.selectMake')}</option>
-                      {getMakes(vehicleForm.vehicle_type).map(m => <option key={m} value={m}>{m}</option>)}
-                      <option value="__other__">{t('client.register.otherMake')}</option>
-                    </select>
-                  )}
-                </div>
-
-                {/* Model */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    {t('client.register.modelLabel')}
-                  </label>
-                  {customModel || customMake || !getModels(vehicleForm.vehicle_type)[vehicleForm.make] ? (
-                    <input name="model" value={vehicleForm.model} onChange={handleVehicleChange}
-                      placeholder={t('client.register.typeModel')}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-900" />
-                  ) : (
-                    <select name="model" value={vehicleForm.model} onChange={(e) => {
-                      if (e.target.value === '__other__') { setCustomModel(true); setVehicleForm(prev => ({...prev, model: ''})); }
-                      else handleVehicleChange(e);
-                    }} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-900 bg-white">
-                      <option value="">{t('client.register.selectModel')}</option>
-                      {(getModels(vehicleForm.vehicle_type)[vehicleForm.make] || []).map(m => <option key={m} value={m}>{m}</option>)}
-                      <option value="__other__">{t('client.register.otherModel')}</option>
-                    </select>
-                  )}
-                </div>
-
-                <FormInput name="registration_number" value={vehicleForm.registration_number}
-                  onChange={handleVehicleChange} label={t('client.register.plateLabel')} required
-                  placeholder="e.g. T 123 ABC" style={{ textTransform: 'uppercase' }} />
-
-                {/* Engine Type */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    {t('client.register.engineTypeLabel')}
-                  </label>
-                  {customEngine ? (
-                    <div className="flex gap-2">
-                      <input name="engine_type" value={vehicleForm.engine_type} onChange={handleVehicleChange}
-                        placeholder={t('client.register.typeEngine')}
-                        className="flex-1 px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-900" />
-                      <button type="button" onClick={() => { setCustomEngine(false); setVehicleForm(prev => ({...prev, engine_type: ''})) }}
-                        className="px-3 py-2 text-xs border border-gray-300 rounded-xl hover:bg-gray-50 text-gray-500">{t('client.register.backToList')}</button>
-                    </div>
-                  ) : (
-                    <select name="engine_type" value={vehicleForm.engine_type} onChange={(e) => {
-                      if (e.target.value === '__other__') { setCustomEngine(true); setVehicleForm(prev => ({...prev, engine_type: ''})); }
-                      else handleVehicleChange(e);
-                    }} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-900 bg-white">
-                      <option value="">{t('client.register.selectEngine')}</option>
-                      {ENGINE_TYPES.map(e => <option key={e} value={e}>{e}</option>)}
-                      <option value="__other__">{t('client.register.otherEngine')}</option>
-                    </select>
-                  )}
-                </div>
-
-                <FormInput name="chassis_number" value={vehicleForm.chassis_number}
-                  onChange={handleVehicleChange} label={t('client.register.chassisLabel')} />
-
-                {/* Number of Axles */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    {t('client.register.axlesLabel')}
-                  </label>
-                  <select name="axles" value={vehicleForm.axles} onChange={handleVehicleChange}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-900 bg-white">
-                    <option value="">{t('client.register.selectAxles')}</option>
-                    {AXLE_OPTIONS.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    {t('client.register.fuelTypeLabel')}
-                  </label>
-                  <select name="fuel_type" value={vehicleForm.fuel_type} onChange={handleVehicleChange}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-900 bg-white">
-                    {FUEL_TYPES.map(type => (
-                      <option key={type} value={type}>{t(`client.register.fuels.${type}`)}</option>
-                    ))}
-                  </select>
-                </div>
+                <button type="button" onClick={addVehicle}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-dashed border-blue-300 text-blue-600 font-medium rounded-xl hover:bg-blue-50 transition active:scale-[0.98]">
+                  <Plus className="w-4 h-4" />
+                  {t('client.register.addAnotherVehicle')}
+                </button>
 
                 <div className="flex gap-3 pt-1">
                   <button type="button" onClick={() => setStep(1)}
@@ -398,6 +311,139 @@ export default function ClientRegister() {
             </Link>
           </div>
         </div>
+      </div>
+    </div>
+  )
+}
+
+function VehicleFormBlock({ index, vehicle, total, updateVehicle, removeVehicle, t }) {
+  const update = (field, value) => updateVehicle(index, { [field]: value })
+
+  return (
+    <div className={`space-y-3 ${total > 1 ? 'border border-gray-200 rounded-xl p-4 relative' : ''}`}>
+      {total > 1 && (
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-sm font-semibold text-gray-700">
+            {t('client.register.vehicleNumber').replace('{number}', index + 1)}
+          </span>
+          <button type="button" onClick={() => removeVehicle(index)}
+            className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 font-medium transition">
+            <Trash2 className="w-3.5 h-3.5" />
+            {t('client.register.removeVehicle')}
+          </button>
+        </div>
+      )}
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+          {t('client.register.vehicleType')} *
+        </label>
+        <select value={vehicle.vehicle_type} onChange={(e) => {
+            updateVehicle(index, { vehicle_type: e.target.value, make: '', model: '', _customMake: false, _customModel: false })
+          }}
+          className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-900 bg-white">
+          {VEHICLE_TYPES.map(type => (
+            <option key={type} value={type}>{t(`client.register.types.${type}`)}</option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+          {t('client.register.makeLabel')} *
+        </label>
+        {vehicle._customMake ? (
+          <div className="flex gap-2">
+            <input value={vehicle.make} onChange={(e) => update('make', e.target.value)} required
+              placeholder={t('client.register.typeMake')}
+              className="flex-1 px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-900" />
+            <button type="button" onClick={() => updateVehicle(index, { _customMake: false, make: '', model: '', _customModel: false })}
+              className="px-3 py-2 text-xs border border-gray-300 rounded-xl hover:bg-gray-50 text-gray-500">{t('client.register.backToList')}</button>
+          </div>
+        ) : (
+          <select value={vehicle.make} onChange={(e) => {
+            if (e.target.value === '__other__') updateVehicle(index, { _customMake: true, make: '', model: '', _customModel: true })
+            else updateVehicle(index, { make: e.target.value, model: '', _customModel: false })
+          }} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-900 bg-white">
+            <option value="">{t('client.register.selectMake')}</option>
+            {getMakes(vehicle.vehicle_type).map(m => <option key={m} value={m}>{m}</option>)}
+            <option value="__other__">{t('client.register.otherMake')}</option>
+          </select>
+        )}
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+          {t('client.register.modelLabel')}
+        </label>
+        {vehicle._customModel || vehicle._customMake || !getModels(vehicle.vehicle_type)[vehicle.make] ? (
+          <input value={vehicle.model} onChange={(e) => update('model', e.target.value)}
+            placeholder={t('client.register.typeModel')}
+            className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-900" />
+        ) : (
+          <select value={vehicle.model} onChange={(e) => {
+            if (e.target.value === '__other__') updateVehicle(index, { _customModel: true, model: '' })
+            else update('model', e.target.value)
+          }} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-900 bg-white">
+            <option value="">{t('client.register.selectModel')}</option>
+            {(getModels(vehicle.vehicle_type)[vehicle.make] || []).map(m => <option key={m} value={m}>{m}</option>)}
+            <option value="__other__">{t('client.register.otherModel')}</option>
+          </select>
+        )}
+      </div>
+
+      <FormInput name="registration_number" value={vehicle.registration_number}
+        onChange={(e) => update('registration_number', e.target.value)} label={t('client.register.plateLabel')} required
+        placeholder="e.g. T 123 ABC" style={{ textTransform: 'uppercase' }} />
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+          {t('client.register.engineTypeLabel')}
+        </label>
+        {vehicle._customEngine ? (
+          <div className="flex gap-2">
+            <input value={vehicle.engine_type} onChange={(e) => update('engine_type', e.target.value)}
+              placeholder={t('client.register.typeEngine')}
+              className="flex-1 px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-900" />
+            <button type="button" onClick={() => updateVehicle(index, { _customEngine: false, engine_type: '' })}
+              className="px-3 py-2 text-xs border border-gray-300 rounded-xl hover:bg-gray-50 text-gray-500">{t('client.register.backToList')}</button>
+          </div>
+        ) : (
+          <select value={vehicle.engine_type} onChange={(e) => {
+            if (e.target.value === '__other__') updateVehicle(index, { _customEngine: true, engine_type: '' })
+            else update('engine_type', e.target.value)
+          }} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-900 bg-white">
+            <option value="">{t('client.register.selectEngine')}</option>
+            {ENGINE_TYPES.map(e => <option key={e} value={e}>{e}</option>)}
+            <option value="__other__">{t('client.register.otherEngine')}</option>
+          </select>
+        )}
+      </div>
+
+      <FormInput name="chassis_number" value={vehicle.chassis_number}
+        onChange={(e) => update('chassis_number', e.target.value)} label={t('client.register.chassisLabel')} />
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+          {t('client.register.axlesLabel')}
+        </label>
+        <select value={vehicle.axles} onChange={(e) => update('axles', e.target.value)}
+          className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-900 bg-white">
+          <option value="">{t('client.register.selectAxles')}</option>
+          {AXLE_OPTIONS.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+          {t('client.register.fuelTypeLabel')}
+        </label>
+        <select value={vehicle.fuel_type} onChange={(e) => update('fuel_type', e.target.value)}
+          className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-900 bg-white">
+          {FUEL_TYPES.map(type => (
+            <option key={type} value={type}>{t(`client.register.fuels.${type}`)}</option>
+          ))}
+        </select>
       </div>
     </div>
   )
