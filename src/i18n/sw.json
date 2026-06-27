@@ -84,7 +84,16 @@
     "rejectConfirm": "Kataa usajili wa mteja huyu?",
     "registeredOnline": "Mtandaoni",
     "registeredWalkIn": "Ametembelea",
-    "location": "Eneo"
+    "location": "Eneo",
+    "stepPersonal": "Taarifa binafsi",
+    "stepVehicles": "Magari",
+    "nextVehicles": "Endelea: Magari",
+    "noVehiclesYet": "Hakuna gari lililoongezwa bado.",
+    "vehiclesOptional": "Unaweza kuhifadhi mteja bila magari na kuyaongeza baadaye.",
+    "addFirstVehicle": "Ongeza gari",
+    "addAnotherVehicle": "Ongeza gari lingine",
+    "vehicleRequired": "Tafadhali kamilisha au ondoa gari ambalo halijajazwa.",
+    "addedNoVehicles": "Mteja ameongezwa, lakini kuhifadhi gari kumeshindikana — tafadhali ongeza wewe."
   },
   "vehicles": {
     "title": "Magari",
@@ -439,6 +448,7 @@
   },
   "common": {
     "save": "Hifadhi",
+    "saving": "Inahifadhi...",
     "cancel": "Ghairi",
     "delete": "Futa",
     "edit": "Hariri",

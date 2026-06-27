@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom'
 import { useLanguage } from '../contexts/LanguageContext'
 import { supabase, formatDate } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
-import { Plus, Search, Phone, Mail, Car, Edit2, Trash2, X, ChevronDown, CheckCircle2, XCircle, Globe, MapPin } from 'lucide-react'
+import { Plus, Search, Phone, Mail, Car, Edit2, Trash2, X, CheckCircle2, XCircle, ArrowLeft, ArrowRight } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { emptyVehicle } from '../lib/vehicleOptions'
+import VehicleFormBlock from '../components/vehicles/VehicleFormBlock'
 
 export default function Customers() {
   const { t } = useLanguage()
@@ -15,10 +17,19 @@ export default function Customers() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState(null)
+  const [step, setStep] = useState(1) // 1 = personal info, 2 = vehicles (new clients only)
+  const [submitting, setSubmitting] = useState(false)
+  const [vehicles, setVehicles] = useState([])
   const [form, setForm] = useState({
     full_name: '', phone: '', email: '', company_name: '',
     tin_number: '', address: '', id_type: '', id_number: '', notes: ''
   })
+
+  const updateVehicle = (index, updates) =>
+    setVehicles(prev => prev.map((v, i) => i === index ? { ...v, ...updates } : v))
+  const addVehicle = () => setVehicles(prev => [...prev, emptyVehicle()])
+  const removeVehicle = (index) =>
+    setVehicles(prev => prev.filter((_, i) => i !== index))
 
   useEffect(() => { fetchCustomers() }, [])
 
@@ -37,8 +48,24 @@ export default function Customers() {
     }
   }
 
-  const handleSubmit = async (e) => {
+  // Step 1 (personal info) submit: validate, then either save (edit mode) or advance to vehicles.
+  const handlePersonalSubmit = (e) => {
     e.preventDefault()
+    if (editingId) {
+      saveCustomer()
+    } else {
+      setStep(2)
+    }
+  }
+
+  // Final submit for new clients: save customer, then bulk-insert any vehicles entered.
+  const handleFinalSubmit = async (e) => {
+    e.preventDefault()
+    await saveCustomer()
+  }
+
+  const saveCustomer = async () => {
+    setSubmitting(true)
     try {
       const payload = { ...form }
       const optionalFields = ['email', 'company_name', 'tin_number', 'address', 'id_type', 'id_number', 'notes']
@@ -51,15 +78,54 @@ export default function Customers() {
       } else {
         payload.status = 'approved'
         payload.registered_via = 'walk_in'
-        const { error } = await supabase.from('customers').insert(payload)
+
+        // Validate any in-progress vehicles before creating the customer — avoids
+        // leaving an orphan customer if vehicle entry is half-filled.
+        const cleanVehicles = vehicles.filter(v => v.make || v.registration_number)
+        const invalidVehicle = cleanVehicles.find(v =>
+          !v.make?.trim() || !v.registration_number?.trim()
+        )
+        if (invalidVehicle) {
+          toast.error(t('customers.vehicleRequired'))
+          setStep(2)
+          setSubmitting(false)
+          return
+        }
+
+        const { data: newCustomer, error } = await supabase
+          .from('customers').insert(payload).select().single()
         if (error) throw error
+
+        if (cleanVehicles.length > 0) {
+          const vehiclePayloads = cleanVehicles.map(v => ({
+            customer_id: newCustomer.id,
+            vehicle_type: v.vehicle_type,
+            make: v.make.trim(),
+            model: v.model?.trim() || null,
+            registration_number: v.registration_number.toUpperCase().trim(),
+            engine_type: v.engine_type || null,
+            chassis_number: v.chassis_number || null,
+            axles: v.axles ? parseInt(v.axles) : null,
+            fuel_type: v.fuel_type,
+          }))
+          const { error: vErr } = await supabase.from('vehicles').insert(vehiclePayloads)
+          if (vErr) {
+            // Customer was created but vehicles failed — partial success.
+            toast.error(t('customers.addedNoVehicles'))
+            console.error('Vehicle insert error:', vErr)
+            closeForm()
+            fetchCustomers()
+            return
+          }
+        }
         toast.success(t('customers.added'))
       }
-      setShowForm(false)
-      resetForm()
+      closeForm()
       fetchCustomers()
     } catch (err) {
       toast.error(err.message)
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -75,8 +141,15 @@ export default function Customers() {
       id_number: customer.id_number || '',
       notes: customer.notes || '',
     })
+    setVehicles([])
     setEditingId(customer.id)
+    setStep(1)
     setShowForm(true)
+  }
+
+  const closeForm = () => {
+    setShowForm(false)
+    resetForm()
   }
 
   const handleDelete = async (id) => {
@@ -94,6 +167,8 @@ export default function Customers() {
   const resetForm = () => {
     setForm({ full_name: '', phone: '', email: '', company_name: '', tin_number: '', address: '', id_type: '', id_number: '', notes: '' })
     setEditingId(null)
+    setVehicles([])
+    setStep(1)
   }
 
   const handleApprove = async (id) => {
@@ -277,75 +352,136 @@ export default function Customers() {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-5 border-b">
-              <h2 className="text-lg font-bold">{editingId ? t('customers.edit') : t('customers.addNew')}</h2>
-              <button onClick={() => setShowForm(false)} className="p-1 rounded hover:bg-gray-100">
+              <div>
+                <h2 className="text-lg font-bold">{editingId ? t('customers.edit') : t('customers.addNew')}</h2>
+                {!editingId && (
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {step === 1 ? t('customers.stepPersonal') : t('customers.stepVehicles')}
+                    <span className="ml-2 text-gray-400">{step}/2</span>
+                  </p>
+                )}
+              </div>
+              <button onClick={closeForm} className="p-1 rounded hover:bg-gray-100">
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <form onSubmit={handleSubmit} className="p-5 space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('customers.name')} *</label>
-                  <input type="text" value={form.full_name} onChange={e => setForm({...form, full_name: e.target.value})} required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+
+            {/* Step 1: personal info (also used for editing) */}
+            {step === 1 && (
+              <form onSubmit={handlePersonalSubmit} className="p-5 space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('customers.name')} *</label>
+                    <input type="text" value={form.full_name} onChange={e => setForm({...form, full_name: e.target.value})} required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('customers.phone')} *</label>
+                    <input type="tel" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="+255..." />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('customers.email')}</label>
+                    <input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('customers.company')}</label>
+                    <input type="text" value={form.company_name} onChange={e => setForm({...form, company_name: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('customers.tin')}</label>
+                    <input type="text" value={form.tin_number} onChange={e => setForm({...form, tin_number: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('customers.address')}</label>
+                    <input type="text" value={form.address} onChange={e => setForm({...form, address: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('customers.idType')}</label>
+                    <select value={form.id_type} onChange={e => setForm({...form, id_type: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                      <option value="">-- Select --</option>
+                      <option value="nida">NIDA</option>
+                      <option value="passport">Passport</option>
+                      <option value="driving_license">Driving License</option>
+                      <option value="voter_id">Voter ID</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('customers.idNumber')}</label>
+                    <input type="text" value={form.id_number} onChange={e => setForm({...form, id_number: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('customers.notes')}</label>
+                    <textarea value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} rows={2}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none" />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('customers.phone')} *</label>
-                  <input type="tel" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="+255..." />
+                <div className="flex gap-3 pt-2">
+                  <button type="submit" disabled={submitting}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-blue-700 text-white font-medium rounded-lg hover:bg-blue-800 transition disabled:opacity-50">
+                    {editingId ? (submitting ? t('common.saving') : t('common.save')) : (
+                      <>{t('customers.nextVehicles')} <ArrowRight className="w-4 h-4" /></>
+                    )}
+                  </button>
+                  <button type="button" onClick={closeForm}
+                    className="px-6 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition">
+                    {t('common.cancel')}
+                  </button>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('customers.email')}</label>
-                  <input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('customers.company')}</label>
-                  <input type="text" value={form.company_name} onChange={e => setForm({...form, company_name: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('customers.tin')}</label>
-                  <input type="text" value={form.tin_number} onChange={e => setForm({...form, tin_number: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('customers.address')}</label>
-                  <input type="text" value={form.address} onChange={e => setForm({...form, address: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('customers.idType')}</label>
-                  <select value={form.id_type} onChange={e => setForm({...form, id_type: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
-                    <option value="">-- Select --</option>
-                    <option value="nida">NIDA</option>
-                    <option value="passport">Passport</option>
-                    <option value="driving_license">Driving License</option>
-                    <option value="voter_id">Voter ID</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('customers.idNumber')}</label>
-                  <input type="text" value={form.id_number} onChange={e => setForm({...form, id_number: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('customers.notes')}</label>
-                  <textarea value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} rows={2}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none" />
-                </div>
-              </div>
-              <div className="flex gap-3 pt-2">
-                <button type="submit" className="flex-1 py-2.5 bg-blue-700 text-white font-medium rounded-lg hover:bg-blue-800 transition">
-                  {t('common.save')}
+              </form>
+            )}
+
+            {/* Step 2: vehicles (new clients only) */}
+            {step === 2 && !editingId && (
+              <form onSubmit={handleFinalSubmit} className="p-5 space-y-4">
+                {vehicles.length === 0 ? (
+                  <div className="text-center py-6 px-4 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+                    <Car className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm text-gray-600 mb-1">{t('customers.noVehiclesYet')}</p>
+                    <p className="text-xs text-gray-400">{t('customers.vehiclesOptional')}</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {vehicles.map((veh, idx) => (
+                      <VehicleFormBlock
+                        key={idx}
+                        index={idx}
+                        vehicle={veh}
+                        total={vehicles.length}
+                        updateVehicle={updateVehicle}
+                        removeVehicle={removeVehicle}
+                        t={t}
+                        variant="compact"
+                      />
+                    ))}
+                  </div>
+                )}
+
+                <button type="button" onClick={addVehicle}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-dashed border-blue-300 text-blue-600 font-medium rounded-lg hover:bg-blue-50 transition text-sm">
+                  <Plus className="w-4 h-4" />
+                  {vehicles.length === 0 ? t('customers.addFirstVehicle') : t('customers.addAnotherVehicle')}
                 </button>
-                <button type="button" onClick={() => setShowForm(false)}
-                  className="px-6 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition">
-                  {t('common.cancel')}
-                </button>
-              </div>
-            </form>
+
+                <div className="flex gap-3 pt-2">
+                  <button type="button" onClick={() => setStep(1)} disabled={submitting}
+                    className="flex items-center gap-2 px-4 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition disabled:opacity-50">
+                    <ArrowLeft className="w-4 h-4" />
+                    {t('common.back')}
+                  </button>
+                  <button type="submit" disabled={submitting}
+                    className="flex-1 py-2.5 bg-blue-700 text-white font-medium rounded-lg hover:bg-blue-800 transition disabled:opacity-50">
+                    {submitting ? t('common.saving') : t('common.save')}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}

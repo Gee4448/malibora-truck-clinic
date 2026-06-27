@@ -84,7 +84,16 @@
     "rejectConfirm": "Reject this customer's registration?",
     "registeredOnline": "Online",
     "registeredWalkIn": "Walk-in",
-    "location": "Location"
+    "location": "Location",
+    "stepPersonal": "Personal info",
+    "stepVehicles": "Vehicles",
+    "nextVehicles": "Next: Vehicles",
+    "noVehiclesYet": "No vehicles added yet.",
+    "vehiclesOptional": "You can save the client without vehicles and add them later.",
+    "addFirstVehicle": "Add a vehicle",
+    "addAnotherVehicle": "Add another vehicle",
+    "vehicleRequired": "Please complete or remove the unfinished vehicle entry.",
+    "addedNoVehicles": "Client added, but vehicle save failed — please add manually."
   },
   "vehicles": {
     "title": "Vehicles",
@@ -439,6 +448,7 @@
   },
   "common": {
     "save": "Save",
+    "saving": "Saving...",
     "cancel": "Cancel",
     "delete": "Delete",
     "edit": "Edit",
