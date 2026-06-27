@@ -4,7 +4,6 @@ import { useAuth } from '../../contexts/AuthContext'
 import {
   LayoutDashboard,
   Users,
-  Car,
   ClipboardList,
   ClipboardCheck,
   FileText,
@@ -25,7 +24,6 @@ export default function Sidebar({ isOpen, onClose }) {
   const navItems = [
     { to: '/admin', icon: LayoutDashboard, label: t('nav.dashboard'), end: true },
     ...(canViewInternal ? [{ to: '/admin/customers', icon: Users, label: t('nav.customers') }] : []),
-    { to: '/admin/vehicles', icon: Car, label: t('nav.vehicles') },
     { to: '/admin/inspections', icon: ClipboardCheck, label: t('nav.inspections') },
     { to: '/admin/job-cards', icon: ClipboardList, label: t('nav.jobCards') },
     { to: '/admin/invoices', icon: FileText, label: t('nav.invoices') },

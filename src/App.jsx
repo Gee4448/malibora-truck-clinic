@@ -11,7 +11,6 @@ import Register from './pages/Register'
 import StaffGate from './pages/StaffGate'
 import Dashboard from './pages/Dashboard'
 import Customers from './pages/Customers'
-import Vehicles from './pages/Vehicles'
 import Inspections from './pages/Inspections'
 import InspectionDetail from './pages/InspectionDetail'
 import CustomerView from './pages/CustomerView'
@@ -206,7 +205,6 @@ function App() {
               <Route index element={<Dashboard />} />
               <Route path="customers" element={<Customers />} />
               <Route path="customers/:id" element={<Customers />} />
-              <Route path="vehicles" element={<Vehicles />} />
               <Route path="inspections" element={<Inspections />} />
               <Route path="inspections/:id" element={<InspectionDetail />} />
               <Route path="job-cards" element={<JobCards />} />
