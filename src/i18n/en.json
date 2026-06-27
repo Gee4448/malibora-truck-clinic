@@ -5,7 +5,7 @@
   },
   "nav": {
     "dashboard": "Dashboard",
-    "customers": "Clients",
+    "customers": "Customers",
     "vehicles": "Vehicles",
     "jobCards": "Job Cards",
     "invoices": "Invoices",
@@ -85,6 +85,22 @@
     "registeredOnline": "Online",
     "registeredWalkIn": "Walk-in",
     "location": "Location",
+    "tiles": {
+      "addNew": {
+        "title": "Add New Customer",
+        "desc": "Register a walk-in customer who came to the office."
+      },
+      "pending": {
+        "title": "Online Requests",
+        "desc": "{count} pending approval",
+        "empty": "No pending online registrations."
+      },
+      "registered": {
+        "title": "Registered Customers",
+        "desc": "{count} approved customers"
+      },
+      "showAll": "Show all (incl. rejected)"
+    },
     "stepPersonal": "Personal info",
     "stepVehicles": "Vehicles",
     "nextVehicles": "Next: Vehicles",

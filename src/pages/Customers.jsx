@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useLanguage } from '../contexts/LanguageContext'
 import { supabase, formatDate } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
-import { Plus, Search, Phone, Mail, Car, Edit2, Trash2, X, CheckCircle2, XCircle, ArrowLeft, ArrowRight } from 'lucide-react'
+import { Plus, Search, Phone, Mail, Car, Edit2, Trash2, X, CheckCircle2, XCircle, ArrowLeft, ArrowRight, UserPlus, Globe, Users } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { emptyVehicle } from '../lib/vehicleOptions'
 import VehicleFormBlock from '../components/vehicles/VehicleFormBlock'
@@ -14,7 +14,9 @@ export default function Customers() {
   const [customers, setCustomers] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
+  // Default to the approved list — that's the "already registered customers" the
+  // user lands on for day-to-day lookup. Pending and All are reachable via cards.
+  const [statusFilter, setStatusFilter] = useState('approved')
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [step, setStep] = useState(1) // 1 = personal info, 2 = vehicles (new clients only)
@@ -207,39 +209,89 @@ export default function Customers() {
     )
 
   const pendingCount = customers.filter(c => c.status === 'pending').length
+  const approvedCount = customers.filter(c => c.status === 'approved').length
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold text-gray-900">{t('customers.title')}</h1>
+    <div className="space-y-5">
+      {/* Page title */}
+      <h1 className="text-2xl font-bold text-gray-900">{t('customers.title')}</h1>
+
+      {/* Action cards — the three entry points into customer management */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {/* Card 1: Add new walk-in customer (always an action, never a filter) */}
         <button
           onClick={() => { resetForm(); setShowForm(true) }}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800 transition text-sm font-medium"
+          className="text-left p-4 rounded-xl border-2 border-dashed border-blue-300 bg-blue-50 hover:bg-blue-100 hover:border-blue-400 transition"
         >
-          <Plus className="w-4 h-4" />
-          {t('customers.addNew')}
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 rounded-lg bg-blue-600 text-white flex items-center justify-center">
+              <UserPlus className="w-5 h-5" />
+            </div>
+            <h3 className="font-semibold text-blue-900">{t('customers.tiles.addNew.title')}</h3>
+          </div>
+          <p className="text-xs text-blue-700/80">{t('customers.tiles.addNew.desc')}</p>
+        </button>
+
+        {/* Card 2: Online registration requests (filter = pending) */}
+        <button
+          onClick={() => setStatusFilter('pending')}
+          className={`text-left p-4 rounded-xl border-2 transition ${
+            statusFilter === 'pending'
+              ? 'border-orange-400 bg-orange-50 ring-2 ring-orange-200'
+              : 'border-gray-200 bg-white hover:border-orange-200 hover:bg-orange-50/50'
+          }`}
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 rounded-lg bg-orange-500 text-white flex items-center justify-center relative">
+              <Globe className="w-5 h-5" />
+              {pendingCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1 bg-red-500 text-white text-[11px] font-bold rounded-full flex items-center justify-center">
+                  {pendingCount}
+                </span>
+              )}
+            </div>
+            <h3 className="font-semibold text-gray-900">{t('customers.tiles.pending.title')}</h3>
+          </div>
+          <p className="text-xs text-gray-600">
+            {pendingCount === 0
+              ? t('customers.tiles.pending.empty')
+              : t('customers.tiles.pending.desc').replace('{count}', pendingCount)}
+          </p>
+        </button>
+
+        {/* Card 3: Already registered (approved) customers (filter = approved) */}
+        <button
+          onClick={() => setStatusFilter('approved')}
+          className={`text-left p-4 rounded-xl border-2 transition ${
+            statusFilter === 'approved'
+              ? 'border-green-400 bg-green-50 ring-2 ring-green-200'
+              : 'border-gray-200 bg-white hover:border-green-200 hover:bg-green-50/50'
+          }`}
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 rounded-lg bg-green-600 text-white flex items-center justify-center">
+              <Users className="w-5 h-5" />
+            </div>
+            <h3 className="font-semibold text-gray-900">{t('customers.tiles.registered.title')}</h3>
+          </div>
+          <p className="text-xs text-gray-600">
+            {t('customers.tiles.registered.desc').replace('{count}', approvedCount)}
+          </p>
         </button>
       </div>
 
-      {/* Status Filter Tabs */}
-      <div className="flex gap-2 flex-wrap">
-        {['all', 'pending', 'approved'].map((f) => (
-          <button
-            key={f}
-            onClick={() => setStatusFilter(f)}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-              statusFilter === f
-                ? 'bg-blue-700 text-white'
-                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-            }`}
-          >
-            {t(`customers.statusFilter.${f}`)}
-            {f === 'pending' && pendingCount > 0 && (
-              <span className="ml-1.5 px-1.5 py-0.5 bg-orange-500 text-white text-xs rounded-full">{pendingCount}</span>
-            )}
-          </button>
-        ))}
+      {/* "Show all" — still reachable, just less prominent */}
+      <div className="flex justify-end">
+        <button
+          onClick={() => setStatusFilter('all')}
+          className={`text-xs font-medium px-3 py-1 rounded-full transition ${
+            statusFilter === 'all'
+              ? 'bg-gray-900 text-white'
+              : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+          }`}
+        >
+          {t('customers.tiles.showAll')}
+        </button>
       </div>
 
       {/* Search */}

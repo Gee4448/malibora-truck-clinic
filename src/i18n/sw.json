@@ -85,6 +85,22 @@
     "registeredOnline": "Mtandaoni",
     "registeredWalkIn": "Ametembelea",
     "location": "Eneo",
+    "tiles": {
+      "addNew": {
+        "title": "Ongeza Mteja Mpya",
+        "desc": "Sajili mteja aliyekuja ofisini."
+      },
+      "pending": {
+        "title": "Maombi ya Mtandaoni",
+        "desc": "{count} yanasubiri idhini",
+        "empty": "Hakuna usajili wa mtandaoni unaosubiri."
+      },
+      "registered": {
+        "title": "Wateja Waliosajiliwa",
+        "desc": "{count} wateja walioidhinishwa"
+      },
+      "showAll": "Onyesha wote (pamoja na waliokataliwa)"
+    },
     "stepPersonal": "Taarifa binafsi",
     "stepVehicles": "Magari",
     "nextVehicles": "Endelea: Magari",
