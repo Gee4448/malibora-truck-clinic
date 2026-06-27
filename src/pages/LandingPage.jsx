@@ -1,22 +1,12 @@
-import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useLanguage } from '../contexts/LanguageContext'
 import {
   Truck, ClipboardCheck, Wrench, FileText, Shield,
-  Phone, MapPin, Clock, Globe, Search, ArrowRight, CheckCircle2
+  Phone, MapPin, Clock, Globe, CheckCircle2
 } from 'lucide-react'
 
 export default function LandingPage() {
   const { t, locale, switchLanguage } = useLanguage()
-  const navigate = useNavigate()
-  const [trackingId, setTrackingId] = useState('')
-
-  const handleTrack = (e) => {
-    e.preventDefault()
-    if (trackingId.trim()) {
-      navigate(`/c/${trackingId.trim()}`)
-    }
-  }
 
   const services = [
     { icon: ClipboardCheck, titleKey: 'landing.services.inspection', descKey: 'landing.services.inspectionDesc' },
@@ -69,35 +59,9 @@ export default function LandingPage() {
           <h2 className="text-3xl sm:text-5xl font-bold mb-4 leading-tight">
             {t('landing.hero.title')}
           </h2>
-          <p className="text-blue-200 text-lg sm:text-xl mb-10 max-w-2xl mx-auto">
+          <p className="text-blue-200 text-lg sm:text-xl max-w-2xl mx-auto">
             {t('landing.hero.subtitle')}
           </p>
-
-          {/* Vehicle Tracking Form */}
-          <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 max-w-lg mx-auto">
-            <div className="flex items-center gap-2 mb-4">
-              <Search className="w-5 h-5 text-blue-700" />
-              <h3 className="text-lg font-bold text-gray-900">{t('landing.track.title')}</h3>
-            </div>
-            <p className="text-gray-500 text-sm mb-4">{t('landing.track.subtitle')}</p>
-            <form onSubmit={handleTrack} className="flex gap-2">
-              <input
-                type="text"
-                value={trackingId}
-                onChange={(e) => setTrackingId(e.target.value)}
-                placeholder={t('landing.track.placeholder')}
-                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-900"
-              />
-              <button
-                type="submit"
-                disabled={!trackingId.trim()}
-                className="px-6 py-3 bg-blue-700 text-white font-medium rounded-lg hover:bg-blue-800 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                {t('landing.track.button')}
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </form>
-          </div>
         </div>
       </section>
 

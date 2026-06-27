@@ -553,12 +553,6 @@
       "title": "Expert Truck Repair & Maintenance",
       "subtitle": "Tanzania's trusted truck clinic. We keep your fleet running with professional diagnostics, repairs, and maintenance services."
     },
-    "track": {
-      "title": "Track Your Vehicle",
-      "subtitle": "Enter your tracking ID to view your vehicle's service status",
-      "placeholder": "Enter your tracking ID...",
-      "button": "Track"
-    },
     "services": {
       "title": "Our Services",
       "subtitle": "Complete truck care from inspection to handover",
