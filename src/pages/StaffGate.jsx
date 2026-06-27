@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLanguage } from '../contexts/LanguageContext'
-import { supabase } from '../lib/supabase'
+import { supabase, isNetworkError } from '../lib/supabase'
 import { Shield, Eye, EyeOff, Globe, ArrowLeft, Lock } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -62,7 +62,8 @@ export default function StaffGate() {
       }
     } catch (err) {
       console.error('Staff gate error:', err)
-      toast.error(t('staffGate.error'))
+      // A paused/unreachable backend looks like a wrong code otherwise — be specific.
+      toast.error(isNetworkError(err) ? t('staffGate.networkError') : t('staffGate.error'))
     } finally {
       setLoading(false)
     }

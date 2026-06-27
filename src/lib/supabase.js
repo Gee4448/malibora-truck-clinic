@@ -10,6 +10,17 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
 })
 
+// Helper: Detect a connectivity failure (server unreachable / offline / paused project)
+// vs. a real database error. Supabase/PostgREST errors carry a `code`; a bare fetch
+// failure (DNS not resolving, offline, CORS, server down) does not.
+export const isNetworkError = (err) => {
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return true
+  const msg = (err?.message || String(err || '')).toLowerCase()
+  return /failed to fetch|fetch failed|networkerror|network request failed|load failed|err_name_not_resolved|err_connection|err_network/.test(
+    msg
+  )
+}
+
 // Helper: Format currency (TZS)
 export const formatTZS = (amount) => {
   if (!amount && amount !== 0) return 'TZS 0'

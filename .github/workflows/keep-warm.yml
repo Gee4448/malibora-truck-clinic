@@ -1,0 +1,40 @@
+name: Keep Supabase awake
+
+# Free-tier Supabase projects pause after ~7 days of inactivity, which takes the
+# whole app offline (the staff gate and customer portal start failing). This job
+# pings the database on a schedule so it never goes idle long enough to pause.
+#
+# The values below are the PUBLIC client credentials — the same anon key that
+# ships in the web app and is protected by Row Level Security — so it is safe to
+# keep them here. To run manually: Actions tab > "Keep Supabase awake" > Run workflow.
+
+on:
+  schedule:
+    - cron: '0 6 * * *'   # every day at 06:00 UTC
+  workflow_dispatch: {}    # allow manual runs from the Actions tab
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST API
+        env:
+          SUPABASE_URL: https://tdvimpqiupasfpebijap.supabase.co
+          SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdmltcHFpdXBhc2ZwZWJpamFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NDc2MTcsImV4cCI6MjA5NTAyMzYxN30.TstRB_WXugrboChSlecsj6SbhWqVEHT7GcHpLyurCw4
+        run: |
+          echo "Pinging $SUPABASE_URL ..."
+          # Calls a lightweight RPC that touches the database (real activity),
+          # which is what keeps the project from auto-pausing.
+          status=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X POST "$SUPABASE_URL/rest/v1/rpc/verify_staff_code" \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+            -H "Content-Type: application/json" \
+            --data '{"input_code":"__keepalive__"}' \
+            --retry 3 --retry-delay 15 --max-time 30)
+          echo "HTTP $status"
+          if [ "$status" != "200" ]; then
+            echo "::error::Supabase returned $status — it may be paused or unreachable."
+            exit 1
+          fi
+          echo "Supabase is awake."

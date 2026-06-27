@@ -594,6 +594,7 @@
     "success": "Ruhusa imetolewa!",
     "invalid": "Nambari ya siri si sahihi.",
     "error": "Uthibitishaji umeshindikana. Jaribu tena.",
+    "networkError": "Imeshindwa kufikia seva. Angalia muunganisho wako na ujaribu tena.",
     "locked": "Majaribio mengi. Tafadhali subiri.",
     "tooManyAttempts": "Majaribio mengi yameshindikana. Imefungwa kwa sekunde 60.",
     "lockedMessage": "Ufikiaji umefungwa kwa muda. Tafadhali subiri kabla ya kujaribu tena.",
