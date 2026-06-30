@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { useClient } from '../../contexts/ClientAuthContext'
-import { Truck, Phone, ArrowRight, Globe, AlertCircle, Clock, XCircle } from 'lucide-react'
+import { Truck, Phone, Lock, ArrowRight, Globe, AlertCircle, Clock, XCircle, Eye, EyeOff } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function ClientLogin() {
@@ -10,6 +10,8 @@ export default function ClientLogin() {
   const { loginWithPhone } = useClient()
   const navigate = useNavigate()
   const [phone, setPhone] = useState('')
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -20,17 +22,14 @@ export default function ClientLogin() {
     setLoading(true)
     setError('')
     try {
-      await loginWithPhone(phone.trim())
+      await loginWithPhone(phone.trim(), password)
       toast.success(t('client.login.success'))
       navigate('/client/dashboard')
     } catch (err) {
-      if (err.message === 'pending_approval') {
-        setError('pending')
-      } else if (err.message === 'rejected') {
-        setError('rejected')
-      } else {
-        setError('not_found')
-      }
+      if (err.message === 'pending_approval') setError('pending')
+      else if (err.message === 'rejected') setError('rejected')
+      else if (err.message === 'wrong_password') setError('wrong_password')
+      else setError('not_found')
     } finally {
       setLoading(false)
     }
@@ -66,7 +65,7 @@ export default function ClientLogin() {
               <Phone className="w-8 h-8 text-blue-700" />
             </div>
             <h2 className="text-xl font-bold text-gray-900">{t('client.login.title')}</h2>
-            <p className="text-gray-500 text-sm mt-1">{t('client.login.subtitle')}</p>
+            <p className="text-gray-500 text-sm mt-1">{t('client.login.subtitleWithPassword')}</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -82,6 +81,30 @@ export default function ClientLogin() {
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-900 text-lg"
                 autoFocus
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                {t('client.login.passwordLabel')}
+              </label>
+              <div className="relative">
+                <Lock className="absolute inset-y-0 left-0 pl-3 flex items-center w-8 h-full text-gray-400" />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => { setPassword(e.target.value); setError('') }}
+                  placeholder={t('client.login.passwordPlaceholder')}
+                  className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-900"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(s => !s)}
+                  className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-gray-600"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
 
             {error === 'pending' && (
@@ -101,6 +124,13 @@ export default function ClientLogin() {
                   <p className="text-sm font-medium text-red-800">{t('client.login.statusRejected')}</p>
                   <p className="text-xs text-red-600 mt-1">{t('client.login.statusRejectedHint')}</p>
                 </div>
+              </div>
+            )}
+
+            {error === 'wrong_password' && (
+              <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl">
+                <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                <p className="text-sm text-red-700">{t('client.login.wrongPassword')}</p>
               </div>
             )}
 

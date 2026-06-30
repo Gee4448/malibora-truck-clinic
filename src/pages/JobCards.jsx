@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useLanguage } from '../contexts/LanguageContext'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase, formatDate, formatTZS } from '../lib/supabase'
@@ -10,10 +10,17 @@ export default function JobCards() {
   const { t } = useLanguage()
   const { canViewInternal } = useAuth()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [jobs, setJobs] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
+  // Dashboard widget buttons deep-link via ?status=requested|in_progress|completed.
+  const statusFilter = searchParams.get('status') || 'all'
+  const setStatusFilter = (v) => {
+    const next = new URLSearchParams(searchParams)
+    if (!v || v === 'all') next.delete('status'); else next.set('status', v)
+    setSearchParams(next, { replace: true })
+  }
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [customers, setCustomers] = useState([])
@@ -129,12 +136,24 @@ export default function JobCards() {
     urgent: 'text-red-600 font-bold',
   }
 
+  // Aliases for the dashboard widget buttons.
+  const statusAliasMap = {
+    requested: ['customer_request', 'pre_job_card', 'pending_approval'],
+    in_progress: ['open', 'in_progress', 'waiting_parts'],
+    completed: ['completed'],
+  }
+  const matchesStatus = (rowStatus) => {
+    if (statusFilter === 'all') return true
+    const aliasGroup = statusAliasMap[statusFilter]
+    if (aliasGroup) return aliasGroup.includes(rowStatus)
+    return rowStatus === statusFilter
+  }
+
   const filtered = jobs.filter(j => {
     const matchSearch = j.job_number?.toLowerCase().includes(search.toLowerCase()) ||
       j.customers?.full_name?.toLowerCase().includes(search.toLowerCase()) ||
       j.vehicles?.registration_number?.toLowerCase().includes(search.toLowerCase())
-    const matchStatus = statusFilter === 'all' || j.status === statusFilter
-    return matchSearch && matchStatus
+    return matchSearch && matchesStatus(j.status)
   })
 
   const calcJobTotal = (items) => items?.reduce((sum, i) => sum + Number(i.total_selling || 0), 0) || 0
@@ -158,12 +177,17 @@ export default function JobCards() {
             className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white" />
         </div>
         <div className="flex gap-2 overflow-x-auto pb-1">
-          {['all', 'customer_request', 'pre_job_card', 'open', 'in_progress', 'waiting_parts', 'completed'].map(s => (
-            <button key={s} onClick={() => setStatusFilter(s)}
+          {[
+            { key: 'all', label: t('common.all') },
+            { key: 'requested', label: t('jobs.filterRequested') },
+            { key: 'in_progress', label: t('jobs.filterInProgress') },
+            { key: 'completed', label: t('jobs.statuses.completed') },
+          ].map(s => (
+            <button key={s.key} onClick={() => setStatusFilter(s.key)}
               className={`px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition ${
-                statusFilter === s ? 'bg-blue-700 text-white' : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
+                statusFilter === s.key ? 'bg-blue-700 text-white' : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
               }`}>
-              {s === 'all' ? t('common.all') : t(`jobs.statuses.${s}`)}
+              {s.label}
             </button>
           ))}
         </div>

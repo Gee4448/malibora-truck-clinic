@@ -36,17 +36,17 @@ export default function Sidebar({ isOpen, onClose }) {
 
   return (
     <>
-      {/* Mobile overlay */}
+      {/* Overlay — always visible when drawer is open, on every screen size. */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/50 z-40"
           onClick={onClose}
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar — drawer at every breakpoint, hidden until the user opens it. */}
       <aside
-        className={`fixed top-0 left-0 h-full w-64 bg-white border-r border-gray-200 z-50 transform transition-transform duration-300 lg:translate-x-0 ${
+        className={`fixed top-0 left-0 h-full w-64 bg-white border-r border-gray-200 z-50 transform transition-transform duration-300 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -59,7 +59,7 @@ export default function Sidebar({ isOpen, onClose }) {
               <p className="text-xs text-gray-500">Truck Clinic</p>
             </div>
           </div>
-          <button onClick={onClose} className="lg:hidden p-1 rounded hover:bg-gray-100">
+          <button onClick={onClose} className="p-1 rounded hover:bg-gray-100">
             <X className="w-5 h-5" />
           </button>
         </div>

@@ -45,7 +45,28 @@
     "lowStock": "Vipuri Vichache",
     "pendingInvoices": "Ankara Zinazosubiri",
     "pendingApprovals": "Idhini Zinazosubiri",
-    "customerRequests": "Maombi ya Wateja"
+    "customerRequests": "Maombi ya Wateja",
+    "viewAll": "Angalia zote",
+    "widgets": {
+      "inspections": {
+        "title": "Ukaguzi",
+        "subtitle": "Ukaguzi wa magari kwa hatua",
+        "requested": "Zilizoombwa",
+        "ongoing": "Zinazoendelea",
+        "completed": "Zilizokamilika"
+      },
+      "jobs": {
+        "title": "Kazi",
+        "subtitle": "Kadi za kazi kwa hatua",
+        "requested": "Kadi za Kazi Zilizoombwa",
+        "inProgress": "Kadi za Kazi Zinazoendelea"
+      },
+      "handover": {
+        "title": "Kabidhiano",
+        "subtitle": "Ripoti za wateja kwa kazi zilizokamilika",
+        "empty": "Hakuna ripoti za kabidhiano bado"
+      }
+    }
   },
   "customers": {
     "title": "Wateja",
@@ -184,6 +205,8 @@
     "serviceRejected": "Huduma imekataliwa",
     "approvedTotal": "Jumla iliyoidhinishwa",
     "profitPerUnit": "Faida kwa kipimo",
+    "filterRequested": "Zilizoombwa",
+    "filterInProgress": "Zinazoendelea",
     "statuses": {
       "pre_job_card": "Kadi ya Awali",
       "pending_approval": "Inasubiri Idhini",
@@ -421,6 +444,8 @@
     "inspectionCompleted": "Ukaguzi umekamilika! Kadi ya Awali imetengenezwa.",
     "linkCopied": "Kiungo cha mteja kimenakiliwa!",
     "shareLink": "Shiriki Kiungo",
+    "filterRequested": "Zilizoombwa",
+    "filterOngoing": "Zinazoendelea",
     "stepSubmit": "Wasilisha",
     "stepPayment": "Malipo",
     "stepInspection": "Ukaguzi",
@@ -633,8 +658,12 @@
       "portal": "Mlango wa Mteja",
       "title": "Karibu Tena",
       "subtitle": "Weka nambari yako ya simu kuingia kwenye mfumo wa huduma za gari lako",
+      "subtitleWithPassword": "Ingia kwa nambari yako ya simu na nywila",
       "phoneLabel": "Nambari ya Simu",
       "phonePlaceholder": "mfano 0712 345 678",
+      "passwordLabel": "Nywila",
+      "passwordPlaceholder": "Nywila yako",
+      "wrongPassword": "Nywila si sahihi. Tafadhali jaribu tena.",
       "button": "Ingia",
       "success": "Karibu tena!",
       "notFound": "Hakuna akaunti iliyopatikana na nambari hii. Tafadhali wasiliana na Malibora Truck Clinic.",
@@ -662,6 +691,19 @@
       "next": "Endelea",
       "vehicleTitle": "Sajili Magari Yako",
       "vehicleSubtitle": "Ongeza angalau gari moja kukamilisha usajili",
+      "vehicleSubtitleOptional": "Si lazima — unaweza kuruka hatua hii na kuongeza gari baadaye.",
+      "optional": "Si lazima",
+      "submitWithoutVehicle": "Wasilisha Usajili",
+      "addVehicleOptional": "Sajili Gari (Si Lazima)",
+      "vehicleHint": "Unaweza pia kujisajili bila gari na kuongeza baadaye.",
+      "passwordLabel": "Nywila",
+      "passwordPlaceholder": "Angalau herufi 6",
+      "confirmPasswordLabel": "Thibitisha Nywila",
+      "passwordTooShort": "Nywila lazima iwe na herufi 6 au zaidi",
+      "passwordMismatch": "Nywila hazifanani",
+      "requestReceivedTitle": "Ombi Limepokelewa",
+      "requestReceivedMessage": "Tumepokea ombi lako la usajili. Timu yetu itakagua na itakujibu hivi karibuni.",
+      "withinTwentyFour": "Tutakujibu ndani ya masaa 24",
       "addAnotherVehicle": "Ongeza Gari Jingine",
       "removeVehicle": "Ondoa",
       "vehicleNumber": "Gari {number}",
@@ -711,7 +753,12 @@
       "vehicles": "Magari",
       "activeServices": "Huduma Zinazoendelea",
       "pendingInvoices": "Ankara",
+      "inspections": "Ukaguzi",
       "activeServicesTitle": "Huduma Zinazoendelea",
+      "jobCardsTitle": "Kadi za Kazi Zangu",
+      "inspectionsTitle": "Ripoti za Ukaguzi",
+      "noInspections": "Hakuna ukaguzi bado",
+      "latestInvoice": "Ankara ya hivi karibuni",
       "viewAll": "Angalia zote",
       "noActiveServices": "Hakuna huduma zinazoendelea",
       "allGood": "Magari yako yote yako katika hali nzuri!",

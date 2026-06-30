@@ -10,7 +10,8 @@ export default function Layout() {
     <div className="min-h-screen bg-gray-50">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <div className="lg:ml-64">
+      {/* No fixed left margin — sidebar is a drawer overlay on all screens. */}
+      <div>
         <Header onMenuToggle={() => setSidebarOpen(true)} />
         <main className="p-4 lg:p-6 animate-fade-in">
           <Outlet />

@@ -8,10 +8,11 @@ export default function Header({ onMenuToggle }) {
 
   return (
     <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 lg:px-6">
-      {/* Left: Menu toggle */}
+      {/* Left: Menu toggle — always visible; the sidebar is a drawer on every viewport. */}
       <button
         onClick={onMenuToggle}
-        className="lg:hidden p-2 rounded-lg hover:bg-gray-100"
+        className="p-2 rounded-lg hover:bg-gray-100"
+        aria-label="Open menu"
       >
         <Menu className="w-5 h-5 text-gray-600" />
       </button>

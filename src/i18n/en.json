@@ -45,7 +45,28 @@
     "lowStock": "Low Stock Alert",
     "pendingInvoices": "Pending Invoices",
     "pendingApprovals": "Pending Approvals",
-    "customerRequests": "Customer Requests"
+    "customerRequests": "Customer Requests",
+    "viewAll": "View all",
+    "widgets": {
+      "inspections": {
+        "title": "Inspections",
+        "subtitle": "Vehicle inspections by stage",
+        "requested": "Requested",
+        "ongoing": "Ongoing",
+        "completed": "Completed"
+      },
+      "jobs": {
+        "title": "Jobs",
+        "subtitle": "Job cards by stage",
+        "requested": "Requested Job Cards",
+        "inProgress": "In-Progress Job Cards"
+      },
+      "handover": {
+        "title": "Handover",
+        "subtitle": "Customer reports for completed jobs",
+        "empty": "No handover reports yet"
+      }
+    }
   },
   "customers": {
     "title": "Customers",
@@ -184,6 +205,8 @@
     "serviceRejected": "Service rejected",
     "approvedTotal": "Approved total",
     "profitPerUnit": "Profit per unit",
+    "filterRequested": "Requested",
+    "filterInProgress": "In Progress",
     "statuses": {
       "pre_job_card": "Pre-Job Card",
       "pending_approval": "Pending Approval",
@@ -421,6 +444,8 @@
     "inspectionCompleted": "Inspection completed! Pre-Job Card created.",
     "linkCopied": "Customer link copied!",
     "shareLink": "Share Link",
+    "filterRequested": "Requested",
+    "filterOngoing": "Ongoing",
     "stepSubmit": "Submit",
     "stepPayment": "Payment",
     "stepInspection": "Inspection",
@@ -633,8 +658,12 @@
       "portal": "Customer Portal",
       "title": "Welcome Back",
       "subtitle": "Enter your phone number to access your vehicle service portal",
+      "subtitleWithPassword": "Sign in with your phone number and password",
       "phoneLabel": "Phone Number",
       "phonePlaceholder": "e.g. 0712 345 678",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Your password",
+      "wrongPassword": "Incorrect password. Please try again.",
       "button": "Sign In",
       "success": "Welcome back!",
       "notFound": "No account found with this phone number. Please contact Malibora Truck Clinic.",
@@ -662,6 +691,19 @@
       "next": "Next",
       "vehicleTitle": "Register Your Vehicles",
       "vehicleSubtitle": "Add at least one vehicle to complete registration",
+      "vehicleSubtitleOptional": "Optional — you can skip this and add vehicles later.",
+      "optional": "Optional",
+      "submitWithoutVehicle": "Submit Registration",
+      "addVehicleOptional": "Register Vehicle (Optional)",
+      "vehicleHint": "You can also register without a vehicle and add one later.",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "At least 6 characters",
+      "confirmPasswordLabel": "Confirm Password",
+      "passwordTooShort": "Password must be at least 6 characters",
+      "passwordMismatch": "Passwords do not match",
+      "requestReceivedTitle": "Request Received",
+      "requestReceivedMessage": "We have received your registration request. Our team will review it and get back to you shortly.",
+      "withinTwentyFour": "We'll get back to you within 24 hours",
       "addAnotherVehicle": "Add Another Vehicle",
       "removeVehicle": "Remove",
       "vehicleNumber": "Vehicle {number}",
@@ -711,7 +753,12 @@
       "vehicles": "Vehicles",
       "activeServices": "Active Services",
       "pendingInvoices": "Invoices",
+      "inspections": "Inspections",
       "activeServicesTitle": "Active Services",
+      "jobCardsTitle": "My Job Cards",
+      "inspectionsTitle": "Inspection Reports",
+      "noInspections": "No inspections yet",
+      "latestInvoice": "Latest invoice",
       "viewAll": "View all",
       "noActiveServices": "No active services",
       "allGood": "All your vehicles are in good shape!",

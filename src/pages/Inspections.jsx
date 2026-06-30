@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useLanguage } from '../contexts/LanguageContext'
 import { supabase, formatDate, formatTZS } from '../lib/supabase'
 import { Plus, Search, Eye, X, ClipboardCheck, CreditCard } from 'lucide-react'
@@ -8,10 +8,18 @@ import toast from 'react-hot-toast'
 export default function Inspections() {
   const { t } = useLanguage()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [inspections, setInspections] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
+  // Dashboard widget buttons deep-link via ?status=requested|ongoing|completed.
+  // Map those friendly aliases to concrete DB status values.
+  const statusFilter = searchParams.get('status') || 'all'
+  const setStatusFilter = (v) => {
+    const next = new URLSearchParams(searchParams)
+    if (!v || v === 'all') next.delete('status'); else next.set('status', v)
+    setSearchParams(next, { replace: true })
+  }
   const [showForm, setShowForm] = useState(false)
   const [customers, setCustomers] = useState([])
   const [filteredVehicles, setFilteredVehicles] = useState([])
@@ -93,12 +101,24 @@ export default function Inspections() {
     cancelled: 'bg-gray-100 text-gray-500',
   }
 
+  // Dashboard widget aliases collapse multiple DB statuses into one chip.
+  const statusAliasMap = {
+    requested: ['pending_payment'],
+    ongoing: ['paid', 'in_progress'],
+    completed: ['completed'],
+  }
+  const matchesStatus = (rowStatus) => {
+    if (statusFilter === 'all') return true
+    const aliasGroup = statusAliasMap[statusFilter]
+    if (aliasGroup) return aliasGroup.includes(rowStatus)
+    return rowStatus === statusFilter
+  }
+
   const filtered = inspections.filter(i => {
     const matchSearch = i.inspection_number?.toLowerCase().includes(search.toLowerCase()) ||
       i.customers?.full_name?.toLowerCase().includes(search.toLowerCase()) ||
       i.vehicles?.registration_number?.toLowerCase().includes(search.toLowerCase())
-    const matchStatus = statusFilter === 'all' || i.status === statusFilter
-    return matchSearch && matchStatus
+    return matchSearch && matchesStatus(i.status)
   })
 
   return (
@@ -120,12 +140,17 @@ export default function Inspections() {
             className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white" />
         </div>
         <div className="flex gap-2 overflow-x-auto pb-1">
-          {['all', 'pending_payment', 'paid', 'in_progress', 'completed'].map(s => (
-            <button key={s} onClick={() => setStatusFilter(s)}
+          {[
+            { key: 'all', label: t('common.all') },
+            { key: 'requested', label: t('inspection.filterRequested') },
+            { key: 'ongoing', label: t('inspection.filterOngoing') },
+            { key: 'completed', label: t('inspection.statuses.completed') },
+          ].map(s => (
+            <button key={s.key} onClick={() => setStatusFilter(s.key)}
               className={`px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition ${
-                statusFilter === s ? 'bg-blue-700 text-white' : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
+                statusFilter === s.key ? 'bg-blue-700 text-white' : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
               }`}>
-              {s === 'all' ? t('common.all') : t(`inspection.statuses.${s}`)}
+              {s.label}
             </button>
           ))}
         </div>
