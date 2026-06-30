@@ -149,14 +149,26 @@ GRANT EXECUTE ON FUNCTION customer_login(text, text) TO authenticated;
 -- see their inspection history, and update access on inspection_items so
 -- they can approve / decline individual recommendations from the service
 -- detail screen.
-DROP POLICY IF EXISTS "Anon can read inspections" ON inspections;
-CREATE POLICY "Anon can read inspections"
-  ON inspections FOR SELECT TO anon USING (true);
+--
+-- Wrapped in DO blocks so this migration can run even on projects where
+-- inspection_workflow.sql has not yet been applied — the inspection
+-- policies will just be a no-op until those tables exist.
+DO $$
+BEGIN
+  IF to_regclass('public.inspections') IS NOT NULL THEN
+    EXECUTE 'DROP POLICY IF EXISTS "Anon can read inspections" ON inspections';
+    EXECUTE 'CREATE POLICY "Anon can read inspections"
+             ON inspections FOR SELECT TO anon USING (true)';
+  END IF;
 
-DROP POLICY IF EXISTS "Anon can read inspection items" ON inspection_items;
-CREATE POLICY "Anon can read inspection items"
-  ON inspection_items FOR SELECT TO anon USING (true);
+  IF to_regclass('public.inspection_items') IS NOT NULL THEN
+    EXECUTE 'DROP POLICY IF EXISTS "Anon can read inspection items" ON inspection_items';
+    EXECUTE 'CREATE POLICY "Anon can read inspection items"
+             ON inspection_items FOR SELECT TO anon USING (true)';
 
-DROP POLICY IF EXISTS "Anon can update inspection item approval" ON inspection_items;
-CREATE POLICY "Anon can update inspection item approval"
-  ON inspection_items FOR UPDATE TO anon USING (true);
+    EXECUTE 'DROP POLICY IF EXISTS "Anon can update inspection item approval" ON inspection_items';
+    EXECUTE 'CREATE POLICY "Anon can update inspection item approval"
+             ON inspection_items FOR UPDATE TO anon USING (true)';
+  END IF;
+END
+$$;
