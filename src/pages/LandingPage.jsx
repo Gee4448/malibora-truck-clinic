@@ -1,5 +1,8 @@
-import { Link } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { useLanguage } from '../contexts/LanguageContext'
+import { useAuth } from '../contexts/AuthContext'
+import { useClient } from '../contexts/ClientAuthContext'
 import {
   Truck, ClipboardCheck, Wrench, FileText, Shield,
   Phone, MapPin, Clock, Globe, CheckCircle2
@@ -7,6 +10,21 @@ import {
 
 export default function LandingPage() {
   const { t, locale, switchLanguage } = useLanguage()
+  const navigate = useNavigate()
+  const { user, loading: authLoading } = useAuth()
+  const { customer, loading: clientLoading } = useClient()
+
+  // Skip the marketing page entirely for anyone who is already signed in —
+  // staff land on /admin, approved clients land on /client/dashboard.
+  // We wait for both auth loaders so we don't bounce before state hydrates.
+  useEffect(() => {
+    if (authLoading || clientLoading) return
+    if (user) {
+      navigate('/admin', { replace: true })
+    } else if (customer && customer.status === 'approved') {
+      navigate('/client/dashboard', { replace: true })
+    }
+  }, [authLoading, clientLoading, user, customer, navigate])
 
   const services = [
     { icon: ClipboardCheck, titleKey: 'landing.services.inspection', descKey: 'landing.services.inspectionDesc' },
