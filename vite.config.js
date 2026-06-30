@@ -17,6 +17,12 @@ export default defineConfig({
         enabled: true,
       },
       workbox: {
+        // Force new SW to activate on next page load instead of waiting for
+        // every tab to close. Without this, code updates appear stuck on
+        // the old bundle even after a hard refresh.
+        skipWaiting: true,
+        clientsClaim: true,
+        cleanupOutdatedCaches: true,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         runtimeCaching: [
           {
