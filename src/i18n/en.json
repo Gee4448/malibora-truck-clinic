@@ -130,7 +130,21 @@
     "addFirstVehicle": "Add a vehicle",
     "addAnotherVehicle": "Add another vehicle",
     "vehicleRequired": "Please complete or remove the unfinished vehicle entry.",
-    "addedNoVehicles": "Client added, but vehicle save failed — please add manually."
+    "addedNoVehicles": "Client added, but vehicle save failed — please add manually.",
+    "detail": {
+      "personalInfo": "Personal Information",
+      "addVehicle": "Add Vehicle",
+      "noVehicles": "No vehicles registered for this customer.",
+      "vehicleAdded": "Vehicle added",
+      "vehicleDeleted": "Vehicle deleted",
+      "deleteVehicle": "Delete vehicle",
+      "deleteVehicleConfirm": "Delete this vehicle?",
+      "axles": "Axles",
+      "chassis": "Chassis",
+      "noInspections": "No inspections yet.",
+      "noJobCards": "No job cards yet.",
+      "noInvoices": "No invoices yet."
+    }
   },
   "vehicles": {
     "title": "Vehicles",

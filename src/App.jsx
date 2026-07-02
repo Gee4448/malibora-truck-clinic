@@ -5,12 +5,12 @@ import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ClientAuthProvider, useClient } from './contexts/ClientAuthContext'
 import Layout from './components/layout/Layout'
 import ClientLayout from './components/layout/ClientLayout'
-import LandingPage from './pages/LandingPage'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import StaffGate from './pages/StaffGate'
 import Dashboard from './pages/Dashboard'
 import Customers from './pages/Customers'
+import CustomerDetail from './pages/CustomerDetail'
 import Inspections from './pages/Inspections'
 import InspectionDetail from './pages/InspectionDetail'
 import CustomerView from './pages/CustomerView'
@@ -171,8 +171,11 @@ function App() {
             }}
           />
           <Routes>
-            {/* Public landing page */}
-            <Route path="/" element={<LandingPage />} />
+            {/* Root goes straight to the client portal — new visitors register or
+                log in with phone + password; the client guards redirect anyone
+                already signed in to their dashboard. Staff reach admin via the
+                discreet "Staff login" link on the client login screen. */}
+            <Route path="/" element={<Navigate to="/client" replace />} />
 
             {/* Customer view - public, no login required */}
             <Route path="/c/:token" element={<CustomerView />} />
@@ -204,7 +207,7 @@ function App() {
             <Route path="/admin" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
               <Route index element={<Dashboard />} />
               <Route path="customers" element={<Customers />} />
-              <Route path="customers/:id" element={<Customers />} />
+              <Route path="customers/:id" element={<CustomerDetail />} />
               <Route path="inspections" element={<Inspections />} />
               <Route path="inspections/:id" element={<InspectionDetail />} />
               <Route path="job-cards" element={<JobCards />} />

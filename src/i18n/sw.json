@@ -130,7 +130,21 @@
     "addFirstVehicle": "Ongeza gari",
     "addAnotherVehicle": "Ongeza gari lingine",
     "vehicleRequired": "Tafadhali kamilisha au ondoa gari ambalo halijajazwa.",
-    "addedNoVehicles": "Mteja ameongezwa, lakini kuhifadhi gari kumeshindikana — tafadhali ongeza wewe."
+    "addedNoVehicles": "Mteja ameongezwa, lakini kuhifadhi gari kumeshindikana — tafadhali ongeza wewe.",
+    "detail": {
+      "personalInfo": "Taarifa Binafsi",
+      "addVehicle": "Ongeza Gari",
+      "noVehicles": "Hakuna magari yaliyosajiliwa kwa mteja huyu.",
+      "vehicleAdded": "Gari limeongezwa",
+      "vehicleDeleted": "Gari limefutwa",
+      "deleteVehicle": "Futa gari",
+      "deleteVehicleConfirm": "Futa gari hili?",
+      "axles": "Ekseli",
+      "chassis": "Chesisi",
+      "noInspections": "Hakuna ukaguzi bado.",
+      "noJobCards": "Hakuna kadi za kazi bado.",
+      "noInvoices": "Hakuna ankara bado."
+    }
   },
   "vehicles": {
     "title": "Magari",
