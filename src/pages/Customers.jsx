@@ -442,11 +442,6 @@ export default function Customers() {
                     <input type="text" value={form.company_name} onChange={e => setForm({...form, company_name: e.target.value})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('customers.tin')}</label>
-                    <input type="text" value={form.tin_number} onChange={e => setForm({...form, tin_number: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
-                  </div>
                   <div className="sm:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-1">{t('customers.address')}</label>
                     <input type="text" value={form.address} onChange={e => setForm({...form, address: e.target.value})}
