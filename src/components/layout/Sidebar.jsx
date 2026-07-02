@@ -23,7 +23,10 @@ export default function Sidebar({ isOpen, onClose }) {
 
   const navItems = [
     { to: '/admin', icon: LayoutDashboard, label: t('nav.dashboard'), end: true },
-    ...(canViewInternal ? [{ to: '/admin/customers', icon: Users, label: t('nav.customers') }] : []),
+    // Customers sits right below Dashboard and is visible to every staff role —
+    // it's the entry point to a client's full profile (vehicles, inspections,
+    // job cards, invoices), not internal cost data.
+    { to: '/admin/customers', icon: Users, label: t('nav.customers') },
     { to: '/admin/inspections', icon: ClipboardCheck, label: t('nav.inspections') },
     { to: '/admin/job-cards', icon: ClipboardList, label: t('nav.jobCards') },
     { to: '/admin/invoices', icon: FileText, label: t('nav.invoices') },
