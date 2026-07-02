@@ -753,14 +753,25 @@
       "types": {
         "truck": "Lori",
         "trailer": "Trela",
-        "car": "Gari"
+        "suv": "SUV",
+        "pickup": "Pikapu",
+        "bus": "Basi",
+        "machine": "Mashine",
+        "car": "Gari",
+        "other": "Nyingine"
       },
       "fuels": {
         "diesel": "Dizeli",
         "petrol": "Petroli",
         "electric": "Umeme",
         "hybrid": "Mseto"
-      }
+      },
+      "yearLabel": "Mwaka",
+      "colorLabel": "Rangi",
+      "colorPlaceholder": "mf. Nyeupe",
+      "mileageLabel": "Umbali (km)",
+      "otherType": "Nyingine (andika mwenyewe)",
+      "typeType": "Andika aina ya gari..."
     },
     "dashboard": {
       "welcome": "Karibu",

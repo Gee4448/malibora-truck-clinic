@@ -71,12 +71,11 @@ export default function ClientRegister() {
           setLoading(false)
           return
         }
-        // _customMake/_customModel/_customEngine are UI-only flags; registerCustomer
-        // whitelists DB columns, so they are ignored downstream.
+        // _customMake/_customModel/_customType are UI-only flags; the signup RPC
+        // reads named columns only, so they are ignored downstream.
         vehiclePayloads = vehicles.map((v) => ({
           ...v,
           registration_number: v.registration_number.toUpperCase(),
-          axles: v.axles ? parseInt(v.axles) : null,
         }))
       }
 

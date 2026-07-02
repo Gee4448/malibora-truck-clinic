@@ -105,10 +105,10 @@ export default function Customers() {
             make: v.make.trim(),
             model: v.model?.trim() || null,
             registration_number: v.registration_number.toUpperCase().trim(),
-            engine_type: v.engine_type || null,
             chassis_number: v.chassis_number || null,
-            axles: v.axles ? parseInt(v.axles) : null,
-            fuel_type: v.fuel_type,
+            year: v.year ? parseInt(v.year) : null,
+            color: v.color?.trim() || null,
+            mileage_km: v.mileage_km ? parseInt(v.mileage_km) : null,
           }))
           const { error: vErr } = await supabase.from('vehicles').insert(vehiclePayloads)
           if (vErr) {

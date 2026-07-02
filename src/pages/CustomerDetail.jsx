@@ -4,7 +4,7 @@ import { useLanguage } from '../contexts/LanguageContext'
 import { supabase, formatDate, formatTZS } from '../lib/supabase'
 import {
   ArrowLeft, Phone, Mail, Building2, CreditCard, MapPin, FileText, User,
-  Truck, Plus, X, Trash2, Edit2, ClipboardCheck, ClipboardList, Fuel, Cog,
+  Truck, Plus, X, Trash2, Edit2, ClipboardCheck, ClipboardList, Gauge,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { emptyVehicle } from '../lib/vehicleOptions'
@@ -71,10 +71,10 @@ export default function CustomerDetail() {
         make: newVehicle.make.trim(),
         model: newVehicle.model?.trim() || null,
         registration_number: newVehicle.registration_number.toUpperCase().trim(),
-        engine_type: newVehicle.engine_type || null,
         chassis_number: newVehicle.chassis_number || null,
-        axles: newVehicle.axles ? parseInt(newVehicle.axles) : null,
-        fuel_type: newVehicle.fuel_type,
+        year: newVehicle.year ? parseInt(newVehicle.year) : null,
+        color: newVehicle.color?.trim() || null,
+        mileage_km: newVehicle.mileage_km ? parseInt(newVehicle.mileage_km) : null,
       })
       if (error) throw error
       toast.success(t('customers.detail.vehicleAdded'))
@@ -222,18 +222,18 @@ export default function CustomerDetail() {
                   <div className="flex-1 min-w-0">
                     <p className="font-bold text-gray-900">{v.registration_number}</p>
                     <p className="text-sm text-gray-600">
-                      {[v.make, v.model].filter(Boolean).join(' ')}
+                      {[v.make, v.model, v.year].filter(Boolean).join(' ')}
                       {v.vehicle_type ? ` · ${v.vehicle_type}` : ''}
                     </p>
                     <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-xs text-gray-500">
-                      {v.engine_type && (
-                        <span className="flex items-center gap-1"><Cog className="w-3 h-3" /> {v.engine_type}</span>
+                      {v.color && (
+                        <span className="flex items-center gap-1">
+                          <span className="w-3 h-3 rounded-full border border-gray-300" style={{ backgroundColor: v.color.toLowerCase() }} />
+                          {v.color}
+                        </span>
                       )}
-                      {v.fuel_type && (
-                        <span className="flex items-center gap-1 capitalize"><Fuel className="w-3 h-3" /> {v.fuel_type}</span>
-                      )}
-                      {v.axles && (
-                        <span>{t('customers.detail.axles')}: {v.axles}</span>
+                      {(v.mileage_km || v.mileage_km === 0) && (
+                        <span className="flex items-center gap-1"><Gauge className="w-3 h-3" /> {Number(v.mileage_km).toLocaleString()} km</span>
                       )}
                     </div>
                     {v.chassis_number && (

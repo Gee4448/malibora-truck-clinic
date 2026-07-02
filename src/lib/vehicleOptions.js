@@ -2,8 +2,14 @@
 // the admin "Add Client" walk-in flow. Keep this file as the single source of
 // truth so the two forms can never drift apart.
 
-export const VEHICLE_TYPES = ['truck', 'trailer', 'car']
+export const VEHICLE_TYPES = ['truck', 'trailer', 'suv', 'pickup', 'bus', 'machine', 'car', 'other']
 export const FUEL_TYPES = ['diesel', 'petrol', 'electric', 'hybrid']
+
+// Common colours offered as quick suggestions; the field also accepts free text.
+export const COLORS = [
+  'White', 'Black', 'Silver', 'Grey', 'Blue', 'Red', 'Green',
+  'Yellow', 'Orange', 'Brown', 'Maroon', 'Gold',
+]
 
 export const TRUCK_MAKES = [
   'Scania', 'Volvo', 'DAF', 'MAN', 'Shacman', 'Mercedes-Benz', 'Iveco',
@@ -64,7 +70,7 @@ export const getMakes = (type) => type === 'trailer' ? TRAILER_MAKES : TRUCK_MAK
 export const getModels = (type) => type === 'trailer' ? TRAILER_MODELS : TRUCK_MODELS
 
 export const emptyVehicle = () => ({
-  vehicle_type: 'truck', make: '', model: '', registration_number: '',
-  engine_type: '', chassis_number: '', axles: '', fuel_type: 'diesel',
-  _customMake: false, _customModel: false, _customEngine: false,
+  registration_number: '', chassis_number: '', make: '', model: '',
+  year: '', color: '', vehicle_type: 'truck', mileage_km: '',
+  _customMake: false, _customModel: false, _customType: false,
 })

@@ -753,14 +753,25 @@
       "types": {
         "truck": "Truck",
         "trailer": "Trailer",
-        "car": "Car"
+        "suv": "SUV",
+        "pickup": "Pickup",
+        "bus": "Bus",
+        "machine": "Machine",
+        "car": "Car",
+        "other": "Other"
       },
       "fuels": {
         "diesel": "Diesel",
         "petrol": "Petrol",
         "electric": "Electric",
         "hybrid": "Hybrid"
-      }
+      },
+      "yearLabel": "Year",
+      "colorLabel": "Color",
+      "colorPlaceholder": "e.g. White",
+      "mileageLabel": "Mileage (km)",
+      "otherType": "Other (type manually)",
+      "typeType": "Type vehicle type..."
     },
     "dashboard": {
       "welcome": "Welcome",

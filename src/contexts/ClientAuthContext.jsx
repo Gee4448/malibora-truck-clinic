@@ -135,10 +135,10 @@ export function ClientAuthProvider({ children }) {
       make: v.make,
       model: v.model || null,
       registration_number: v.registration_number,
-      engine_type: v.engine_type || null,
       chassis_number: v.chassis_number || null,
-      axles: v.axles || null,
-      fuel_type: v.fuel_type,
+      year: v.year || null,
+      color: v.color || null,
+      mileage_km: v.mileage_km || null,
     }))
 
     // Atomic path: one transactional RPC (migration 004 — supersedes 003) so a
