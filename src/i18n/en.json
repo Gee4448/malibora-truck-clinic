@@ -681,6 +681,7 @@
       "button": "Sign In",
       "success": "Welcome back!",
       "notFound": "No account found with this phone number. Please contact Malibora Truck Clinic.",
+      "connectionError": "Can't reach the server. Please check your internet connection and try again.",
       "help": "Don't have an account?",
       "callSupport": "Call us for help",
       "noAccount": "Don't have an account?",

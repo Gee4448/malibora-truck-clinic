@@ -21,9 +21,11 @@ export default function ClientInvoiceView() {
 
   const fetchInvoice = async () => {
     try {
+      // Explicit customer-safe columns only — never expose internal cost or
+      // profit columns (internal_cost_*, profit_*) to the client portal.
       const { data: inv } = await supabase
         .from('invoices')
-        .select('*, customers(full_name, phone, company_name, address), vehicles(registration_number, make, model), job_cards(job_number)')
+        .select('id, invoice_number, invoice_type, status, job_card_id, subtotal_parts, subtotal_labour, subtotal_additional, vat_amount, discount_amount, total_amount, deposit_percentage, deposit_amount, customer_agreed_at, paid_at, payment_method, created_at, customers(full_name, phone, company_name, address), vehicles(registration_number, make, model), job_cards(job_number)')
         .eq('id', id)
         .single()
 
@@ -246,11 +248,11 @@ export default function ClientInvoiceView() {
           <span className="font-bold text-gray-900">{t('invoices.total')}</span>
           <span className="font-bold text-gray-900 text-lg">{formatTZS(invoice.total_amount)}</span>
         </div>
-        {invoice.status === 'paid' && invoice.payment_date && (
+        {invoice.status === 'paid' && invoice.paid_at && (
           <div className="mt-2 p-2.5 bg-green-50 rounded-lg flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-green-600" />
             <p className="text-xs text-green-700">
-              {t('invoices.paidOn')} {formatDate(invoice.payment_date)}
+              {t('invoices.paidOn')} {formatDate(invoice.paid_at)}
               {invoice.payment_method && ` · ${t(`paymentMethods.${invoice.payment_method}`)}`}
             </p>
           </div>

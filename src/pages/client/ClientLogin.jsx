@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { useClient } from '../../contexts/ClientAuthContext'
-import { Truck, Phone, Lock, ArrowRight, Globe, AlertCircle, Clock, XCircle, Eye, EyeOff } from 'lucide-react'
+import { isNetworkError } from '../../lib/supabase'
+import { Truck, Phone, Lock, ArrowRight, Globe, AlertCircle, Clock, XCircle, Eye, EyeOff, WifiOff } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function ClientLogin() {
@@ -29,6 +30,7 @@ export default function ClientLogin() {
       if (err.message === 'pending_approval') setError('pending')
       else if (err.message === 'rejected') setError('rejected')
       else if (err.message === 'wrong_password') setError('wrong_password')
+      else if (isNetworkError(err)) setError('connection')
       else setError('not_found')
     } finally {
       setLoading(false)
@@ -138,6 +140,13 @@ export default function ClientLogin() {
               <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl">
                 <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
                 <p className="text-sm text-red-700">{t('client.login.notFound')}</p>
+              </div>
+            )}
+
+            {error === 'connection' && (
+              <div className="flex items-center gap-2 p-3 bg-orange-50 border border-orange-200 rounded-xl">
+                <WifiOff className="w-4 h-4 text-orange-500 flex-shrink-0" />
+                <p className="text-sm text-orange-700">{t('client.login.connectionError')}</p>
               </div>
             )}
 

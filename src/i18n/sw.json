@@ -681,6 +681,7 @@
       "button": "Ingia",
       "success": "Karibu tena!",
       "notFound": "Hakuna akaunti iliyopatikana na nambari hii. Tafadhali wasiliana na Malibora Truck Clinic.",
+      "connectionError": "Imeshindwa kufikia seva. Tafadhali angalia mtandao wako wa intaneti kisha jaribu tena.",
       "help": "Huna akaunti?",
       "callSupport": "Piga simu kwa msaada",
       "noAccount": "Huna akaunti?",

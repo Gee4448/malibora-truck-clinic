@@ -18,9 +18,11 @@ export default function ClientInvoices() {
 
   const fetchInvoices = async () => {
     try {
+      // Explicit customer-safe columns only — the list must not pull internal
+      // cost/profit columns into the client's browser.
       const { data } = await supabase
         .from('invoices')
-        .select('*, vehicles(registration_number), job_cards(job_number)')
+        .select('id, invoice_number, invoice_type, status, total_amount, created_at, vehicles(registration_number), job_cards(job_number)')
         .eq('customer_id', customer.id)
         .in('invoice_type', ['proforma', 'final'])
         .order('created_at', { ascending: false })
