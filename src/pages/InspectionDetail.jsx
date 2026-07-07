@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { supabase, formatTZS, formatDate } from '../lib/supabase'
 import {
   ArrowLeft, Plus, Trash2, CreditCard, Play, CheckCircle2,
-  AlertTriangle, X, ClipboardList, FileText, Share2, Copy
+  AlertTriangle, X, ClipboardList, FileText, Share2, Copy, Wrench, Send
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -23,6 +23,8 @@ export default function InspectionDetail() {
     problem_description: '', severity: 'medium', recommended_action: '', estimated_cost: '', notes: ''
   })
   const [paymentForm, setPaymentForm] = useState({ payment_method: 'cash', payment_reference: '' })
+  const [situation, setSituation] = useState('')
+  const [savingSituation, setSavingSituation] = useState(false)
 
   useEffect(() => { fetchInspection() }, [id])
 
@@ -34,6 +36,7 @@ export default function InspectionDetail() {
         .eq('id', id).single()
       if (error) throw error
       setInspection(data)
+      setSituation(data.repair_summary || '')
 
       const { data: problemItems } = await supabase
         .from('inspection_items')
@@ -119,6 +122,41 @@ export default function InspectionDetail() {
     }
   }
 
+  // Set a single item's repair status (pending / in_progress / done).
+  // Optimistic update so the mechanic's tick feels instant.
+  const setItemRepairStatus = async (item, status) => {
+    const done_at = status === 'done' ? new Date().toISOString() : null
+    setItems(prev => prev.map(i => i.id === item.id
+      ? { ...i, repair_status: status, repair_done_at: done_at } : i))
+    try {
+      const { error } = await supabase.from('inspection_items')
+        .update({ repair_status: status, repair_done_at: done_at })
+        .eq('id', item.id)
+      if (error) throw error
+    } catch (err) {
+      toast.error(err.message)
+      fetchInspection()
+    }
+  }
+
+  // Post the mechanic's "current car situation" note for the customer to see.
+  const saveSituation = async () => {
+    setSavingSituation(true)
+    try {
+      const { error } = await supabase.from('inspections').update({
+        repair_summary: situation.trim() || null,
+        repair_updated_at: new Date().toISOString(),
+      }).eq('id', id)
+      if (error) throw error
+      toast.success(t('inspection.situationUpdated'))
+      fetchInspection()
+    } catch (err) {
+      toast.error(err.message)
+    } finally {
+      setSavingSituation(false)
+    }
+  }
+
   // Complete inspection & auto-create Pre-Job Card
   const completeInspection = async () => {
     if (items.length === 0) {
@@ -179,6 +217,9 @@ export default function InspectionDetail() {
   const isPaid = inspection.status === 'paid'
   const isInProgress = inspection.status === 'in_progress'
   const isCompleted = inspection.status === 'completed'
+
+  const repairDone = items.filter(i => i.repair_status === 'done').length
+  const repairPct = items.length ? Math.round((repairDone / items.length) * 100) : 0
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -367,9 +408,43 @@ export default function InspectionDetail() {
                     )}
                   </div>
                 </div>
+
+                {/* Repair progress — mechanic ticks each item; customer sees it live */}
+                {(isInProgress || isCompleted) && (
+                  <div className="mt-3 flex items-center gap-1.5 flex-wrap">
+                    <Wrench className="w-3.5 h-3.5 text-gray-400" />
+                    {['pending', 'in_progress', 'done'].map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setItemRepairStatus(item, s)}
+                        className={`text-xs px-2.5 py-1 rounded-full font-medium transition ${
+                          (item.repair_status || 'pending') === s
+                            ? s === 'done' ? 'bg-green-600 text-white'
+                              : s === 'in_progress' ? 'bg-yellow-500 text-white'
+                              : 'bg-gray-500 text-white'
+                            : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                        }`}
+                      >
+                        {t(`inspection.repairStatuses.${s}`)}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
-            <div className="p-4 bg-gray-50">
+            <div className="p-4 bg-gray-50 space-y-3">
+              {(isInProgress || isCompleted) && (
+                <div>
+                  <div className="flex justify-between items-center mb-1.5">
+                    <span className="text-sm font-medium text-gray-600">{t('inspection.repairSection')}</span>
+                    <span className="text-sm font-bold text-green-700">{repairDone}/{items.length} {t('inspection.partsFixed')}</span>
+                  </div>
+                  <div className="w-full h-2.5 bg-gray-200 rounded-full overflow-hidden">
+                    <div className="h-full bg-green-500 transition-all" style={{ width: `${repairPct}%` }} />
+                  </div>
+                </div>
+              )}
               <div className="flex justify-between items-center">
                 <span className="font-semibold text-gray-700">{t('inspection.totalEstimatedCost')}</span>
                 <span className="text-lg font-bold">{formatTZS(totalEstimated)}</span>
@@ -378,6 +453,38 @@ export default function InspectionDetail() {
           </div>
         )}
       </div>
+
+      {/* Current Car Situation — mechanic posts an update the customer sees live */}
+      {items.length > 0 && (isInProgress || isCompleted) && (
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <div className="flex items-center gap-2 mb-1">
+            <Wrench className="w-4 h-4 text-blue-600" />
+            <h3 className="font-semibold text-gray-900">{t('inspection.currentSituation')}</h3>
+          </div>
+          <p className="text-xs text-gray-500 mb-3">{t('inspection.repairHint')}</p>
+          <textarea
+            value={situation}
+            onChange={(e) => setSituation(e.target.value)}
+            rows={3}
+            placeholder={t('inspection.situationPlaceholder')}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+          />
+          <div className="flex items-center justify-between mt-3 gap-3">
+            <span className="text-xs text-gray-400">
+              {inspection.repair_updated_at
+                ? `${t('inspection.situationLastUpdated')}: ${formatDate(inspection.repair_updated_at)}`
+                : ''}
+            </span>
+            <button
+              onClick={saveSituation}
+              disabled={savingSituation}
+              className="flex items-center gap-1.5 px-4 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800 text-sm font-medium disabled:opacity-40 flex-shrink-0"
+            >
+              <Send className="w-4 h-4" /> {t('inspection.updateSituation')}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Payment Modal */}
       {showPayment && (

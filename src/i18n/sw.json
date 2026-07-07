@@ -483,7 +483,20 @@
       "medium": "Wastani",
       "high": "Juu",
       "critical": "Hatari"
-    }
+    },
+    "repairStatuses": {
+      "pending": "Bado",
+      "in_progress": "Inaendelea",
+      "done": "Imekamilika"
+    },
+    "repairSection": "Maendeleo ya Matengenezo",
+    "repairHint": "Weka alama kila kipengele unapokitengeneza — mteja anaona moja kwa moja.",
+    "partsFixed": "vimekamilika",
+    "currentSituation": "Hali ya Sasa ya Gari",
+    "situationPlaceholder": "mf. Breki zimebadilishwa, bado tunasubiri kipuli cha pampu ya mafuta...",
+    "updateSituation": "Tuma Taarifa kwa Mteja",
+    "situationUpdated": "Taarifa imetumwa — mteja anaweza kuiona sasa",
+    "situationLastUpdated": "Ilisasishwa mwisho"
   },
   "preJobCard": {
     "title": "Kadi ya Kazi ya Awali",
@@ -585,6 +598,12 @@
     "approvedItems": "Imeidhinishwa",
     "items": "vipengele",
     "repairProgress": "Maendeleo ya Matengenezo",
+    "partsFixed": "vipengele vimekamilika",
+    "mechanicUpdate": "Taarifa kutoka kwa fundi",
+    "noRepairYet": "Matengenezo bado hayajaanza. Tafadhali angalia tena baadaye.",
+    "statusFixed": "Imekamilika",
+    "statusInProgress": "Inatengenezwa",
+    "statusPending": "Bado",
     "stepInspection": "Ukaguzi",
     "stepApproved": "Imeidhinishwa",
     "stepInProgress": "Inaendelea",

@@ -18,6 +18,24 @@ export default function ClientServiceDetail() {
 
   useEffect(() => { fetchData() }, [id])
 
+  // Live updates: when the mechanic ticks an item or posts a car-situation note,
+  // refetch so the customer sees "fixed / in progress / pending" change in place.
+  useEffect(() => {
+    const inspId = jobCard?.inspection_id
+    if (!inspId) return
+    const channel = supabase
+      .channel(`svc-${inspId}`)
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'inspection_items', filter: `inspection_id=eq.${inspId}` },
+        () => fetchData())
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'inspections', filter: `id=eq.${inspId}` },
+        () => fetchData())
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jobCard?.inspection_id])
+
   const fetchData = async () => {
     try {
       const { data: jc } = await supabase
@@ -78,6 +96,9 @@ export default function ClientServiceDetail() {
   const totalEstimated = items.reduce((s, i) => s + Number(i.estimated_cost || 0), 0)
   const approvedCount = items.filter(i => i.customer_approved === true).length
   const approvedTotal = items.filter(i => i.customer_approved === true).reduce((s, i) => s + Number(i.estimated_cost || 0), 0)
+  const repairDone = items.filter(i => i.repair_status === 'done').length
+  const repairPct = items.length ? Math.round((repairDone / items.length) * 100) : 0
+  const repairStarted = items.some(i => i.repair_status && i.repair_status !== 'pending') || !!inspection?.repair_summary
 
   if (loading) {
     return (
@@ -165,6 +186,33 @@ export default function ClientServiceDetail() {
         </div>
       )}
 
+      {/* Live Repair Progress */}
+      {items.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold text-gray-900 text-sm flex items-center gap-1.5">
+              <Wrench className="w-4 h-4 text-blue-600" /> {t('customerView.repairProgress')}
+            </h3>
+            <span className="text-sm font-bold text-green-700">{repairPct}%</span>
+          </div>
+          <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
+            <div className="h-full bg-green-500 transition-all" style={{ width: `${repairPct}%` }} />
+          </div>
+          <p className="text-xs text-gray-500">{repairDone}/{items.length} {t('customerView.partsFixed')}</p>
+          {inspection?.repair_summary ? (
+            <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
+              <p className="text-xs font-medium text-blue-800 mb-0.5">{t('customerView.mechanicUpdate')}</p>
+              <p className="text-sm text-blue-900 whitespace-pre-line">{inspection.repair_summary}</p>
+              {inspection.repair_updated_at && (
+                <p className="text-[10px] text-blue-500 mt-1">{formatDate(inspection.repair_updated_at)}</p>
+              )}
+            </div>
+          ) : !repairStarted ? (
+            <p className="text-xs text-gray-400">{t('customerView.noRepairYet')}</p>
+          ) : null}
+        </div>
+      )}
+
       {/* Inspection Findings */}
       {items.length > 0 && (
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
@@ -201,6 +249,16 @@ export default function ClientServiceDetail() {
                           )}
                           {t(`inspection.severities.${item.severity}`)}
                         </span>
+                        {item.repair_status === 'done' && (
+                          <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-green-100 text-green-700 flex items-center gap-0.5">
+                            <CheckCircle2 className="w-3 h-3" /> {t('customerView.statusFixed')}
+                          </span>
+                        )}
+                        {item.repair_status === 'in_progress' && (
+                          <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-yellow-100 text-yellow-700 flex items-center gap-0.5">
+                            <Wrench className="w-3 h-3" /> {t('customerView.statusInProgress')}
+                          </span>
+                        )}
                         {item.customer_approved === true && (
                           <span className="text-xs text-green-600 font-medium flex items-center gap-0.5">
                             <CheckCircle2 className="w-3 h-3" /> {t('customerView.approved')}

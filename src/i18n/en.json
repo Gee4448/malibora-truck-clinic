@@ -483,7 +483,20 @@
       "medium": "Medium",
       "high": "High",
       "critical": "Critical"
-    }
+    },
+    "repairStatuses": {
+      "pending": "Pending",
+      "in_progress": "In Progress",
+      "done": "Done"
+    },
+    "repairSection": "Repair Progress",
+    "repairHint": "Tick each item as you fix it — the customer sees this live.",
+    "partsFixed": "fixed",
+    "currentSituation": "Current Car Situation",
+    "situationPlaceholder": "e.g. Brake pads replaced, still waiting for the fuel pump part...",
+    "updateSituation": "Post Update to Customer",
+    "situationUpdated": "Update posted — the customer can now see it",
+    "situationLastUpdated": "Last updated"
   },
   "preJobCard": {
     "title": "Pre-Job Card",
@@ -585,6 +598,12 @@
     "approvedItems": "Approved",
     "items": "items",
     "repairProgress": "Repair Progress",
+    "partsFixed": "parts fixed",
+    "mechanicUpdate": "Update from the mechanic",
+    "noRepairYet": "Repairs haven't started yet. Check back soon.",
+    "statusFixed": "Fixed",
+    "statusInProgress": "Being fixed",
+    "statusPending": "Pending",
     "stepInspection": "Inspection",
     "stepApproved": "Approved",
     "stepInProgress": "In Progress",
