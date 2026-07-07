@@ -3,8 +3,10 @@ import { Toaster } from 'react-hot-toast'
 import { LanguageProvider } from './contexts/LanguageContext'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ClientAuthProvider, useClient } from './contexts/ClientAuthContext'
+import { MechanicAuthProvider, useMechanic } from './contexts/MechanicAuthContext'
 import Layout from './components/layout/Layout'
 import ClientLayout from './components/layout/ClientLayout'
+import MechanicLayout from './components/layout/MechanicLayout'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import StaffGate from './pages/StaffGate'
@@ -33,6 +35,9 @@ import ClientInvoiceView from './pages/client/ClientInvoiceView'
 import ClientProfile from './pages/client/ClientProfile'
 import ClientRegister from './pages/client/ClientRegister'
 import ClientNewRequest from './pages/client/ClientNewRequest'
+import MechanicLogin from './pages/mechanic/MechanicLogin'
+import MechanicJobs from './pages/mechanic/MechanicJobs'
+import MechanicJobDetail from './pages/mechanic/MechanicJobDetail'
 import InstallPrompt from './components/common/InstallPrompt'
 import './styles/index.css'
 
@@ -135,6 +140,44 @@ function StaffVerifiedRoute({ children }) {
   return children
 }
 
+// Mechanic Protected Route — requires a PIN session
+function MechanicProtectedRoute({ children }) {
+  const { mechanic, loading } = useMechanic()
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin w-10 h-10 border-4 border-amber-600 border-t-transparent rounded-full"></div>
+      </div>
+    )
+  }
+
+  if (!mechanic) {
+    return <Navigate to="/mechanic" replace />
+  }
+
+  return children
+}
+
+// Mechanic Public Route (redirect to jobs if already signed in)
+function MechanicPublicRoute({ children }) {
+  const { mechanic, loading } = useMechanic()
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-900">
+        <div className="animate-spin w-10 h-10 border-4 border-white border-t-transparent rounded-full"></div>
+      </div>
+    )
+  }
+
+  if (mechanic) {
+    return <Navigate to="/mechanic/jobs" replace />
+  }
+
+  return children
+}
+
 // Client Public Route (redirect to dashboard if logged in)
 function ClientPublicRoute({ children }) {
   const { customer, loading } = useClient()
@@ -160,6 +203,7 @@ function App() {
       <LanguageProvider>
         <AuthProvider>
           <ClientAuthProvider>
+          <MechanicAuthProvider>
           <InstallPrompt />
           <Toaster
             position="top-right"
@@ -196,6 +240,15 @@ function App() {
               </Route>
             </Route>
 
+            {/* Mechanic portal — PIN login, restricted to assigned jobs */}
+            <Route path="/mechanic">
+              <Route index element={<MechanicPublicRoute><MechanicLogin /></MechanicPublicRoute>} />
+              <Route element={<MechanicProtectedRoute><MechanicLayout /></MechanicProtectedRoute>}>
+                <Route path="jobs" element={<MechanicJobs />} />
+                <Route path="jobs/:id" element={<MechanicJobDetail />} />
+              </Route>
+            </Route>
+
             {/* Staff access gate */}
             <Route path="/admin/gate" element={<StaffGate />} />
 
@@ -224,6 +277,7 @@ function App() {
             {/* Catch all */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          </MechanicAuthProvider>
           </ClientAuthProvider>
         </AuthProvider>
       </LanguageProvider>

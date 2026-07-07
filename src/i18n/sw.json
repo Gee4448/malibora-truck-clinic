@@ -208,6 +208,9 @@
     "selectPart": "Chagua Kipuri",
     "selectService": "Chagua Huduma",
     "technicianName": "Jina la Fundi",
+    "selectMechanic": "Chagua fundi",
+    "noMechanics": "Hakuna mafundi bado. Waongeze kwenye Mipangilio kwanza.",
+    "mechanicAssignHint": "Fundi ataona kazi hii kwenye lango lake la PIN.",
     "change": "Badilisha",
     "itemAdded": "Kipengele kimeongezwa",
     "itemRemoved": "Kipengele kimeondolewa",
@@ -613,6 +616,56 @@
     "poweredBy": "Imetengenezwa na Malibora Truck Clinic",
     "allApproved": "Vipengele vyote vimeidhinishwa!",
     "failedUpdate": "Imeshindikana kubadilisha"
+  },
+  "mechanic": {
+    "login": {
+      "portal": "Lango la Fundi",
+      "title": "Ingia kama Fundi",
+      "subtitle": "Weka PIN yako binafsi kuona kazi zako",
+      "enterPin": "Weka PIN yako",
+      "invalid": "PIN si sahihi. Tafadhali jaribu tena.",
+      "connectionError": "Imeshindwa kufikia seva. Angalia mtandao kisha jaribu tena.",
+      "success": "Karibu!",
+      "notMechanic": "Si fundi? Nenda kwenye lango la wateja"
+    },
+    "jobs": {
+      "title": "Kazi Zangu",
+      "subtitle": "Magari uliyopewa",
+      "filter": { "active": "Zinaendelea", "completed": "Zimekamilika" },
+      "empty": "Hakuna kazi hapa bado."
+    },
+    "job": {
+      "progress": "Maendeleo ya matengenezo",
+      "checklist": "Orodha ya matengenezo",
+      "checklistHint": "Bonyeza Imekamilika unapotengeneza kila kipengele — mteja anaona moja kwa moja.",
+      "noItems": "Hakuna vipengele vya ukaguzi kwenye kazi hii bado.",
+      "situation": "Mjulishe mteja",
+      "situationHint": "Andika hali ya sasa ya gari kwa ajili ya mteja.",
+      "postSituation": "Tuma taarifa",
+      "situationPosted": "Taarifa imetumwa kwa mteja",
+      "notYours": "Kazi hii haujapewa wewe."
+    }
+  },
+  "mechanicsAdmin": {
+    "title": "Mafundi",
+    "add": "Ongeza",
+    "hint": "Ongeza kila fundi na umpe PIN. Wataingia kwenye /mechanic kwa PIN hiyo tu kuona kazi walizopewa.",
+    "empty": "Hakuna mafundi walioongezwa bado.",
+    "inactive": "Hayupo kazini",
+    "deactivate": "Zima",
+    "activate": "Washa",
+    "addTitle": "Ongeza Fundi",
+    "editTitle": "Hariri Fundi",
+    "name": "Jina kamili",
+    "phone": "Simu",
+    "pin": "PIN",
+    "pinKeep": "Acha wazi kubaki na PIN ya sasa",
+    "pinPlaceholder": "mf. 4821",
+    "pinHint": "Angalau tarakimu 4. Mpe fundi kwa siri.",
+    "saved": "Fundi amehifadhiwa",
+    "forbidden": "Ni mmiliki au meneja pekee anayeweza kusimamia mafundi.",
+    "nameRequired": "Jina linahitajika",
+    "pinTooShort": "PIN lazima iwe angalau tarakimu 4"
   },
   "install": {
     "title": "Sakinisha Programu ya Malibora",

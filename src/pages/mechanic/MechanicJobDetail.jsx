@@ -1,0 +1,252 @@
+import { useState, useEffect } from 'react'
+import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useLanguage } from '../../contexts/LanguageContext'
+import { useMechanic } from '../../contexts/MechanicAuthContext'
+import { supabase, formatDate } from '../../lib/supabase'
+import { ArrowLeft, Truck, Wrench, XCircle, Send, AlertTriangle } from 'lucide-react'
+import toast from 'react-hot-toast'
+
+export default function MechanicJobDetail() {
+  const { id } = useParams()
+  const { t } = useLanguage()
+  const { mechanic } = useMechanic()
+  const navigate = useNavigate()
+  const [job, setJob] = useState(null)
+  const [inspection, setInspection] = useState(null)
+  const [items, setItems] = useState([])
+  const [situation, setSituation] = useState('')
+  const [savingSituation, setSavingSituation] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [denied, setDenied] = useState(false)
+
+  useEffect(() => {
+    fetchData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id])
+
+  const fetchData = async () => {
+    try {
+      const { data: jc } = await supabase
+        .from('job_cards')
+        .select('id, job_number, status, description, inspection_id, assigned_mechanic_id, vehicles(registration_number, make, model, year)')
+        .eq('id', id)
+        .single()
+
+      // Only the assigned mechanic may open this job.
+      if (!jc || jc.assigned_mechanic_id !== mechanic?.id) {
+        setDenied(true)
+        setLoading(false)
+        return
+      }
+      setJob(jc)
+
+      if (jc.inspection_id) {
+        const [inspRes, itemsRes] = await Promise.all([
+          supabase.from('inspections').select('id, description, repair_summary, repair_updated_at').eq('id', jc.inspection_id).single(),
+          supabase.from('inspection_items').select('*').eq('inspection_id', jc.inspection_id).order('sort_order'),
+        ])
+        setInspection(inspRes.data)
+        setSituation(inspRes.data?.repair_summary || '')
+        setItems(itemsRes.data || [])
+      }
+    } catch (err) {
+      console.error('Mechanic job error:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const setItemStatus = async (item, status) => {
+    const done_at = status === 'done' ? new Date().toISOString() : null
+    setItems(prev => prev.map(i => i.id === item.id ? { ...i, repair_status: status, repair_done_at: done_at } : i))
+    try {
+      const { error } = await supabase.rpc('mechanic_set_item_repair', {
+        p_mechanic_id: mechanic.id, p_item_id: item.id, p_status: status,
+      })
+      if (error) throw error
+    } catch (err) {
+      toast.error(err.message)
+      fetchData()
+    }
+  }
+
+  const saveSituation = async () => {
+    if (!inspection?.id) return
+    setSavingSituation(true)
+    try {
+      const { error } = await supabase.rpc('mechanic_update_situation', {
+        p_mechanic_id: mechanic.id, p_inspection_id: inspection.id, p_summary: situation,
+      })
+      if (error) throw error
+      toast.success(t('mechanic.job.situationPosted'))
+      fetchData()
+    } catch (err) {
+      toast.error(err.message)
+    } finally {
+      setSavingSituation(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin w-8 h-8 border-4 border-amber-600 border-t-transparent rounded-full"></div>
+      </div>
+    )
+  }
+
+  if (denied || !job) {
+    return (
+      <div className="text-center py-12">
+        <XCircle className="w-12 h-12 text-red-300 mx-auto mb-3" />
+        <p className="text-gray-500">{t('mechanic.job.notYours')}</p>
+        <button onClick={() => navigate('/mechanic/jobs')} className="text-amber-600 text-sm mt-2">{t('common.back')}</button>
+      </div>
+    )
+  }
+
+  const v = job.vehicles
+  const done = items.filter(i => i.repair_status === 'done').length
+  const pct = items.length ? Math.round((done / items.length) * 100) : 0
+
+  const severityColors = {
+    low: { bg: 'bg-gray-100', text: 'text-gray-600' },
+    medium: { bg: 'bg-yellow-100', text: 'text-yellow-700' },
+    high: { bg: 'bg-orange-100', text: 'text-orange-700' },
+    critical: { bg: 'bg-red-100', text: 'text-red-700' },
+  }
+
+  return (
+    <div className="space-y-4">
+      <Link to="/mechanic/jobs" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700">
+        <ArrowLeft className="w-4 h-4" /> {t('common.back')}
+      </Link>
+
+      {/* Vehicle / job header */}
+      <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-lg font-bold text-gray-900">{job.job_number}</p>
+          <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-slate-100 text-slate-700">
+            {t(`jobs.statuses.${job.status}`)}
+          </span>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-gray-700">
+          <Truck className="w-4 h-4 text-gray-400" />
+          <span className="font-bold">{v?.registration_number}</span>
+          <span className="text-gray-500">{v?.make} {v?.model} {v?.year || ''}</span>
+        </div>
+        {(inspection?.description || job.description) && (
+          <p className="text-sm text-gray-600 mt-2 pt-2 border-t border-gray-100">
+            {inspection?.description || job.description}
+          </p>
+        )}
+      </div>
+
+      {/* Progress */}
+      {items.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-sm font-medium text-gray-600">{t('mechanic.job.progress')}</span>
+            <span className="text-sm font-bold text-green-700">{done}/{items.length} · {pct}%</span>
+          </div>
+          <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
+            <div className="h-full bg-green-500 transition-all" style={{ width: `${pct}%` }} />
+          </div>
+        </div>
+      )}
+
+      {/* Repair checklist */}
+      {items.length > 0 ? (
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="p-4 border-b border-gray-100">
+            <h3 className="font-semibold text-gray-900 text-sm">{t('mechanic.job.checklist')}</h3>
+            <p className="text-xs text-gray-500">{t('mechanic.job.checklistHint')}</p>
+          </div>
+          <div className="divide-y divide-gray-100">
+            {items.map((item, idx) => {
+              const sev = severityColors[item.severity] || severityColors.medium
+              return (
+                <div key={item.id} className="p-4">
+                  <div className="flex items-start gap-2 mb-2">
+                    <span className="text-xs font-bold text-gray-400 mt-0.5">#{idx + 1}</span>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${sev.bg} ${sev.text}`}>
+                          {(item.severity === 'high' || item.severity === 'critical') && (
+                            <AlertTriangle className="w-3 h-3 inline mr-0.5" />
+                          )}
+                          {t(`inspection.severities.${item.severity}`)}
+                        </span>
+                        {item.customer_approved === false && (
+                          <span className="text-xs text-red-600 font-medium">{t('customerView.declined')}</span>
+                        )}
+                      </div>
+                      <p className="text-sm font-medium text-gray-900">{item.problem_description}</p>
+                      {item.recommended_action && (
+                        <p className="text-xs text-blue-600 mt-0.5">{t('inspection.recommended')}: {item.recommended_action}</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-wrap pl-5">
+                    {['pending', 'in_progress', 'done'].map((s) => (
+                      <button
+                        key={s}
+                        onClick={() => setItemStatus(item, s)}
+                        className={`text-xs px-3 py-1.5 rounded-full font-medium transition ${
+                          (item.repair_status || 'pending') === s
+                            ? s === 'done' ? 'bg-green-600 text-white'
+                              : s === 'in_progress' ? 'bg-yellow-500 text-white'
+                              : 'bg-gray-500 text-white'
+                            : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                        }`}
+                      >
+                        {t(`inspection.repairStatuses.${s}`)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+          <Wrench className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+          <p className="text-gray-500 text-sm">{t('mechanic.job.noItems')}</p>
+        </div>
+      )}
+
+      {/* Current situation note */}
+      {inspection?.id && (
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <div className="flex items-center gap-2 mb-1">
+            <Wrench className="w-4 h-4 text-amber-600" />
+            <h3 className="font-semibold text-gray-900 text-sm">{t('mechanic.job.situation')}</h3>
+          </div>
+          <p className="text-xs text-gray-500 mb-3">{t('mechanic.job.situationHint')}</p>
+          <textarea
+            value={situation}
+            onChange={(e) => setSituation(e.target.value)}
+            rows={3}
+            placeholder={t('inspection.situationPlaceholder')}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none resize-none text-gray-900"
+          />
+          <div className="flex items-center justify-between mt-3 gap-3">
+            <span className="text-xs text-gray-400">
+              {inspection.repair_updated_at
+                ? `${t('inspection.situationLastUpdated')}: ${formatDate(inspection.repair_updated_at)}`
+                : ''}
+            </span>
+            <button
+              onClick={saveSituation}
+              disabled={savingSituation}
+              className="flex items-center gap-1.5 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm font-medium disabled:opacity-40 flex-shrink-0"
+            >
+              <Send className="w-4 h-4" /> {t('mechanic.job.postSituation')}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

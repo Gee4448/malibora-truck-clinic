@@ -208,6 +208,9 @@
     "selectPart": "Select Part",
     "selectService": "Select Service",
     "technicianName": "Technician Name",
+    "selectMechanic": "Select mechanic",
+    "noMechanics": "No mechanics yet. Add them in Settings first.",
+    "mechanicAssignHint": "The mechanic sees this job in their PIN portal.",
     "change": "Change",
     "itemAdded": "Item added",
     "itemRemoved": "Item removed",
@@ -613,6 +616,56 @@
     "poweredBy": "Powered by Malibora Truck Clinic",
     "allApproved": "All items approved!",
     "failedUpdate": "Failed to update"
+  },
+  "mechanic": {
+    "login": {
+      "portal": "Mechanic Portal",
+      "title": "Mechanic Sign In",
+      "subtitle": "Enter your personal PIN to see your jobs",
+      "enterPin": "Enter your PIN",
+      "invalid": "Wrong PIN. Please try again.",
+      "connectionError": "Can't reach the server. Check your connection and try again.",
+      "success": "Welcome!",
+      "notMechanic": "Not a mechanic? Go to the customer portal"
+    },
+    "jobs": {
+      "title": "My Jobs",
+      "subtitle": "Vehicles assigned to you",
+      "filter": { "active": "Active", "completed": "Completed" },
+      "empty": "No jobs here yet."
+    },
+    "job": {
+      "progress": "Repair progress",
+      "checklist": "Repair checklist",
+      "checklistHint": "Tap Done as you fix each item — the customer sees it live.",
+      "noItems": "No inspection items on this job yet.",
+      "situation": "Update the customer",
+      "situationHint": "Write the current situation of the vehicle for the customer.",
+      "postSituation": "Post update",
+      "situationPosted": "Update sent to the customer",
+      "notYours": "This job isn't assigned to you."
+    }
+  },
+  "mechanicsAdmin": {
+    "title": "Mechanics",
+    "add": "Add",
+    "hint": "Add each mechanic and give them a PIN. They sign in at /mechanic with just that PIN to see the jobs assigned to them.",
+    "empty": "No mechanics added yet.",
+    "inactive": "Inactive",
+    "deactivate": "Deactivate",
+    "activate": "Activate",
+    "addTitle": "Add Mechanic",
+    "editTitle": "Edit Mechanic",
+    "name": "Full name",
+    "phone": "Phone",
+    "pin": "PIN",
+    "pinKeep": "Leave blank to keep current PIN",
+    "pinPlaceholder": "e.g. 4821",
+    "pinHint": "At least 4 digits. Share it privately with the mechanic.",
+    "saved": "Mechanic saved",
+    "forbidden": "Only an owner or manager can manage mechanics.",
+    "nameRequired": "Name is required",
+    "pinTooShort": "PIN must be at least 4 digits"
   },
   "install": {
     "title": "Install Malibora App",

@@ -182,10 +182,14 @@ export default function ClientLogin() {
         </div>
       </div>
 
-      {/* Footer link to staff login */}
-      <div className="text-center pb-6">
+      {/* Footer links to staff + mechanic portals */}
+      <div className="text-center pb-6 flex items-center justify-center gap-3">
         <Link to="/admin/login" className="text-blue-200 text-xs hover:text-white transition-colors">
           {t('landing.staffLogin')}
+        </Link>
+        <span className="text-blue-300/50 text-xs">·</span>
+        <Link to="/mechanic" className="text-blue-200 text-xs hover:text-white transition-colors">
+          {t('mechanic.login.portal')}
         </Link>
       </div>
     </div>

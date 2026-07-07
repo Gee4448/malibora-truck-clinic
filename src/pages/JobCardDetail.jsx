@@ -20,6 +20,8 @@ export default function JobCardDetail() {
   const [showAddItem, setShowAddItem] = useState(false)
   const [showAssignTech, setShowAssignTech] = useState(false)
   const [techName, setTechName] = useState('')
+  const [techId, setTechId] = useState('')
+  const [mechanics, setMechanics] = useState([])
   const [itemType, setItemType] = useState('part')
   const [itemForm, setItemForm] = useState({
     part_id: '', labour_id: '', description: '', quantity: 1,
@@ -30,7 +32,13 @@ export default function JobCardDetail() {
     fetchJob()
     fetchParts()
     fetchLabourRates()
+    fetchMechanics()
   }, [id])
+
+  const fetchMechanics = async () => {
+    const { data } = await supabase.from('mechanics').select('id, name, active').eq('active', true).order('name')
+    setMechanics(data || [])
+  }
 
   const fetchJob = async () => {
     try {
@@ -115,11 +123,20 @@ export default function JobCardDetail() {
     }
   }
 
-  // Assign technician
+  // Assign a mechanic. Stores the mechanic id (so the mechanic portal can find
+  // this job) plus their name for display.
   const assignTechnician = async (e) => {
     e.preventDefault()
+    if (!techId) {
+      toast.error(t('jobs.selectMechanic'))
+      return
+    }
+    const picked = mechanics.find(m => m.id === techId)
     try {
-      await supabase.from('job_cards').update({ assigned_technician: techName }).eq('id', id)
+      await supabase.from('job_cards').update({
+        assigned_mechanic_id: techId,
+        assigned_technician: picked?.name || techName,
+      }).eq('id', id)
       toast.success(t('jobs.technicianAssigned'))
       setShowAssignTech(false)
       fetchJob()
@@ -390,7 +407,7 @@ export default function JobCardDetail() {
             </div>
           </div>
           {!isPreJobCard && job.status !== 'completed' && (
-            <button onClick={() => { setTechName(job.assigned_technician); setShowAssignTech(true) }}
+            <button onClick={() => { setTechName(job.assigned_technician); setTechId(job.assigned_mechanic_id || ''); setShowAssignTech(true) }}
               className="text-xs text-blue-600 hover:underline">{t('jobs.change')}</button>
           )}
         </div>
@@ -584,10 +601,19 @@ export default function JobCardDetail() {
             </div>
             <form onSubmit={assignTechnician} className="p-5 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('jobs.technicianName')} *</label>
-                <input type="text" value={techName} onChange={e => setTechName(e.target.value)} required
-                  placeholder={t('jobs.technicianName')}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('jobs.selectMechanic')} *</label>
+                {mechanics.length === 0 ? (
+                  <p className="text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-lg p-3">
+                    {t('jobs.noMechanics')}
+                  </p>
+                ) : (
+                  <select value={techId} onChange={e => setTechId(e.target.value)} required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                    <option value="">{t('jobs.selectMechanic')}</option>
+                    {mechanics.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                  </select>
+                )}
+                <p className="text-xs text-gray-400 mt-1.5">{t('jobs.mechanicAssignHint')}</p>
               </div>
               <div className="flex gap-3 pt-2">
                 <button type="submit" className="flex-1 py-2.5 bg-blue-700 text-white font-medium rounded-lg hover:bg-blue-800 transition">

@@ -4,10 +4,11 @@ import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import { Globe, User, Lock, Building, Save } from 'lucide-react'
 import toast from 'react-hot-toast'
+import MechanicsManager from '../components/admin/MechanicsManager'
 
 export default function Settings() {
   const { t, locale, switchLanguage } = useLanguage()
-  const { profile, user } = useAuth()
+  const { profile, user, isManager } = useAuth()
   const [profileForm, setProfileForm] = useState({
     full_name: profile?.full_name || '',
     phone: profile?.phone || '',
@@ -129,6 +130,9 @@ export default function Settings() {
           </button>
         </form>
       </div>
+
+      {/* Mechanics (owner/manager only) */}
+      {isManager && <MechanicsManager />}
 
       {/* Business Info */}
       <div className="bg-white rounded-xl border border-gray-200 p-5">
