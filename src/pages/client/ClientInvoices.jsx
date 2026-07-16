@@ -22,7 +22,7 @@ export default function ClientInvoices() {
       // cost/profit columns into the client's browser.
       const { data } = await supabase
         .from('invoices')
-        .select('id, invoice_number, invoice_type, status, total_amount, created_at, vehicles(registration_number), job_cards(job_number)')
+        .select('id, invoice_number, invoice_type, status, total_amount, created_at, job_cards(job_number, vehicles(registration_number))')
         .eq('customer_id', customer.id)
         .in('invoice_type', ['proforma', 'final'])
         .order('created_at', { ascending: false })
@@ -107,7 +107,7 @@ export default function ClientInvoices() {
               </div>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-gray-500">{inv.vehicles?.registration_number} · {inv.job_cards?.job_number}</p>
+                  <p className="text-xs text-gray-500">{inv.job_cards?.vehicles?.registration_number} · {inv.job_cards?.job_number}</p>
                   <p className="text-xs text-gray-400 mt-0.5">{formatDate(inv.created_at)}</p>
                 </div>
                 <div className="flex items-center gap-2">

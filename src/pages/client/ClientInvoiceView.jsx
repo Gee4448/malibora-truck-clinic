@@ -25,7 +25,7 @@ export default function ClientInvoiceView() {
       // profit columns (internal_cost_*, profit_*) to the client portal.
       const { data: inv } = await supabase
         .from('invoices')
-        .select('id, invoice_number, invoice_type, status, job_card_id, subtotal_parts, subtotal_labour, subtotal_additional, vat_amount, discount_amount, total_amount, deposit_percentage, deposit_amount, customer_agreed_at, paid_at, payment_method, created_at, customers(full_name, phone, company_name, address), vehicles(registration_number, make, model), job_cards(job_number)')
+        .select('id, invoice_number, invoice_type, status, job_card_id, subtotal_parts, subtotal_labour, subtotal_additional, vat_amount, discount_amount, total_amount, deposit_percentage, deposit_amount, customer_agreed_at, paid_at, payment_method, created_at, customers(full_name, phone, company_name, address), job_cards(job_number, vehicles(registration_number, make, model))')
         .eq('id', id)
         .single()
 
@@ -135,8 +135,8 @@ export default function ClientInvoiceView() {
           </div>
           <div>
             <p className="text-gray-400 text-xs">{t('customerView.vehicle')}</p>
-            <p className="font-medium text-gray-900">{invoice.vehicles?.registration_number}</p>
-            <p className="text-xs text-gray-500">{invoice.vehicles?.make} {invoice.vehicles?.model}</p>
+            <p className="font-medium text-gray-900">{invoice.job_cards?.vehicles?.registration_number}</p>
+            <p className="text-xs text-gray-500">{invoice.job_cards?.vehicles?.make} {invoice.job_cards?.vehicles?.model}</p>
           </div>
           <div>
             <p className="text-gray-400 text-xs">{t('invoices.job')}</p>
