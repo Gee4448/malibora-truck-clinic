@@ -3,6 +3,11 @@ import { supabase } from '../lib/supabase'
 
 const ClientAuthContext = createContext()
 
+// Migration 010 restricts the anon role to these customers columns; selecting
+// '*' now fails with "permission denied", so every read must use this list.
+const CUSTOMER_COLUMNS =
+  'id, full_name, phone, email, company_name, address, location, status, registered_via, created_at'
+
 // Fallback used only when migration 004 has not been applied yet, so a deploy
 // without the migration still gives a usable (legacy, phone-only, no-password)
 // login path. Remove once 004 is everywhere.
@@ -10,7 +15,7 @@ async function legacyLogin(phone) {
   const normalized = phone.replace(/\s+/g, '').replace(/^0/, '+255')
   const { data, error } = await supabase
     .from('customers')
-    .select('*')
+    .select(CUSTOMER_COLUMNS)
     .or(`phone.eq.${phone},phone.eq.${normalized}`)
     .limit(1)
     .single()
@@ -33,7 +38,7 @@ async function legacyRegister(normalizedPhone, customerPayload, vehiclesPayload)
   const { data: customer, error: custErr } = await supabase
     .from('customers')
     .insert({ ...customerPayload, status: 'pending', registered_via: 'online' })
-    .select()
+    .select(CUSTOMER_COLUMNS)
     .single()
   if (custErr) throw custErr
 
@@ -69,7 +74,7 @@ export function ClientAuthProvider({ children }) {
     try {
       const { data, error } = await supabase
         .from('customers')
-        .select('*')
+        .select(CUSTOMER_COLUMNS)
         .eq('id', customerId)
         .single()
       if (error || !data || data.status === 'rejected') {
