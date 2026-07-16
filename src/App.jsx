@@ -209,7 +209,13 @@ function App() {
             position="top-right"
             toastOptions={{
               duration: 3000,
-              style: { borderRadius: '12px', padding: '12px 16px', fontSize: '14px' },
+              style: {
+                borderRadius: '14px',
+                padding: '12px 16px',
+                fontSize: '14px',
+                boxShadow: '0 10px 30px -8px rgb(0 0 0 / 0.2)',
+                border: '1px solid rgb(0 0 0 / 0.05)',
+              },
               success: { iconTheme: { primary: '#059669', secondary: '#fff' } },
               error: { iconTheme: { primary: '#dc2626', secondary: '#fff' } },
             }}

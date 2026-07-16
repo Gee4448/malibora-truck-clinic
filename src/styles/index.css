@@ -15,6 +15,13 @@
   --color-gray-500: #6b7280;
   --color-gray-700: #374151;
   --color-gray-900: #111827;
+
+  /* Motion tokens */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast: 180ms;
+  --dur-base: 300ms;
+  --dur-slow: 500ms;
 }
 
 /* Base styles */
@@ -22,6 +29,7 @@ body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background-color: var(--color-gray-50);
   color: var(--color-gray-900);
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* PWA install prompt */
@@ -49,7 +57,10 @@ body {
   }
 }
 
-/* Animations */
+/* ============================================================
+   Animation system
+   ============================================================ */
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-10px); }
   to { opacity: 1; transform: translateY(0); }
@@ -75,6 +86,174 @@ body {
 
 .animate-slide-up {
   animation: slideUp 0.4s ease-out;
+}
+
+/* Fade + rise — the default page/card entrance */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp var(--dur-slow) var(--ease-out-expo) both;
+}
+
+/* Pop — icons, badges, hero elements */
+@keyframes popIn {
+  0% { opacity: 0; transform: scale(0.6); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.animate-pop-in {
+  animation: popIn 0.45s var(--ease-spring) both;
+}
+
+/* Scale-in for cards/sheets */
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.4s var(--ease-out-expo) both;
+}
+
+/* Gentle float — decorative blobs */
+@keyframes float {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-14px) scale(1.04); }
+}
+
+.animate-float {
+  animation: float 7s ease-in-out infinite;
+}
+
+.animate-float-delayed {
+  animation: float 9s ease-in-out 1.2s infinite;
+}
+
+/* Shimmer — skeleton loading */
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    100deg,
+    var(--color-gray-200) 40%,
+    var(--color-gray-100) 50%,
+    var(--color-gray-200) 60%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+  border-radius: 0.5rem;
+}
+
+/* Staggered children — apply to a container; direct children rise in sequence */
+.stagger-children > * {
+  animation: fadeInUp var(--dur-slow) var(--ease-out-expo) both;
+}
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 60ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 120ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 180ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 240ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 300ms; }
+.stagger-children > *:nth-child(7) { animation-delay: 360ms; }
+.stagger-children > *:nth-child(8) { animation-delay: 420ms; }
+.stagger-children > *:nth-child(n + 9) { animation-delay: 480ms; }
+
+/* Interactive lift — cards that navigate somewhere */
+.card-lift {
+  transition:
+    transform var(--dur-fast) var(--ease-out-expo),
+    box-shadow var(--dur-fast) var(--ease-out-expo),
+    border-color var(--dur-fast) ease;
+  cursor: pointer;
+}
+.card-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -8px rgb(30 64 175 / 0.18);
+}
+.card-lift:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 2px 8px -4px rgb(30 64 175 / 0.15);
+  transition-duration: 80ms;
+}
+
+/* Tactile press — buttons and tap targets */
+.press {
+  transition: transform var(--dur-fast) var(--ease-spring);
+}
+.press:active {
+  transform: scale(0.96);
+  transition-duration: 80ms;
+}
+
+/* Glass surface — sticky headers */
+.glass-header {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Bottom-nav icon spring on activation */
+@keyframes navBounce {
+  0% { transform: translateY(0) scale(1); }
+  40% { transform: translateY(-3px) scale(1.15); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+.nav-tab-active svg {
+  animation: navBounce 0.45s var(--ease-spring);
+}
+
+/* Animated dot under the active bottom tab */
+.nav-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 9999px;
+  background: currentColor;
+  opacity: 0;
+  transform: scale(0);
+  transition: opacity var(--dur-base) ease, transform var(--dur-base) var(--ease-spring);
+}
+.nav-tab-active .nav-dot {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Spinner with softer look */
+@keyframes spinnerPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+.spinner-pulse {
+  animation: spinnerPulse 1.2s ease-in-out infinite;
+}
+
+/* Slow gradient drift for hero panels */
+@keyframes gradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradientShift 8s ease infinite;
+}
+
+/* Reduced motion: keep everything visible, drop the movement */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Safe area for bottom navigation (mobile) */

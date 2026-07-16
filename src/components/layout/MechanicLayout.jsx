@@ -15,7 +15,7 @@ export default function MechanicLayout() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-slate-800 text-white sticky top-0 z-40">
+      <header className="glass-header bg-slate-800/95 text-white sticky top-0 z-40 shadow-lg shadow-slate-900/10">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="bg-amber-500 rounded-lg p-1.5">
@@ -41,7 +41,7 @@ export default function MechanicLayout() {
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 py-5">
+      <main className="max-w-3xl mx-auto px-4 py-5 animate-fade-in-up">
         <Outlet />
       </main>
     </div>

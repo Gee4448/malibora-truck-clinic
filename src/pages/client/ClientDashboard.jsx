@@ -7,6 +7,8 @@ import {
   Truck, ClipboardList, FileText, ArrowRight, ClipboardCheck,
   Clock, CheckCircle2, Wrench, AlertTriangle, Send
 } from 'lucide-react'
+import CountUp from '../../components/common/CountUp'
+import { DashboardSkeleton } from '../../components/common/Skeleton'
 
 export default function ClientDashboard() {
   const { t } = useLanguage()
@@ -77,29 +79,37 @@ export default function ClientDashboard() {
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full"></div>
-      </div>
-    )
+    return <DashboardSkeleton />
   }
 
+  const statCards = [
+    { to: '/client/vehicles', icon: Truck, iconBg: 'bg-blue-100', iconColor: 'text-blue-600', value: stats.vehicles, label: t('client.dashboard.vehicles') },
+    { to: '/client/services', icon: ClipboardList, iconBg: 'bg-yellow-100', iconColor: 'text-yellow-600', value: stats.activeJobs, label: t('client.dashboard.activeServices') },
+    { to: '/client/services', icon: ClipboardCheck, iconBg: 'bg-purple-100', iconColor: 'text-purple-600', value: stats.inspections, label: t('client.dashboard.inspections') },
+    { to: '/client/invoices', icon: FileText, iconBg: 'bg-green-100', iconColor: 'text-green-600', value: stats.pendingInvoices, label: t('client.dashboard.pendingInvoices') },
+  ]
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 stagger-children">
       {/* Welcome */}
-      <div className="bg-gradient-to-r from-blue-700 to-blue-600 rounded-2xl p-5 text-white">
-        <h1 className="text-lg font-bold">
-          {t('client.dashboard.welcome')}, {customer?.full_name?.split(' ')[0]}!
-        </h1>
-        <p className="text-blue-100 text-sm mt-1">
-          {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
-        </p>
+      <div className="relative overflow-hidden bg-gradient-to-r from-blue-800 via-blue-600 to-blue-700 animate-gradient rounded-2xl p-5 text-white">
+        {/* decorative floating shapes */}
+        <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/10 animate-float pointer-events-none" />
+        <div className="absolute -bottom-10 right-16 w-24 h-24 rounded-full bg-white/5 animate-float-delayed pointer-events-none" />
+        <div className="relative">
+          <h1 className="text-lg font-bold">
+            {t('client.dashboard.welcome')}, {customer?.full_name?.split(' ')[0]}!
+          </h1>
+          <p className="text-blue-100 text-sm mt-1">
+            {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
+          </p>
+        </div>
       </div>
 
       {/* Report Problem Button */}
       <Link
         to="/client/new-request"
-        className="flex items-center gap-3 bg-white rounded-xl border-2 border-dashed border-blue-300 p-4 hover:border-blue-500 hover:bg-blue-50 transition-colors active:scale-[0.99]"
+        className="card-lift flex items-center gap-3 bg-white rounded-xl border-2 border-dashed border-blue-300 p-4 hover:border-blue-500 hover:bg-blue-50"
       >
         <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
           <Send className="w-5 h-5 text-blue-600" />
@@ -112,41 +122,24 @@ export default function ClientDashboard() {
       </Link>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <Link to="/client/vehicles" className="bg-white rounded-xl p-4 border border-gray-200 text-center hover:shadow-md transition-shadow">
-          <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-2">
-            <Truck className="w-5 h-5 text-blue-600" />
-          </div>
-          <p className="text-2xl font-bold text-gray-900">{stats.vehicles}</p>
-          <p className="text-[10px] text-gray-500 mt-0.5">{t('client.dashboard.vehicles')}</p>
-        </Link>
-        <Link to="/client/services" className="bg-white rounded-xl p-4 border border-gray-200 text-center hover:shadow-md transition-shadow">
-          <div className="w-10 h-10 bg-yellow-100 rounded-xl flex items-center justify-center mx-auto mb-2">
-            <ClipboardList className="w-5 h-5 text-yellow-600" />
-          </div>
-          <p className="text-2xl font-bold text-gray-900">{stats.activeJobs}</p>
-          <p className="text-[10px] text-gray-500 mt-0.5">{t('client.dashboard.activeServices')}</p>
-        </Link>
-        <Link to="/client/services" className="bg-white rounded-xl p-4 border border-gray-200 text-center hover:shadow-md transition-shadow">
-          <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-2">
-            <ClipboardCheck className="w-5 h-5 text-purple-600" />
-          </div>
-          <p className="text-2xl font-bold text-gray-900">{stats.inspections}</p>
-          <p className="text-[10px] text-gray-500 mt-0.5">{t('client.dashboard.inspections')}</p>
-        </Link>
-        <Link to="/client/invoices" className="bg-white rounded-xl p-4 border border-gray-200 text-center hover:shadow-md transition-shadow">
-          <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-2">
-            <FileText className="w-5 h-5 text-green-600" />
-          </div>
-          <p className="text-2xl font-bold text-gray-900">{stats.pendingInvoices}</p>
-          <p className="text-[10px] text-gray-500 mt-0.5">{t('client.dashboard.pendingInvoices')}</p>
-        </Link>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 stagger-children">
+        {statCards.map((card, i) => (
+          <Link key={i} to={card.to} className="card-lift bg-white rounded-xl p-4 border border-gray-200 text-center">
+            <div className={`w-10 h-10 ${card.iconBg} rounded-xl flex items-center justify-center mx-auto mb-2`}>
+              <card.icon className={`w-5 h-5 ${card.iconColor}`} />
+            </div>
+            <p className="text-2xl font-bold text-gray-900">
+              <CountUp value={card.value} />
+            </p>
+            <p className="text-[10px] text-gray-500 mt-0.5">{card.label}</p>
+          </Link>
+        ))}
       </div>
 
       {/* Latest Invoice (if any) */}
       {latestInvoice && (
         <Link to={`/client/invoices/${latestInvoice.id}`}
-          className="block bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl p-4 text-white hover:shadow-lg active:scale-[0.99] transition">
+          className="card-lift block bg-gradient-to-r from-green-600 to-emerald-600 animate-gradient rounded-xl p-4 text-white">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[10px] uppercase tracking-wider text-green-100">{t('client.dashboard.latestInvoice')}</p>

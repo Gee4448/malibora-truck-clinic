@@ -7,11 +7,11 @@ export default function Header({ onMenuToggle }) {
   const { profile } = useAuth()
 
   return (
-    <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 lg:px-6">
+    <header className="glass-header h-16 bg-white/85 border-b border-gray-200 flex items-center justify-between px-4 lg:px-6 sticky top-0 z-30">
       {/* Left: Menu toggle — always visible; the sidebar is a drawer on every viewport. */}
       <button
         onClick={onMenuToggle}
-        className="p-2 rounded-lg hover:bg-gray-100"
+        className="p-2 rounded-lg hover:bg-gray-100 press cursor-pointer"
         aria-label="Open menu"
       >
         <Menu className="w-5 h-5 text-gray-600" />
@@ -22,7 +22,7 @@ export default function Header({ onMenuToggle }) {
         {/* Language toggle */}
         <button
           onClick={() => switchLanguage(locale === 'en' ? 'sw' : 'en')}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-100 hover:bg-gray-200 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-100 hover:bg-gray-200 transition-colors press cursor-pointer"
           title={locale === 'en' ? 'Badilisha kwa Kiswahili' : 'Switch to English'}
         >
           <Globe className="w-4 h-4" />
@@ -30,8 +30,9 @@ export default function Header({ onMenuToggle }) {
         </button>
 
         {/* Notifications */}
-        <button className="relative p-2 rounded-lg hover:bg-gray-100">
+        <button className="relative p-2 rounded-lg hover:bg-gray-100 press cursor-pointer" aria-label="Notifications">
           <Bell className="w-5 h-5 text-gray-600" />
+          <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-ping opacity-75"></span>
           <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
         </button>
 

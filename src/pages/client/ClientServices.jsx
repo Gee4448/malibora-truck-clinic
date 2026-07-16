@@ -7,6 +7,7 @@ import {
   ClipboardList, Clock, CheckCircle2, Wrench,
   AlertTriangle, XCircle, ArrowRight, Send
 } from 'lucide-react'
+import { ListSkeleton } from '../../components/common/Skeleton'
 
 export default function ClientServices() {
   const { t } = useLanguage()
@@ -53,11 +54,7 @@ export default function ClientServices() {
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full"></div>
-      </div>
-    )
+    return <ListSkeleton rows={4} />
   }
 
   return (

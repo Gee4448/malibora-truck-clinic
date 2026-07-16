@@ -1,4 +1,4 @@
-import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { useClient } from '../../contexts/ClientAuthContext'
 import {
@@ -9,6 +9,7 @@ export default function ClientLayout() {
   const { t, locale, switchLanguage } = useLanguage()
   const { customer, logout } = useClient()
   const navigate = useNavigate()
+  const location = useLocation()
 
   const handleLogout = () => {
     logout()
@@ -26,7 +27,7 @@ export default function ClientLayout() {
   return (
     <div className="min-h-screen bg-gray-50 pb-20 lg:pb-0">
       {/* Top Header */}
-      <header className="bg-blue-800 text-white sticky top-0 z-40">
+      <header className="glass-header bg-blue-800/95 text-white sticky top-0 z-40 shadow-lg shadow-blue-900/10">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <Truck className="w-7 h-7" />
@@ -44,8 +45,8 @@ export default function ClientLayout() {
                 to={tab.to}
                 end={tab.end}
                 className={({ isActive }) =>
-                  `flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                    isActive ? 'bg-white/20 text-white' : 'text-blue-200 hover:bg-white/10 hover:text-white'
+                  `flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 press ${
+                    isActive ? 'bg-white/20 text-white shadow-sm' : 'text-blue-200 hover:bg-white/10 hover:text-white'
                   }`
                 }
               >
@@ -58,14 +59,15 @@ export default function ClientLayout() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => switchLanguage(locale === 'en' ? 'sw' : 'en')}
-              className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium bg-white/10 hover:bg-white/20 transition-colors"
+              className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium bg-white/10 hover:bg-white/20 transition-colors press cursor-pointer"
             >
               <Globe className="w-3.5 h-3.5" />
               {locale === 'en' ? 'SW' : 'EN'}
             </button>
             <button
               onClick={handleLogout}
-              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
+              aria-label={t('nav.logout')}
+              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors press cursor-pointer"
             >
               <LogOut className="w-4 h-4" />
             </button>
@@ -73,13 +75,13 @@ export default function ClientLayout() {
         </div>
       </header>
 
-      {/* Page Content */}
-      <main className="max-w-3xl mx-auto px-4 py-5">
+      {/* Page Content — key on pathname so each tab change replays the entrance */}
+      <main key={location.pathname} className="max-w-3xl mx-auto px-4 py-5 animate-fade-in-up">
         <Outlet />
       </main>
 
       {/* Bottom Tab Navigation (mobile) */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40 lg:hidden safe-area-bottom">
+      <nav className="fixed bottom-0 left-0 right-0 glass-header bg-white/90 border-t border-gray-200 z-40 lg:hidden safe-area-bottom shadow-[0_-4px_20px_-8px_rgb(0_0_0/0.1)]">
         <div className="max-w-3xl mx-auto flex">
           {tabs.map((tab) => (
             <NavLink
@@ -87,13 +89,14 @@ export default function ClientLayout() {
               to={tab.to}
               end={tab.end}
               className={({ isActive }) =>
-                `flex-1 flex flex-col items-center gap-0.5 py-2 pt-2.5 text-[10px] font-medium transition-colors ${
-                  isActive ? 'text-blue-700' : 'text-gray-400'
+                `flex-1 flex flex-col items-center gap-0.5 py-2 pt-2.5 text-[10px] font-medium transition-colors duration-200 ${
+                  isActive ? 'text-blue-700 nav-tab-active' : 'text-gray-400 hover:text-gray-600'
                 }`
               }
             >
               <tab.icon className="w-5 h-5" />
               {tab.label}
+              <span className="nav-dot" />
             </NavLink>
           ))}
         </div>

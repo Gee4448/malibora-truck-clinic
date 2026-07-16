@@ -4,6 +4,7 @@ import { useLanguage } from '../../contexts/LanguageContext'
 import { useMechanic } from '../../contexts/MechanicAuthContext'
 import { supabase, formatDate } from '../../lib/supabase'
 import { Truck, ClipboardList, ArrowRight, CheckCircle2, Wrench } from 'lucide-react'
+import { ListSkeleton } from '../../components/common/Skeleton'
 
 const ACTIVE = ['customer_request', 'pre_job_card', 'pending_approval', 'open', 'in_progress', 'waiting_parts']
 
@@ -45,11 +46,7 @@ export default function MechanicJobs() {
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin w-8 h-8 border-4 border-amber-600 border-t-transparent rounded-full"></div>
-      </div>
-    )
+    return <ListSkeleton rows={4} />
   }
 
   return (

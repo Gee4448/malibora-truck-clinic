@@ -38,9 +38,13 @@ export default function ClientLogin() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-700 flex flex-col">
+    <div className="relative min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-700 animate-gradient flex flex-col overflow-hidden">
+      {/* Decorative floating shapes */}
+      <div className="absolute top-10 -left-16 w-56 h-56 rounded-full bg-blue-500/20 blur-2xl animate-float pointer-events-none" />
+      <div className="absolute bottom-24 -right-20 w-72 h-72 rounded-full bg-blue-400/15 blur-2xl animate-float-delayed pointer-events-none" />
+
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-4">
+      <div className="relative flex items-center justify-between px-4 py-4 animate-fade-in">
         <div className="flex items-center gap-2">
           <div className="bg-white rounded-xl p-2">
             <Truck className="w-6 h-6 text-blue-700" />
@@ -60,10 +64,10 @@ export default function ClientLogin() {
       </div>
 
       {/* Login Card */}
-      <div className="flex-1 flex items-center justify-center px-4 pb-12">
-        <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 w-full max-w-sm">
+      <div className="relative flex-1 flex items-center justify-center px-4 pb-12">
+        <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 w-full max-w-sm animate-scale-in">
           <div className="text-center mb-6">
-            <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pop-in">
               <Phone className="w-8 h-8 text-blue-700" />
             </div>
             <h2 className="text-xl font-bold text-gray-900">{t('client.login.title')}</h2>
@@ -110,7 +114,7 @@ export default function ClientLogin() {
             </div>
 
             {error === 'pending' && (
-              <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+              <div className="animate-scale-in flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
                 <Clock className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm font-medium text-amber-800">{t('client.login.statusPending')}</p>
@@ -120,7 +124,7 @@ export default function ClientLogin() {
             )}
 
             {error === 'rejected' && (
-              <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl">
+              <div className="animate-scale-in flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl">
                 <XCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm font-medium text-red-800">{t('client.login.statusRejected')}</p>
@@ -130,21 +134,21 @@ export default function ClientLogin() {
             )}
 
             {error === 'wrong_password' && (
-              <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl">
+              <div className="animate-scale-in flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl">
                 <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
                 <p className="text-sm text-red-700">{t('client.login.wrongPassword')}</p>
               </div>
             )}
 
             {error === 'not_found' && (
-              <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl">
+              <div className="animate-scale-in flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl">
                 <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
                 <p className="text-sm text-red-700">{t('client.login.notFound')}</p>
               </div>
             )}
 
             {error === 'connection' && (
-              <div className="flex items-center gap-2 p-3 bg-orange-50 border border-orange-200 rounded-xl">
+              <div className="animate-scale-in flex items-center gap-2 p-3 bg-orange-50 border border-orange-200 rounded-xl">
                 <WifiOff className="w-4 h-4 text-orange-500 flex-shrink-0" />
                 <p className="text-sm text-orange-700">{t('client.login.connectionError')}</p>
               </div>
@@ -153,7 +157,7 @@ export default function ClientLogin() {
             <button
               type="submit"
               disabled={!phone.trim() || loading}
-              className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-blue-700 text-white font-medium rounded-xl hover:bg-blue-800 transition disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98]"
+              className="press w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-blue-700 text-white font-medium rounded-xl hover:bg-blue-800 hover:shadow-lg hover:shadow-blue-700/30 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
               {loading ? (
                 <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full" />
@@ -183,7 +187,7 @@ export default function ClientLogin() {
       </div>
 
       {/* Footer links to staff + mechanic portals */}
-      <div className="text-center pb-6 flex items-center justify-center gap-3">
+      <div className="relative text-center pb-6 flex items-center justify-center gap-3 animate-fade-in">
         <Link to="/admin/login" className="text-blue-200 text-xs hover:text-white transition-colors">
           {t('landing.staffLogin')}
         </Link>

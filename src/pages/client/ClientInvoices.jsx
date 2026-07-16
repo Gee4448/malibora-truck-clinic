@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { useClient } from '../../contexts/ClientAuthContext'
 import { supabase, formatTZS, formatDate } from '../../lib/supabase'
-import { FileText, ArrowRight, CheckCircle2 } from 'lucide-react'
+import { FileText, ArrowRight } from 'lucide-react'
+import { ListSkeleton } from '../../components/common/Skeleton'
 
 export default function ClientInvoices() {
   const { t } = useLanguage()
@@ -53,11 +54,7 @@ export default function ClientInvoices() {
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full"></div>
-      </div>
-    )
+    return <ListSkeleton rows={4} />
   }
 
   return (

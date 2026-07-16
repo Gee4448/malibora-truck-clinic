@@ -42,15 +42,15 @@ export default function Sidebar({ isOpen, onClose }) {
       {/* Overlay — always visible when drawer is open, on every screen size. */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40"
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 animate-fade-in"
           onClick={onClose}
         />
       )}
 
       {/* Sidebar — drawer at every breakpoint, hidden until the user opens it. */}
       <aside
-        className={`fixed top-0 left-0 h-full w-64 bg-white border-r border-gray-200 z-50 transform transition-transform duration-300 ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
+        className={`fixed top-0 left-0 h-full w-64 bg-white border-r border-gray-200 z-50 transform transition-transform duration-300 [transition-timing-function:var(--ease-out-expo)] flex flex-col ${
+          isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
         }`}
       >
         {/* Logo */}
@@ -69,7 +69,7 @@ export default function Sidebar({ isOpen, onClose }) {
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto py-4 px-3">
-          <ul className="space-y-1">
+          <ul className={`space-y-1 ${isOpen ? 'stagger-children' : ''}`}>
             {navItems.map((item) => (
               <li key={item.to}>
                 <NavLink
@@ -77,10 +77,10 @@ export default function Sidebar({ isOpen, onClose }) {
                   end={item.end}
                   onClick={onClose}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                    `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 press ${
                       isActive
                         ? 'bg-blue-50 text-blue-700 border-r-3 border-blue-700'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 hover:translate-x-0.5'
                     }`
                   }
                 >
