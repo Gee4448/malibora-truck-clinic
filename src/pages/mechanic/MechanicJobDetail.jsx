@@ -136,7 +136,7 @@ export default function MechanicJobDetail() {
           <span className="text-gray-500">{v?.make} {v?.model} {v?.year || ''}</span>
         </div>
         {(inspection?.description || job.description) && (
-          <p className="text-sm text-gray-600 mt-2 pt-2 border-t border-gray-100">
+          <p className="text-sm text-gray-600 mt-2 pt-2 border-t border-gray-100 whitespace-pre-line">
             {inspection?.description || job.description}
           </p>
         )}

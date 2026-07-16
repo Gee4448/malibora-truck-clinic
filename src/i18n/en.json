@@ -875,7 +875,16 @@
       "submit": "Submit Request",
       "success": "Request submitted!",
       "noVehicles": "Please add a vehicle first",
-      "fillRequired": "Please fill in all required fields"
+      "fillRequired": "Please fill in all required fields",
+      "selectCategory": "Vehicle Category",
+      "categoryHint": "Pick the type so we show you the right systems",
+      "selectParts": "Which parts have a problem?",
+      "partsHint": "Tap a system to open it, then tick the parts. You can select more than one.",
+      "selectedParts": "Selected parts",
+      "clearAll": "Clear all",
+      "otherNotes": "Anything else? (optional)",
+      "otherNotesPlaceholder": "If something is not on the list, describe it briefly",
+      "selectAtLeastOne": "Please select at least one part or describe the problem"
     },
     "vehicles": {
       "title": "My Vehicles",

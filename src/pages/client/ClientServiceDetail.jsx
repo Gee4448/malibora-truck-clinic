@@ -182,7 +182,7 @@ export default function ClientServiceDetail() {
       {(inspection?.description || jobCard.description) && (
         <div className="bg-white rounded-xl border border-gray-200 p-4">
           <h3 className="text-xs font-semibold text-gray-400 mb-1">{t('customerView.yourComplaint')}</h3>
-          <p className="text-sm text-gray-800">{inspection?.description || jobCard.description}</p>
+          <p className="text-sm text-gray-800 whitespace-pre-line">{inspection?.description || jobCard.description}</p>
         </div>
       )}
 

@@ -875,7 +875,16 @@
       "submit": "Wasilisha Ombi",
       "success": "Ombi limewasilishwa!",
       "noVehicles": "Tafadhali ongeza gari kwanza",
-      "fillRequired": "Tafadhali jaza sehemu zote zinazohitajika"
+      "fillRequired": "Tafadhali jaza sehemu zote zinazohitajika",
+      "selectCategory": "Aina ya Gari",
+      "categoryHint": "Chagua aina ili tukuonyeshe mifumo inayohusika",
+      "selectParts": "Sehemu gani zina tatizo?",
+      "partsHint": "Gusa mfumo kuufungua, kisha weka alama kwenye sehemu. Unaweza kuchagua zaidi ya moja.",
+      "selectedParts": "Sehemu ulizochagua",
+      "clearAll": "Futa vyote",
+      "otherNotes": "Kuna kitu kingine? (hiari)",
+      "otherNotesPlaceholder": "Kama tatizo halipo kwenye orodha, eleza kwa ufupi",
+      "selectAtLeastOne": "Tafadhali chagua angalau sehemu moja au eleza tatizo"
     },
     "vehicles": {
       "title": "Magari Yangu",
