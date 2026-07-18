@@ -95,7 +95,9 @@ body {
 }
 
 .animate-fade-in-up {
-  animation: fadeInUp var(--dur-slow) var(--ease-out-expo) both;
+  /* `backwards`, not `both`: a lingering transform on <main> would make it
+     the containing block for fixed-position modals, clipping them off-screen */
+  animation: fadeInUp var(--dur-slow) var(--ease-out-expo) backwards;
 }
 
 /* Pop — icons, badges, hero elements */
@@ -152,7 +154,8 @@ body {
 
 /* Staggered children — apply to a container; direct children rise in sequence */
 .stagger-children > * {
-  animation: fadeInUp var(--dur-slow) var(--ease-out-expo) both;
+  /* `backwards` for the same reason as .animate-fade-in-up above */
+  animation: fadeInUp var(--dur-slow) var(--ease-out-expo) backwards;
 }
 .stagger-children > *:nth-child(1) { animation-delay: 0ms; }
 .stagger-children > *:nth-child(2) { animation-delay: 60ms; }
