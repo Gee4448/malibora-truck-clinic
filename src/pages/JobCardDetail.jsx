@@ -176,8 +176,6 @@ export default function JobCardDetail() {
         ...itemForm,
         part_id: partId,
         description: part.name,
-        cost_price: part.cost_price,
-        selling_price: part.selling_price,
       })
     }
   }
@@ -189,8 +187,6 @@ export default function JobCardDetail() {
         ...itemForm,
         labour_id: labourId,
         description: labour.service_name,
-        cost_price: labour.cost_rate,
-        selling_price: labour.selling_rate,
         quantity: labour.estimated_hours,
       })
     }
@@ -650,7 +646,7 @@ export default function JobCardDetail() {
                     <option value="">{t('jobs.selectPart')}</option>
                     {parts.map(p => (
                       <option key={p.id} value={p.id}>
-                        {p.name} (Stock: {p.quantity_in_stock}) - {formatTZS(p.selling_price)}
+                        {p.name} (Stock: {p.quantity_in_stock})
                       </option>
                     ))}
                   </select>
@@ -664,7 +660,7 @@ export default function JobCardDetail() {
                     <option value="">{t('jobs.selectService')}</option>
                     {labourRates.map(l => (
                       <option key={l.id} value={l.id}>
-                        {l.service_name} - {formatTZS(l.selling_rate)}
+                        {l.service_name}
                       </option>
                     ))}
                   </select>

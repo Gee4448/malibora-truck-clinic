@@ -5,6 +5,49 @@ import { Plus, Eye, Download, Search, X, ClipboardCheck } from 'lucide-react'
 import { generateHandoverPDF } from '../lib/pdf'
 import toast from 'react-hot-toast'
 
+// Numbered add-one-at-a-time list input; entries are joined into the
+// existing text columns on save, so no schema change is needed.
+function ItemListInput({ label, required, items, onChange, placeholder, addLabel }) {
+  const [draft, setDraft] = useState('')
+  const add = () => {
+    const value = draft.trim()
+    if (!value) return
+    onChange([...items, value])
+    setDraft('')
+  }
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">{label}{required && ' *'}</label>
+      {items.length > 0 && (
+        <ol className="mb-2 space-y-1">
+          {items.map((item, i) => (
+            <li key={i} className="flex items-start gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-sm">
+              <span className="text-gray-400 font-medium">{i + 1}.</span>
+              <span className="flex-1">{item}</span>
+              <button type="button" onClick={() => onChange(items.filter((_, x) => x !== i))}
+                className="p-0.5 rounded hover:bg-gray-200 text-gray-400 hover:text-red-500">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </li>
+          ))}
+        </ol>
+      )}
+      <div className="flex gap-2">
+        <input type="text" value={draft} onChange={e => setDraft(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); add() } }}
+          placeholder={placeholder}
+          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+        <button type="button" onClick={add}
+          className="flex items-center gap-1 px-3 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition text-sm font-medium">
+          <Plus className="w-4 h-4" /> {addLabel}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+const numberItems = (items) => items.map((s, i) => `${i + 1}. ${s}`).join('\n')
+
 export default function Handover() {
   const { t } = useLanguage()
   const [handovers, setHandovers] = useState([])
@@ -14,11 +57,13 @@ export default function Handover() {
   const [showForm, setShowForm] = useState(false)
   const [showDetail, setShowDetail] = useState(null)
   const [form, setForm] = useState({
-    job_card_id: '', work_summary: '', parts_summary: '',
-    recommendations: '', next_service_date: '', next_service_mileage: '',
+    job_card_id: '', next_service_date: '', next_service_mileage: '',
     mileage_out: '', fuel_level_out: '', received_by: '',
     warranty_parts_days: '30', warranty_labour_days: '7', notes: '',
   })
+  const [workItems, setWorkItems] = useState([])
+  const [partsItems, setPartsItems] = useState([])
+  const [recItems, setRecItems] = useState([])
 
   useEffect(() => {
     fetchHandovers()
@@ -68,15 +113,16 @@ export default function Handover() {
     e.preventDefault()
     const job = completedJobs.find(j => j.id === form.job_card_id)
     if (!job) return toast.error(t('handover.completedJob'))
+    if (workItems.length === 0) return toast.error(t('handover.workItemsRequired'))
 
     try {
       const payload = {
         job_card_id: form.job_card_id,
         customer_id: job.customer_id,
         vehicle_id: job.vehicle_id,
-        work_summary: form.work_summary,
-        parts_summary: form.parts_summary || null,
-        recommendations: form.recommendations || null,
+        work_summary: numberItems(workItems),
+        parts_summary: partsItems.length ? numberItems(partsItems) : null,
+        recommendations: recItems.length ? numberItems(recItems) : null,
         next_service_date: form.next_service_date || null,
         next_service_mileage: form.next_service_mileage ? parseInt(form.next_service_mileage) : null,
         mileage_out: form.mileage_out ? parseInt(form.mileage_out) : null,
@@ -104,7 +150,10 @@ export default function Handover() {
   }
 
   const resetForm = () => {
-    setForm({ job_card_id: '', work_summary: '', parts_summary: '', recommendations: '', next_service_date: '', next_service_mileage: '', mileage_out: '', fuel_level_out: '', received_by: '', warranty_parts_days: '30', warranty_labour_days: '7', notes: '' })
+    setForm({ job_card_id: '', next_service_date: '', next_service_mileage: '', mileage_out: '', fuel_level_out: '', received_by: '', warranty_parts_days: '30', warranty_labour_days: '7', notes: '' })
+    setWorkItems([])
+    setPartsItems([])
+    setRecItems([])
   }
 
   const filtered = handovers.filter(h =>
@@ -179,9 +228,9 @@ export default function Handover() {
                 <div><span className="text-gray-500">{t('handover.mileageOut')}:</span><p className="font-medium">{showDetail.mileage_out?.toLocaleString() || '-'} km</p></div>
                 <div><span className="text-gray-500">{t('handover.fuelLevelOut')}:</span><p className="font-medium capitalize">{showDetail.fuel_level_out || '-'}</p></div>
               </div>
-              <div><span className="text-gray-500">{t('handover.workSummary')}:</span><p className="mt-1">{showDetail.work_summary}</p></div>
-              {showDetail.parts_summary && <div><span className="text-gray-500">{t('handover.partsUsed')}:</span><p className="mt-1">{showDetail.parts_summary}</p></div>}
-              {showDetail.recommendations && <div><span className="text-gray-500">{t('handover.recommendations')}:</span><p className="mt-1">{showDetail.recommendations}</p></div>}
+              <div><span className="text-gray-500">{t('handover.workSummary')}:</span><p className="mt-1 whitespace-pre-line">{showDetail.work_summary}</p></div>
+              {showDetail.parts_summary && <div><span className="text-gray-500">{t('handover.partsUsed')}:</span><p className="mt-1 whitespace-pre-line">{showDetail.parts_summary}</p></div>}
+              {showDetail.recommendations && <div><span className="text-gray-500">{t('handover.recommendations')}:</span><p className="mt-1 whitespace-pre-line">{showDetail.recommendations}</p></div>}
               <div className="grid grid-cols-2 gap-4 pt-2 border-t">
                 <div><span className="text-gray-500">{t('handover.partsWarranty')}:</span><p className="font-medium">{showDetail.warranty_parts_days} {t('handover.days')}</p></div>
                 <div><span className="text-gray-500">{t('handover.labourWarranty')}:</span><p className="font-medium">{showDetail.warranty_labour_days} {t('handover.days')}</p></div>
@@ -218,23 +267,15 @@ export default function Handover() {
                   ))}
                 </select>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('handover.workSummary')} *</label>
-                <textarea value={form.work_summary} onChange={e => setForm({...form, work_summary: e.target.value})} required rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none"
-                  placeholder="Summarize all work done..." />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('handover.partsSummary')}</label>
-                <textarea value={form.parts_summary} onChange={e => setForm({...form, parts_summary: e.target.value})} rows={2}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('handover.recommendations')}</label>
-                <textarea value={form.recommendations} onChange={e => setForm({...form, recommendations: e.target.value})} rows={2}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none"
-                  placeholder="Future service recommendations..." />
-              </div>
+              <ItemListInput label={t('handover.workSummary')} required
+                items={workItems} onChange={setWorkItems}
+                placeholder="e.g. Replaced brake pads" addLabel={t('common.add')} />
+              <ItemListInput label={t('handover.partsSummary')}
+                items={partsItems} onChange={setPartsItems}
+                placeholder="e.g. Oil filter x1" addLabel={t('common.add')} />
+              <ItemListInput label={t('handover.recommendations')}
+                items={recItems} onChange={setRecItems}
+                placeholder="Future service recommendations..." addLabel={t('common.add')} />
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">{t('handover.mileageOut')}</label>
