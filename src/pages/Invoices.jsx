@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useLanguage } from '../contexts/LanguageContext'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase, formatTZS, formatDate } from '../lib/supabase'
+import { sendSMS, smsTemplates } from '../lib/sms'
 import { Search, Filter, Eye, FileText } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -41,6 +42,16 @@ export default function Invoices() {
       const update = { status }
       if (status === 'paid') update.paid_at = new Date().toISOString()
       await supabase.from('invoices').update(update).eq('id', id)
+      // Notify the customer when an invoice is sent to them (non-blocking).
+      if (status === 'sent') {
+        const inv = invoices.find(i => i.id === id)
+        if (inv) sendSMS({
+          to: inv.customers?.phone,
+          message: smsTemplates.invoice_ready(inv.customers?.full_name, inv.invoice_number, formatTZS(inv.total_amount)),
+          event: 'invoice_ready',
+          customerId: inv.customer_id,
+        })
+      }
       toast.success(t('invoices.updated'))
       fetchInvoices()
     } catch (err) {
@@ -68,6 +79,7 @@ export default function Invoices() {
     sent: 'bg-blue-100 text-blue-700',
     approved: 'bg-green-100 text-green-700',
     negotiating: 'bg-amber-100 text-amber-700',
+    partial: 'bg-orange-100 text-orange-700',
     paid: 'bg-emerald-100 text-emerald-700',
     cancelled: 'bg-red-100 text-red-700',
   }
@@ -99,6 +111,7 @@ export default function Invoices() {
           <option value="draft">{t('invoices.statuses.draft')}</option>
           <option value="sent">{t('invoices.statuses.sent')}</option>
           <option value="approved">{t('invoices.statuses.approved')}</option>
+          <option value="partial">{t('invoices.statuses.partial')}</option>
           <option value="paid">{t('invoices.statuses.paid')}</option>
         </select>
       </div>

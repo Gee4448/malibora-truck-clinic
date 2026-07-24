@@ -31,12 +31,23 @@ export default function ClientInvoiceView() {
 
       if (inv) {
         setInvoice(inv)
-        const { data: jobItems } = await supabase
-          .from('job_card_items')
-          .select('*')
-          .eq('job_card_id', inv.job_card_id)
-          .order('item_type', { ascending: true })
-        setItems(jobItems || [])
+        // A final invoice generated from a proforma carries a frozen snapshot in
+        // invoice_items; otherwise use the job's shared items. Customer-safe columns only.
+        const { data: snap } = await supabase
+          .from('invoice_items')
+          .select('id, item_type, description, quantity, selling_price, total_selling')
+          .eq('invoice_id', inv.id)
+          .order('sort_order', { ascending: true })
+        if (snap && snap.length > 0) {
+          setItems(snap)
+        } else {
+          const { data: jobItems } = await supabase
+            .from('job_card_items')
+            .select('id, item_type, description, quantity, selling_price, total_selling')
+            .eq('job_card_id', inv.job_card_id)
+            .order('item_type', { ascending: true })
+          setItems(jobItems || [])
+        }
 
         const { data: msgs } = await supabase
           .from('invoice_negotiations')
@@ -234,7 +245,7 @@ export default function ClientInvoiceView() {
         )}
         {invoice.vat_amount > 0 && (
           <div className="flex justify-between text-sm py-1">
-            <span className="text-gray-500">{t('invoices.vat')}</span>
+            <span className="text-gray-500">{t('invoices.vat')} ({invoice.vat_rate != null ? Number(invoice.vat_rate) : 18}%)</span>
             <span className="text-gray-900">{formatTZS(invoice.vat_amount)}</span>
           </div>
         )}

@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Fragment } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useLanguage } from '../contexts/LanguageContext'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase, formatTZS, formatDate } from '../lib/supabase'
-import { ArrowLeft, Printer, Download, MessageCircle, CheckCircle, CreditCard, Send, MessageSquare, Save } from 'lucide-react'
+import { ArrowLeft, Printer, Download, MessageCircle, CheckCircle, CreditCard, Send, MessageSquare, Save, Pencil, Trash2, Plus, FileText } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { generateInvoicePDF } from '../lib/pdf'
 
@@ -14,9 +14,21 @@ export default function InvoiceDetail() {
   const navigate = useNavigate()
   const [invoice, setInvoice] = useState(null)
   const [items, setItems] = useState([])
+  // Which table the line items live in: 'invoice_items' (frozen snapshot on a
+  // final invoice) or 'job_card_items' (shared with the job card; proformas + legacy).
+  const [itemsSource, setItemsSource] = useState('job_card_items')
   const [loading, setLoading] = useState(true)
-  const [paymentForm, setPaymentForm] = useState({ method: 'cash', reference: '' })
+  const [paymentForm, setPaymentForm] = useState({ method: 'cash', reference: '', amount: '' })
   const [showPayment, setShowPayment] = useState(false)
+  const [editingVat, setEditingVat] = useState(false)
+  const [vatInput, setVatInput] = useState('')
+  const [savingVat, setSavingVat] = useState(false)
+  const [editItems, setEditItems] = useState(false)
+  const [draftItems, setDraftItems] = useState([])
+  const [deletedIds, setDeletedIds] = useState([])
+  const [savingItems, setSavingItems] = useState(false)
+  const [linkedFinal, setLinkedFinal] = useState(null) // final invoice generated from this proforma
+  const [generatingFinal, setGeneratingFinal] = useState(false)
   const [messages, setMessages] = useState([])
   const [newMessage, setNewMessage] = useState('')
   const [sendingMessage, setSendingMessage] = useState(false)
@@ -41,14 +53,39 @@ export default function InvoiceDetail() {
       if (error) throw error
       setInvoice(data)
 
-      // Fetch job items
-      const { data: jobItems } = await supabase
-        .from('job_card_items')
+      // Line items: a final invoice generated from a proforma has a frozen
+      // snapshot in invoice_items; otherwise fall back to the job's shared items.
+      const { data: snapItems } = await supabase
+        .from('invoice_items')
         .select('*')
-        .eq('job_card_id', data.job_card_id)
-        .order('item_type, created_at')
-      setItems(jobItems || [])
+        .eq('invoice_id', data.id)
+        .order('sort_order', { ascending: true })
+      if (snapItems && snapItems.length > 0) {
+        setItems(snapItems)
+        setItemsSource('invoice_items')
+      } else {
+        const { data: jobItems } = await supabase
+          .from('job_card_items')
+          .select('*')
+          .eq('job_card_id', data.job_card_id)
+          .order('item_type, created_at')
+        setItems(jobItems || [])
+        setItemsSource('job_card_items')
+      }
       setDepositPct(data.deposit_percentage || 70)
+
+      // If this is a proforma, see whether a final invoice was already generated from it.
+      if (data.invoice_type === 'proforma') {
+        const { data: fin } = await supabase
+          .from('invoices')
+          .select('id, invoice_number')
+          .eq('source_proforma_id', data.id)
+          .limit(1)
+          .maybeSingle()
+        setLinkedFinal(fin || null)
+      } else {
+        setLinkedFinal(null)
+      }
 
       // Fetch negotiation messages
       const { data: msgs } = await supabase
@@ -67,14 +104,226 @@ export default function InvoiceDetail() {
 
   const updateStatus = async (status) => {
     try {
-      const update = { status }
-      if (status === 'paid') {
-        update.paid_at = new Date().toISOString()
-        update.payment_method = paymentForm.method
-        update.payment_reference = paymentForm.reference
-      }
-      await supabase.from('invoices').update(update).eq('id', id)
+      await supabase.from('invoices').update({ status }).eq('id', id)
       toast.success(t('invoices.updated'))
+      fetchInvoice()
+    } catch (err) {
+      toast.error(err.message)
+    }
+  }
+
+  const saveVatRate = async () => {
+    const newRate = Number(vatInput)
+    if (isNaN(newRate) || newRate < 0 || newRate > 100) {
+      toast.error(t('invoices.invalidVat'))
+      return
+    }
+    setSavingVat(true)
+    try {
+      // Back the pre-VAT subtotal out of stored values so we don't depend on how
+      // it was originally composed (discounts etc.): subtotal = total - old VAT.
+      const subtotal = (Number(invoice.total_amount) || 0) - (Number(invoice.vat_amount) || 0)
+      const vatAmount = subtotal * newRate / 100
+      const totalAmount = subtotal + vatAmount
+      const costParts = Number(invoice.internal_cost_parts) || 0
+      const costLabour = Number(invoice.internal_cost_labour) || 0
+      const profitTotal = totalAmount - costParts - costLabour
+      const { error } = await supabase.from('invoices').update({
+        vat_rate: newRate,
+        vat_amount: vatAmount,
+        total_amount: totalAmount,
+        profit_total: profitTotal,
+        profit_margin: totalAmount > 0 ? (profitTotal / totalAmount * 100) : 0,
+      }).eq('id', id)
+      if (error) throw error
+      toast.success(t('invoices.updated'))
+      setEditingVat(false)
+      fetchInvoice()
+    } catch (err) {
+      toast.error(err.message)
+    } finally {
+      setSavingVat(false)
+    }
+  }
+
+  // A1: create a final invoice from this approved proforma, snapshotting the
+  // current line items so later proforma edits don't change the issued invoice.
+  const generateFinalFromProforma = async () => {
+    setGeneratingFinal(true)
+    try {
+      const { data: newInv, error } = await supabase.from('invoices').insert({
+        job_card_id: invoice.job_card_id,
+        customer_id: invoice.customer_id,
+        invoice_type: 'final',
+        status: 'draft',
+        source_proforma_id: invoice.id,
+        subtotal_parts: invoice.subtotal_parts,
+        subtotal_labour: invoice.subtotal_labour,
+        subtotal_additional: invoice.subtotal_additional,
+        discount_amount: invoice.discount_amount,
+        vat_rate: invoice.vat_rate,
+        vat_amount: invoice.vat_amount,
+        total_amount: invoice.total_amount,
+        internal_cost_parts: invoice.internal_cost_parts,
+        internal_cost_labour: invoice.internal_cost_labour,
+        profit_parts: invoice.profit_parts,
+        profit_labour: invoice.profit_labour,
+        profit_total: invoice.profit_total,
+        profit_margin: invoice.profit_margin,
+      }).select().single()
+      if (error) throw error
+
+      // Freeze the current line items onto the new final invoice.
+      if (items.length > 0) {
+        const rows = items.map((it, i) => ({
+          invoice_id: newInv.id,
+          item_type: it.item_type,
+          description: it.description,
+          quantity: Number(it.quantity) || 0,
+          cost_price: Number(it.cost_price) || 0,
+          selling_price: Number(it.selling_price) || 0,
+          sort_order: i,
+        }))
+        const { error: itErr } = await supabase.from('invoice_items').insert(rows)
+        if (itErr) throw itErr
+      }
+      toast.success(t('invoices.finalGenerated'))
+      navigate(`/admin/invoices/${newInv.id}`)
+    } catch (err) {
+      toast.error(err.message)
+    } finally {
+      setGeneratingFinal(false)
+    }
+  }
+
+  const startEditItems = () => {
+    setDraftItems(items.map(it => ({ ...it })))
+    setDeletedIds([])
+    setEditItems(true)
+  }
+
+  const cancelEditItems = () => {
+    setEditItems(false)
+    setDraftItems([])
+    setDeletedIds([])
+  }
+
+  const updateDraft = (idx, field, value) => {
+    setDraftItems(d => d.map((it, i) => i === idx ? { ...it, [field]: value } : it))
+  }
+
+  const addDraftLine = (item_type) => {
+    setDraftItems(d => [...d, {
+      id: null,
+      _tmp: (crypto.randomUUID ? crypto.randomUUID() : String(Math.random())),
+      item_type,
+      description: '',
+      quantity: 1,
+      selling_price: 0,
+      cost_price: 0,
+    }])
+  }
+
+  const removeDraftLine = (idx) => {
+    const it = draftItems[idx]
+    if (it?.id) setDeletedIds(x => [...x, it.id])
+    setDraftItems(d => d.filter((_, i) => i !== idx))
+  }
+
+  const saveItems = async () => {
+    for (const it of draftItems) {
+      if (!String(it.description || '').trim()) { toast.error(t('invoices.itemNeedsDesc')); return }
+      if (Number(it.quantity) <= 0) { toast.error(t('invoices.itemNeedsQty')); return }
+    }
+    setSavingItems(true)
+    try {
+      if (deletedIds.length) {
+        const { error } = await supabase.from(itemsSource).delete().in('id', deletedIds)
+        if (error) throw error
+      }
+      for (const it of draftItems) {
+        const payload = {
+          item_type: it.item_type,
+          description: String(it.description).trim(),
+          quantity: Number(it.quantity) || 0,
+          selling_price: Number(it.selling_price) || 0,
+          cost_price: Number(it.cost_price) || 0,
+        }
+        // FK differs by source table
+        if (itemsSource === 'invoice_items') payload.invoice_id = invoice.id
+        else payload.job_card_id = invoice.job_card_id
+        if (it.id) {
+          const { error } = await supabase.from(itemsSource).update(payload).eq('id', it.id)
+          if (error) throw error
+        } else {
+          const { error } = await supabase.from(itemsSource).insert(payload)
+          if (error) throw error
+        }
+      }
+      // Recompute invoice totals locally (total_* are DB-generated, so derive from qty*price).
+      const sumSell = (type) => draftItems.filter(x => x.item_type === type)
+        .reduce((s, x) => s + Number(x.quantity || 0) * Number(x.selling_price || 0), 0)
+      const sumCost = (type) => draftItems.filter(x => x.item_type === type)
+        .reduce((s, x) => s + Number(x.quantity || 0) * Number(x.cost_price || 0), 0)
+      const subtotalParts = sumSell('part')
+      const subtotalLabour = sumSell('labour')
+      const subtotalAdditional = sumSell('additional')
+      const subtotal = subtotalParts + subtotalLabour + subtotalAdditional
+      const vatAmount = subtotal * vatRate / 100
+      const totalAmount = subtotal + vatAmount
+      const costParts = sumCost('part')
+      const costLabour = sumCost('labour')
+      const profitTotal = totalAmount - costParts - costLabour
+      const { error: invErr } = await supabase.from('invoices').update({
+        subtotal_parts: subtotalParts,
+        subtotal_labour: subtotalLabour,
+        subtotal_additional: subtotalAdditional,
+        vat_amount: vatAmount,
+        total_amount: totalAmount,
+        internal_cost_parts: costParts,
+        internal_cost_labour: costLabour,
+        profit_parts: subtotalParts - costParts,
+        profit_labour: subtotalLabour - costLabour,
+        profit_total: profitTotal,
+        profit_margin: totalAmount > 0 ? (profitTotal / totalAmount * 100) : 0,
+      }).eq('id', id)
+      if (invErr) throw invErr
+      toast.success(t('invoices.updated'))
+      setEditItems(false)
+      setDraftItems([])
+      setDeletedIds([])
+      fetchInvoice()
+    } catch (err) {
+      toast.error(err.message)
+    } finally {
+      setSavingItems(false)
+    }
+  }
+
+  const openPayment = () => {
+    setPaymentForm({ method: 'cash', reference: '', amount: balanceOwed > 0 ? String(balanceOwed) : '' })
+    setShowPayment(true)
+  }
+
+  const recordPayment = async () => {
+    const thisPayment = Number(paymentForm.amount)
+    if (!thisPayment || thisPayment <= 0) {
+      toast.error(t('invoices.enterAmount'))
+      return
+    }
+    const newPaid = amountPaid + thisPayment
+    const fullyPaid = newPaid >= invoiceTotal - 0.005 // rounding tolerance
+    try {
+      const update = {
+        amount_paid: newPaid,
+        payment_method: paymentForm.method,
+        payment_reference: paymentForm.reference || null,
+        status: fullyPaid ? 'paid' : 'partial',
+      }
+      if (fullyPaid) update.paid_at = new Date().toISOString()
+      const { error } = await supabase.from('invoices').update(update).eq('id', id)
+      if (error) throw error
+      toast.success(fullyPaid ? t('invoices.updated') : t('invoices.paymentRecorded'))
       setShowPayment(false)
       fetchInvoice()
     } catch (err) {
@@ -107,6 +356,13 @@ export default function InvoiceDetail() {
 
   if (loading) return <div className="flex justify-center p-8"><div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full"></div></div>
   if (!invoice) return null
+
+  const invoiceTotal = Number(invoice.total_amount) || 0
+  const amountPaid = Number(invoice.amount_paid) || 0
+  const balanceOwed = Math.max(0, invoiceTotal - amountPaid)
+  const vatRate = invoice.vat_rate != null ? Number(invoice.vat_rate) : 18
+  // Invoice is locked for edits once any payment has started or it's finalised.
+  const docEditable = invoice.status !== 'paid' && invoice.status !== 'cancelled' && invoice.status !== 'partial'
 
   const typeLabels = { proforma: t('invoices.proforma'), final: t('invoices.final'), internal: t('invoices.internal') }
   const handleSendStaffMessage = async () => {
@@ -149,6 +405,7 @@ export default function InvoiceDetail() {
     sent: 'bg-blue-100 text-blue-700',
     approved: 'bg-green-100 text-green-700',
     negotiating: 'bg-amber-100 text-amber-700',
+    partial: 'bg-orange-100 text-orange-700',
     paid: 'bg-emerald-100 text-emerald-700',
     cancelled: 'bg-red-100 text-red-700',
   }
@@ -179,10 +436,24 @@ export default function InvoiceDetail() {
               <button onClick={() => updateStatus('approved')} className="flex items-center gap-1.5 px-3 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 text-sm font-medium">
                 <CheckCircle className="w-4 h-4" /> {t('invoices.approve')}
               </button>
-              <button onClick={() => setShowPayment(true)} className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-medium">
-                <CreditCard className="w-4 h-4" /> {t('invoices.markPaid')}
+              <button onClick={openPayment} className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-medium">
+                <CreditCard className="w-4 h-4" /> {invoice.status === 'partial' ? t('invoices.recordPayment') : t('invoices.markPaid')}
               </button>
             </>
+          )}
+          {/* A1: proforma -> final invoice */}
+          {invoice.invoice_type === 'proforma' && invoice.status !== 'cancelled' && (
+            linkedFinal ? (
+              <Link to={`/admin/invoices/${linkedFinal.id}`}
+                className="flex items-center gap-1.5 px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 text-sm font-medium">
+                <FileText className="w-4 h-4" /> {t('invoices.viewFinal')}: {linkedFinal.invoice_number}
+              </Link>
+            ) : (
+              <button onClick={generateFinalFromProforma} disabled={generatingFinal}
+                className="flex items-center gap-1.5 px-3 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800 text-sm font-medium disabled:opacity-40">
+                <FileText className="w-4 h-4" /> {t('invoices.generateFinal')}
+              </button>
+            )
           )}
         </div>
       </div>
@@ -203,6 +474,13 @@ export default function InvoiceDetail() {
             <span className={`inline-block text-xs px-2.5 py-1 rounded-full font-medium mt-2 ${statusColors[invoice.status]}`}>
               {t(`invoices.statuses.${invoice.status}`)}
             </span>
+            {invoice.source_proforma_id && (
+              <p className="text-xs text-gray-400 mt-2 no-print">
+                <Link to={`/admin/invoices/${invoice.source_proforma_id}`} className="hover:text-blue-600">
+                  {t('invoices.fromProforma')}
+                </Link>
+              </p>
+            )}
           </div>
         </div>
 
@@ -226,6 +504,29 @@ export default function InvoiceDetail() {
           </div>
         </div>
 
+        {/* Items edit toolbar (no-print) */}
+        {docEditable && (
+          <div className="no-print flex justify-end mb-2">
+            {!editItems ? (
+              <button onClick={startEditItems}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium">
+                <Pencil className="w-3.5 h-3.5" /> {t('invoices.editItems')}
+              </button>
+            ) : (
+              <div className="flex gap-2">
+                <button onClick={saveItems} disabled={savingItems}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium disabled:opacity-40">
+                  <Save className="w-3.5 h-3.5" /> {t('common.save')}
+                </button>
+                <button onClick={cancelEditItems}
+                  className="px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium">
+                  {t('common.cancel')}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Items Table */}
         <table className="w-full text-sm mb-6">
           <thead>
@@ -235,52 +536,105 @@ export default function InvoiceDetail() {
               <th className="text-right p-2.5 font-semibold text-blue-900">{t('invoices.qty')}</th>
               <th className="text-right p-2.5 font-semibold text-blue-900">{t('invoices.unitPrice')}</th>
               <th className="text-right p-2.5 font-semibold text-blue-900">{t('invoices.amount')}</th>
+              {editItems && <th className="w-8"></th>}
             </tr>
           </thead>
           <tbody>
-            {/* Parts Section */}
-            {partItems.length > 0 && (
-              <>
-                <tr><td colSpan="5" className="p-2 font-semibold text-gray-700 bg-gray-50 border-b">{t('invoices.partsMaterials')}</td></tr>
-                {partItems.map((item, i) => (
-                  <tr key={item.id} className="border-b border-gray-100">
-                    <td className="p-2.5 text-gray-500">{i + 1}</td>
-                    <td className="p-2.5">{item.description}</td>
-                    <td className="p-2.5 text-right">{item.quantity}</td>
-                    <td className="p-2.5 text-right">{formatTZS(item.selling_price)}</td>
-                    <td className="p-2.5 text-right font-medium">{formatTZS(item.total_selling)}</td>
+            {editItems ? (
+              [
+                { type: 'part', label: t('invoices.partsMaterials') },
+                { type: 'labour', label: t('invoices.labourServices') },
+                { type: 'additional', label: t('invoices.additionalCosts') },
+              ].map(section => (
+                <Fragment key={section.type}>
+                  <tr>
+                    <td colSpan="6" className="p-2 bg-gray-50 border-b">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-gray-700">{section.label}</span>
+                        <button onClick={() => addDraftLine(section.type)}
+                          className="flex items-center gap-1 text-blue-600 hover:text-blue-800 text-xs font-medium">
+                          <Plus className="w-3.5 h-3.5" /> {t('invoices.addLine')}
+                        </button>
+                      </div>
+                    </td>
                   </tr>
-                ))}
-              </>
-            )}
-            {/* Labour Section */}
-            {labourItems.length > 0 && (
+                  {draftItems.map((it, idx) => ({ it, idx })).filter(r => r.it.item_type === section.type).map(({ it, idx }, i) => (
+                    <tr key={it.id || it._tmp} className="border-b border-gray-100">
+                      <td className="p-1.5 text-gray-500">{i + 1}</td>
+                      <td className="p-1.5">
+                        <input type="text" value={it.description}
+                          onChange={e => updateDraft(idx, 'description', e.target.value)}
+                          className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                      </td>
+                      <td className="p-1.5">
+                        <input type="number" min="0" step="any" value={it.quantity}
+                          onChange={e => updateDraft(idx, 'quantity', e.target.value)}
+                          className="w-16 px-2 py-1 border border-gray-300 rounded text-right text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                      </td>
+                      <td className="p-1.5">
+                        <input type="number" min="0" step="any" value={it.selling_price}
+                          onChange={e => updateDraft(idx, 'selling_price', e.target.value)}
+                          className="w-28 px-2 py-1 border border-gray-300 rounded text-right text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                      </td>
+                      <td className="p-1.5 text-right font-medium whitespace-nowrap">
+                        {formatTZS(Number(it.quantity || 0) * Number(it.selling_price || 0))}
+                      </td>
+                      <td className="p-1.5 text-center">
+                        <button onClick={() => removeDraftLine(idx)} className="text-red-500 hover:text-red-700" title={t('common.delete')}>
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </Fragment>
+              ))
+            ) : (
               <>
-                <tr><td colSpan="5" className="p-2 font-semibold text-gray-700 bg-gray-50 border-b">{t('invoices.labourServices')}</td></tr>
-                {labourItems.map((item, i) => (
-                  <tr key={item.id} className="border-b border-gray-100">
-                    <td className="p-2.5 text-gray-500">{i + 1}</td>
-                    <td className="p-2.5">{item.description}</td>
-                    <td className="p-2.5 text-right">{item.quantity} hrs</td>
-                    <td className="p-2.5 text-right">{formatTZS(item.selling_price)}</td>
-                    <td className="p-2.5 text-right font-medium">{formatTZS(item.total_selling)}</td>
-                  </tr>
-                ))}
-              </>
-            )}
-            {/* Additional Section */}
-            {additionalItems.length > 0 && (
-              <>
-                <tr><td colSpan="5" className="p-2 font-semibold text-gray-700 bg-gray-50 border-b">{t('invoices.additionalCosts')}</td></tr>
-                {additionalItems.map((item, i) => (
-                  <tr key={item.id} className="border-b border-gray-100">
-                    <td className="p-2.5 text-gray-500">{i + 1}</td>
-                    <td className="p-2.5">{item.description}</td>
-                    <td className="p-2.5 text-right">{item.quantity}</td>
-                    <td className="p-2.5 text-right">{formatTZS(item.selling_price)}</td>
-                    <td className="p-2.5 text-right font-medium">{formatTZS(item.total_selling)}</td>
-                  </tr>
-                ))}
+                {/* Parts Section */}
+                {partItems.length > 0 && (
+                  <>
+                    <tr><td colSpan="5" className="p-2 font-semibold text-gray-700 bg-gray-50 border-b">{t('invoices.partsMaterials')}</td></tr>
+                    {partItems.map((item, i) => (
+                      <tr key={item.id} className="border-b border-gray-100">
+                        <td className="p-2.5 text-gray-500">{i + 1}</td>
+                        <td className="p-2.5">{item.description}</td>
+                        <td className="p-2.5 text-right">{item.quantity}</td>
+                        <td className="p-2.5 text-right">{formatTZS(item.selling_price)}</td>
+                        <td className="p-2.5 text-right font-medium">{formatTZS(item.total_selling)}</td>
+                      </tr>
+                    ))}
+                  </>
+                )}
+                {/* Labour Section */}
+                {labourItems.length > 0 && (
+                  <>
+                    <tr><td colSpan="5" className="p-2 font-semibold text-gray-700 bg-gray-50 border-b">{t('invoices.labourServices')}</td></tr>
+                    {labourItems.map((item, i) => (
+                      <tr key={item.id} className="border-b border-gray-100">
+                        <td className="p-2.5 text-gray-500">{i + 1}</td>
+                        <td className="p-2.5">{item.description}</td>
+                        <td className="p-2.5 text-right">{item.quantity} hrs</td>
+                        <td className="p-2.5 text-right">{formatTZS(item.selling_price)}</td>
+                        <td className="p-2.5 text-right font-medium">{formatTZS(item.total_selling)}</td>
+                      </tr>
+                    ))}
+                  </>
+                )}
+                {/* Additional Section */}
+                {additionalItems.length > 0 && (
+                  <>
+                    <tr><td colSpan="5" className="p-2 font-semibold text-gray-700 bg-gray-50 border-b">{t('invoices.additionalCosts')}</td></tr>
+                    {additionalItems.map((item, i) => (
+                      <tr key={item.id} className="border-b border-gray-100">
+                        <td className="p-2.5 text-gray-500">{i + 1}</td>
+                        <td className="p-2.5">{item.description}</td>
+                        <td className="p-2.5 text-right">{item.quantity}</td>
+                        <td className="p-2.5 text-right">{formatTZS(item.selling_price)}</td>
+                        <td className="p-2.5 text-right font-medium">{formatTZS(item.total_selling)}</td>
+                      </tr>
+                    ))}
+                  </>
+                )}
               </>
             )}
           </tbody>
@@ -309,9 +663,30 @@ export default function InvoiceDetail() {
                 <span>-{formatTZS(invoice.discount_amount)}</span>
               </div>
             )}
-            <div className="flex justify-between py-2 border-b border-gray-200">
-              <span className="text-gray-600">{t('invoices.vat')}</span>
-              <span className="font-medium">{formatTZS(invoice.vat_amount)}</span>
+            <div className="flex justify-between items-center py-2 border-b border-gray-200">
+              <span className="text-gray-600 flex items-center gap-1.5">
+                {t('invoices.vat')} ({vatRate}%)
+                {docEditable && !editingVat && (
+                  <button onClick={() => { setVatInput(String(vatRate)); setEditingVat(true) }}
+                    className="no-print text-blue-600 hover:text-blue-800" title={t('invoices.editVat')}>
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </span>
+              {editingVat ? (
+                <span className="no-print flex items-center gap-1.5">
+                  <input type="number" min="0" max="100" step="any" value={vatInput}
+                    onChange={e => setVatInput(e.target.value)}
+                    className="w-16 px-2 py-1 border border-gray-300 rounded text-right text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                  <span className="text-gray-400 text-sm">%</span>
+                  <button onClick={saveVatRate} disabled={savingVat}
+                    className="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 disabled:opacity-40">{t('common.save')}</button>
+                  <button onClick={() => setEditingVat(false)}
+                    className="px-2 py-1 border border-gray-300 rounded text-xs hover:bg-gray-50">{t('common.cancel')}</button>
+                </span>
+              ) : (
+                <span className="font-medium">{formatTZS(invoice.vat_amount)}</span>
+              )}
             </div>
             <div className="flex justify-between py-3 border-b-2 border-blue-700 bg-blue-50 px-3 -mx-3 mt-1 rounded">
               <span className="text-lg font-bold text-blue-900">{t('invoices.total')}</span>
@@ -359,6 +734,19 @@ export default function InvoiceDetail() {
             <p className="font-semibold text-emerald-800">{t('invoices.paidOn')} {formatDate(invoice.paid_at)}</p>
             {invoice.payment_method && <p className="text-emerald-700 capitalize">{t('invoices.method')}: {invoice.payment_method.replace('_', ' ')}</p>}
             {invoice.payment_reference && <p className="text-emerald-700">{t('invoices.ref')}: {invoice.payment_reference}</p>}
+          </div>
+        )}
+        {invoice.status === 'partial' && (
+          <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-lg text-sm">
+            <p className="font-semibold text-orange-800">{t('invoices.partiallyPaid')}</p>
+            <div className="flex justify-between mt-1 text-orange-700">
+              <span>{t('invoices.amountPaid')}</span><span className="font-medium">{formatTZS(amountPaid)}</span>
+            </div>
+            <div className="flex justify-between text-orange-900 font-semibold">
+              <span>{t('invoices.balanceOwed')}</span><span>{formatTZS(balanceOwed)}</span>
+            </div>
+            {invoice.payment_method && <p className="text-orange-700 capitalize mt-1">{t('invoices.method')}: {invoice.payment_method.replace('_', ' ')}</p>}
+            {invoice.payment_reference && <p className="text-orange-700">{t('invoices.ref')}: {invoice.payment_reference}</p>}
           </div>
         )}
 
@@ -450,6 +838,37 @@ export default function InvoiceDetail() {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
             <h2 className="text-lg font-bold mb-4">{t('invoices.markPaid')}</h2>
             <div className="space-y-4">
+              {/* Amount summary */}
+              <div className="bg-gray-50 rounded-lg p-3 text-sm space-y-1">
+                <div className="flex justify-between text-gray-600">
+                  <span>{t('invoices.total')}</span>
+                  <span className="font-medium text-gray-900">{formatTZS(invoiceTotal)}</span>
+                </div>
+                {amountPaid > 0 && (
+                  <div className="flex justify-between text-gray-600">
+                    <span>{t('invoices.amountPaid')}</span>
+                    <span className="font-medium text-emerald-700">{formatTZS(amountPaid)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between border-t border-gray-200 pt-1 mt-1">
+                  <span className="text-gray-700 font-medium">{t('invoices.balanceOwed')}</span>
+                  <span className="font-bold text-gray-900">{formatTZS(balanceOwed)}</span>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('invoices.paymentAmount')}</label>
+                <input type="number" min="0" step="any" value={paymentForm.amount}
+                  onChange={e => setPaymentForm({...paymentForm, amount: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  placeholder="0" />
+                {Number(paymentForm.amount) > 0 && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    {(amountPaid + Number(paymentForm.amount)) >= invoiceTotal - 0.005
+                      ? t('invoices.willBeFullyPaid')
+                      : `${t('invoices.balanceAfter')}: ${formatTZS(Math.max(0, invoiceTotal - amountPaid - Number(paymentForm.amount)))}`}
+                  </p>
+                )}
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">{t('invoices.paymentMethod')}</label>
                 <select value={paymentForm.method} onChange={e => setPaymentForm({...paymentForm, method: e.target.value})}
@@ -465,10 +884,10 @@ export default function InvoiceDetail() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">{t('invoices.paymentRef')}</label>
                 <input type="text" value={paymentForm.reference} onChange={e => setPaymentForm({...paymentForm, reference: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                  placeholder="Transaction reference..." />
+                  placeholder={t('invoices.refPlaceholder')} />
               </div>
               <div className="flex gap-3">
-                <button onClick={() => updateStatus('paid')} className="flex-1 py-2.5 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700">
+                <button onClick={recordPayment} className="flex-1 py-2.5 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700">
                   {t('common.confirm')}
                 </button>
                 <button onClick={() => setShowPayment(false)} className="px-6 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50">

@@ -26,3 +26,6 @@ dist-ssr
 
 .vercel
 dev-dist
+
+# Client correspondence (contains customer names, phone numbers, prices)
+_client-notes

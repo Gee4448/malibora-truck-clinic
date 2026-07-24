@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useLanguage } from '../contexts/LanguageContext'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase, formatTZS, formatDate } from '../lib/supabase'
+import { sendSMS, smsTemplates } from '../lib/sms'
 import {
   ArrowLeft, Plus, Trash2, CreditCard, Play, CheckCircle2,
   AlertTriangle, X, ClipboardList, FileText, Share2, Copy, Wrench, Send
@@ -186,6 +187,14 @@ export default function InspectionDetail() {
         fuel_level: inspection.fuel_level,
       }).select().single()
       if (jobError) throw jobError
+
+      // Notify the customer that their inspection is done (non-blocking).
+      sendSMS({
+        to: inspection.customers?.phone,
+        message: smsTemplates.inspection_complete(inspection.customers?.full_name, inspection.vehicles?.registration_number),
+        event: 'inspection_complete',
+        customerId: inspection.customer_id,
+      })
 
       toast.success(t('inspection.inspectionCompleted'))
       navigate(`/admin/job-cards/${jobCard.id}`)

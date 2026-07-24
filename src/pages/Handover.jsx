@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useLanguage } from '../contexts/LanguageContext'
 import { supabase, formatDate } from '../lib/supabase'
+import { sendSMS, smsTemplates } from '../lib/sms'
 import { Plus, Eye, Download, Search, X, ClipboardCheck } from 'lucide-react'
 import { generateHandoverPDF } from '../lib/pdf'
 import toast from 'react-hot-toast'
 
 // Numbered add-one-at-a-time list input; entries are joined into the
 // existing text columns on save, so no schema change is needed.
-function ItemListInput({ label, required, items, onChange, placeholder, addLabel }) {
+function ItemListInput({ label, required, items, onChange, placeholder, addLabel, hint }) {
   const [draft, setDraft] = useState('')
   const add = () => {
     const value = draft.trim()
@@ -18,6 +19,7 @@ function ItemListInput({ label, required, items, onChange, placeholder, addLabel
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 mb-1">{label}{required && ' *'}</label>
+      {hint && <p className="text-xs text-gray-400 mb-1.5 -mt-0.5">{hint}</p>}
       {items.length > 0 && (
         <ol className="mb-2 space-y-1">
           {items.map((item, i) => (
@@ -93,20 +95,25 @@ export default function Handover() {
   const fetchCompletedJobs = async () => {
     const { data } = await supabase
       .from('job_cards')
-      .select('id, job_number, customer_id, vehicle_id, vehicles(registration_number), customers(full_name)')
+      .select('id, job_number, customer_id, vehicle_id, vehicles(registration_number), customers(full_name, phone)')
       .eq('status', 'completed')
       .order('date_completed', { ascending: false })
     setCompletedJobs(data || [])
   }
 
-  const handleJobSelect = (jobId) => {
-    const job = completedJobs.find(j => j.id === jobId)
-    if (job) {
-      setForm({
-        ...form,
-        job_card_id: jobId,
-      })
-    }
+  const handleJobSelect = async (jobId) => {
+    setForm(f => ({ ...f, job_card_id: jobId }))
+    if (!jobId) { setPartsItems([]); return }
+    // CB2: auto-fill Parts Used from the job's parts (same rows the invoice uses).
+    const { data } = await supabase
+      .from('job_card_items')
+      .select('description, quantity')
+      .eq('job_card_id', jobId)
+      .eq('item_type', 'part')
+      .order('created_at')
+    setPartsItems((data || []).map(p =>
+      Number(p.quantity) > 1 ? `${p.description} x${Number(p.quantity)}` : p.description
+    ))
   }
 
   const handleSubmit = async (e) => {
@@ -135,6 +142,15 @@ export default function Handover() {
 
       const { error } = await supabase.from('handover_cards').insert(payload)
       if (error) throw error
+
+      // Notify the customer their car is ready for pickup (non-blocking).
+      sendSMS({
+        to: job.customers?.phone,
+        message: smsTemplates.car_ready(job.customers?.full_name, job.vehicles?.registration_number),
+        event: 'car_ready',
+        customerId: job.customer_id,
+      })
+
       toast.success(t('handover.created'))
       setShowForm(false)
       resetForm()
@@ -270,7 +286,7 @@ export default function Handover() {
               <ItemListInput label={t('handover.workSummary')} required
                 items={workItems} onChange={setWorkItems}
                 placeholder="e.g. Replaced brake pads" addLabel={t('common.add')} />
-              <ItemListInput label={t('handover.partsSummary')}
+              <ItemListInput label={t('handover.partsSummary')} hint={t('handover.partsAutoFilled')}
                 items={partsItems} onChange={setPartsItems}
                 placeholder="e.g. Oil filter x1" addLabel={t('common.add')} />
               <ItemListInput label={t('handover.recommendations')}

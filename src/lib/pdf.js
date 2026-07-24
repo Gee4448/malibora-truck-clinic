@@ -156,7 +156,7 @@ export function generateInvoicePDF(invoice, items, showInternal = false) {
   if (Number(invoice.subtotal_additional) > 0) { ty += 6; drawTotalLine('Additional:', formatTZS(invoice.subtotal_additional), ty) }
   if (Number(invoice.discount_amount) > 0) { ty += 6; drawTotalLine('Discount:', `-${formatTZS(invoice.discount_amount)}`, ty) }
   ty += 6
-  drawTotalLine('VAT (18%):', formatTZS(invoice.vat_amount), ty)
+  drawTotalLine(`VAT (${invoice.vat_rate != null ? Number(invoice.vat_rate) : 18}%):`, formatTZS(invoice.vat_amount), ty)
   ty += 8
 
   // Total box

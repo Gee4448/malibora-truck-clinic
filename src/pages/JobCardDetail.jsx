@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useLanguage } from '../contexts/LanguageContext'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase, formatTZS, formatDate } from '../lib/supabase'
-import { Plus, Trash2, FileText, Printer, ArrowLeft, Package, Wrench, DollarSign, X, CheckCircle2, XCircle, UserPlus, AlertCircle, Share2 } from 'lucide-react'
+import { Plus, Trash2, FileText, Printer, ArrowLeft, Package, Wrench, DollarSign, X, CheckCircle2, XCircle, UserPlus, AlertCircle, Share2, Pencil } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function JobCardDetail() {
@@ -23,6 +23,9 @@ export default function JobCardDetail() {
   const [techId, setTechId] = useState('')
   const [mechanics, setMechanics] = useState([])
   const [itemType, setItemType] = useState('part')
+  const [editingDesc, setEditingDesc] = useState(false)
+  const [descInput, setDescInput] = useState('')
+  const [savingDesc, setSavingDesc] = useState(false)
   const [itemForm, setItemForm] = useState({
     part_id: '', labour_id: '', description: '', quantity: 1,
     cost_price: 0, selling_price: 0,
@@ -169,6 +172,8 @@ export default function JobCardDetail() {
     setLabourRates(data || [])
   }
 
+  // Picking a catalog part fills the name AND its price as editable defaults
+  // (A6). Leaving the picker blank = enter a custom part with a manual price.
   const handlePartSelect = (partId) => {
     const part = parts.find(p => p.id === partId)
     if (part) {
@@ -176,7 +181,11 @@ export default function JobCardDetail() {
         ...itemForm,
         part_id: partId,
         description: part.name,
+        cost_price: part.cost_price ?? 0,
+        selling_price: part.selling_price ?? 0,
       })
+    } else {
+      setItemForm({ ...itemForm, part_id: '' })
     }
   }
 
@@ -188,7 +197,11 @@ export default function JobCardDetail() {
         labour_id: labourId,
         description: labour.service_name,
         quantity: labour.estimated_hours,
+        cost_price: labour.cost_rate ?? 0,
+        selling_price: labour.selling_rate ?? 0,
       })
+    } else {
+      setItemForm({ ...itemForm, labour_id: '' })
     }
   }
 
@@ -213,15 +226,8 @@ export default function JobCardDetail() {
       const { error } = await supabase.from('job_card_items').insert(payload)
       if (error) throw error
 
-      // If part, reduce stock
-      if (itemType === 'part' && itemForm.part_id) {
-        const part = parts.find(p => p.id === itemForm.part_id)
-        if (part) {
-          await supabase.from('parts').update({
-            quantity_in_stock: Math.max(0, part.quantity_in_stock - Number(itemForm.quantity))
-          }).eq('id', itemForm.part_id)
-        }
-      }
+      // Note: the garage does not manage spare-part inventory in the system
+      // (per client), so adding a part no longer decrements catalog stock.
 
       toast.success(t('jobs.itemAdded'))
       setShowAddItem(false)
@@ -230,6 +236,22 @@ export default function JobCardDetail() {
       fetchParts()
     } catch (err) {
       toast.error(err.message)
+    }
+  }
+
+  const saveDescription = async () => {
+    setSavingDesc(true)
+    try {
+      const { error } = await supabase.from('job_cards')
+        .update({ description: descInput }).eq('id', id)
+      if (error) throw error
+      toast.success(t('jobs.descriptionSaved'))
+      setEditingDesc(false)
+      fetchJob()
+    } catch (err) {
+      toast.error(err.message)
+    } finally {
+      setSavingDesc(false)
     }
   }
 
@@ -253,7 +275,8 @@ export default function JobCardDetail() {
       const subtotalLabour = labourItems.reduce((sum, i) => sum + Number(i.total_selling || 0), 0)
       const subtotalAdditional = additionalItems.reduce((sum, i) => sum + Number(i.total_selling || 0), 0)
       const subtotal = subtotalParts + subtotalLabour + subtotalAdditional
-      const vatAmount = subtotal * 0.18
+      const VAT_RATE = 18 // default; editable per-invoice on the invoice page
+      const vatAmount = subtotal * VAT_RATE / 100
       const totalAmount = subtotal + vatAmount
 
       const costParts = partItems.reduce((sum, i) => sum + Number(i.total_cost || 0), 0)
@@ -266,6 +289,7 @@ export default function JobCardDetail() {
         subtotal_parts: subtotalParts,
         subtotal_labour: subtotalLabour,
         subtotal_additional: subtotalAdditional,
+        vat_rate: VAT_RATE,
         vat_amount: vatAmount,
         total_amount: totalAmount,
         internal_cost_parts: costParts,
@@ -382,8 +406,30 @@ export default function JobCardDetail() {
 
       {/* Work Description */}
       <div className="bg-white rounded-xl border border-gray-200 p-5">
-        <h3 className="font-semibold text-gray-900 mb-2">{t('jobs.description')}</h3>
-        <p className="text-sm text-gray-700 whitespace-pre-line">{job.description}</p>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="font-semibold text-gray-900">{t('jobs.description')}</h3>
+          {job.status !== 'completed' && job.status !== 'cancelled' && !editingDesc && (
+            <button onClick={() => { setDescInput(job.description || ''); setEditingDesc(true) }}
+              className="flex items-center gap-1 text-blue-600 hover:text-blue-800 text-xs font-medium">
+              <Pencil className="w-3.5 h-3.5" /> {t('jobs.editDescription')}
+            </button>
+          )}
+        </div>
+        {editingDesc ? (
+          <div>
+            <textarea value={descInput} onChange={e => setDescInput(e.target.value)} rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              placeholder={t('jobs.descriptionPlaceholder')} />
+            <div className="flex gap-2 mt-2">
+              <button onClick={saveDescription} disabled={savingDesc}
+                className="px-3 py-1.5 bg-blue-700 text-white rounded-lg text-sm font-medium hover:bg-blue-800 disabled:opacity-40">{t('common.save')}</button>
+              <button onClick={() => setEditingDesc(false)}
+                className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50">{t('common.cancel')}</button>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-700 whitespace-pre-line">{job.description || <span className="text-gray-400">{t('common.noData')}</span>}</p>
+        )}
         {job.diagnosis && (
           <>
             <h3 className="font-semibold text-gray-900 mt-4 mb-2">{t('jobs.diagnosis')}</h3>
@@ -643,13 +689,14 @@ export default function JobCardDetail() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">{t('jobs.selectPart')}</label>
                   <select value={itemForm.part_id} onChange={e => handlePartSelect(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
-                    <option value="">{t('jobs.selectPart')}</option>
+                    <option value="">{t('jobs.customPart')}</option>
                     {parts.map(p => (
                       <option key={p.id} value={p.id}>
-                        {p.name} (Stock: {p.quantity_in_stock})
+                        {p.name}
                       </option>
                     ))}
                   </select>
+                  <p className="text-xs text-gray-400 mt-1.5">{t('jobs.customPartHint')}</p>
                 </div>
               )}
               {itemType === 'labour' && (
