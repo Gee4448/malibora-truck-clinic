@@ -5,12 +5,12 @@
 -- Source: Antony voice note PTT-20260718-WA0024.
 --
 -- Architecture: a Supabase Edge Function `send-sms` (supabase/functions/send-sms)
--- calls the Beem Africa API using SECRET credentials stored as function secrets,
--- so the API key never reaches the browser. This table logs every attempt so
--- staff can see what went out. The Edge Function (service role) writes the log.
+-- calls the Africa's Talking API using SECRET credentials stored as function
+-- secrets, so the API key never reaches the browser. This table logs every
+-- attempt so staff can see what went out. The Edge Function (service role) writes it.
 --
--- INACTIVE until Beem credentials are set as function secrets:
---   supabase secrets set BEEM_API_KEY=... BEEM_SECRET_KEY=... BEEM_SENDER_ID=...
+-- INACTIVE until the SMS credentials are set as function secrets:
+--   supabase secrets set AT_USERNAME=... AT_API_KEY=... AT_SENDER_ID=...
 -- Until then, sends are recorded with status 'skipped' and nothing is sent.
 --
 -- Apply in Supabase dashboard -> SQL Editor -> Run.

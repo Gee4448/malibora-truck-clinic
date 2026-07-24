@@ -1,11 +1,11 @@
 import { supabase } from './supabase'
 
 // Client-side SMS helper. Calls the `send-sms` Edge Function, which holds the
-// Beem Africa credentials server-side. Every call is safe to fire-and-forget:
+// Africa's Talking credentials server-side. Every call is safe to fire-and-forget:
 // it never throws, so a notification problem can't break the action that
 // triggered it (saving a handover, marking an invoice sent, etc).
 //
-// While Beem is not configured, the Edge Function records the attempt as
+// While the SMS provider is not configured, the Edge Function records the attempt as
 // 'skipped' and returns { skipped: true } — the UI just carries on.
 
 // Normalize a Tanzanian phone number to 255XXXXXXXXX.

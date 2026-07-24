@@ -1,12 +1,13 @@
 // Supabase Edge Function: send-sms
 //
-// Sends an SMS to a customer via Beem Africa, keeping the API credentials on the
-// server (never in the browser). Logs every attempt to the sms_log table.
+// Sends an SMS to a customer via Africa's Talking, keeping the API credentials on
+// the server (never in the browser). Logs every attempt to the sms_log table.
 //
 // Deploy:  supabase functions deploy send-sms
-// Secrets: supabase secrets set BEEM_API_KEY=xxx BEEM_SECRET_KEY=xxx BEEM_SENDER_ID=MALIBORA
+// Secrets: supabase secrets set AT_USERNAME=xxx AT_API_KEY=xxx AT_SENDER_ID=MALIBORA
+//          (use AT_USERNAME=sandbox for the free test environment)
 //
-// Until the Beem secrets are set, requests are recorded as 'skipped' and nothing
+// Until the AT secrets are set, requests are recorded as 'skipped' and nothing
 // is sent — so the app works fine before the account is provisioned.
 
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
@@ -25,12 +26,13 @@ const json = (body: unknown, status = 200) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
-// Normalize a Tanzanian phone number to Beem's expected format (255XXXXXXXXX).
+// Normalize a Tanzanian phone number to E.164 (+255XXXXXXXXX), which Africa's
+// Talking requires.
 function normalizeTZ(phone: string): string {
   let p = String(phone || "").replace(/[^0-9]/g, "");
   if (p.startsWith("0")) p = "255" + p.slice(1);
   else if (p.length === 9 && (p.startsWith("7") || p.startsWith("6"))) p = "255" + p;
-  return p;
+  return p ? "+" + p : "";
 }
 
 serve(async (req) => {
@@ -58,9 +60,9 @@ serve(async (req) => {
     return json({ ok: false, error: "missing_to_or_message" }, 400);
   }
 
-  const apiKey = Deno.env.get("BEEM_API_KEY");
-  const secretKey = Deno.env.get("BEEM_SECRET_KEY");
-  const senderId = Deno.env.get("BEEM_SENDER_ID") ?? "INFO";
+  const username = Deno.env.get("AT_USERNAME");
+  const apiKey = Deno.env.get("AT_API_KEY");
+  const senderId = Deno.env.get("AT_SENDER_ID"); // optional alphanumeric/short code
 
   const log = async (status: string, provider_response: unknown) => {
     try {
@@ -72,28 +74,33 @@ serve(async (req) => {
   };
 
   // Not configured yet — record and no-op so the app keeps working.
-  if (!apiKey || !secretKey) {
+  if (!apiKey || !username) {
     await log("skipped", { reason: "not_configured" });
     return json({ ok: false, skipped: true, reason: "not_configured" });
   }
 
+  // The sandbox username uses a separate host so you can test without spending.
+  const host = username === "sandbox"
+    ? "https://api.sandbox.africastalking.com"
+    : "https://api.africastalking.com";
+
   try {
-    const auth = btoa(`${apiKey}:${secretKey}`);
-    const res = await fetch("https://apisms.beem.africa/v1/send", {
+    const form = new URLSearchParams({ username, to, message });
+    if (senderId) form.set("from", senderId);
+
+    const res = await fetch(`${host}/version1/messaging`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Basic ${auth}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Accept": "application/json",
+        "apiKey": apiKey,
       },
-      body: JSON.stringify({
-        source_addr: senderId,
-        encoding: 0,
-        message,
-        recipients: [{ recipient_id: 1, dest_addr: to }],
-      }),
+      body: form.toString(),
     });
     const body = await res.json().catch(() => ({}));
-    const ok = res.ok;
+    // AT returns 201 on accept; per-recipient statusCode 100–102 means success.
+    const recipient = body?.SMSMessageData?.Recipients?.[0];
+    const ok = res.ok && recipient?.statusCode >= 100 && recipient?.statusCode <= 102;
     await log(ok ? "sent" : "failed", body);
     return json({ ok, provider: body }, ok ? 200 : 502);
   } catch (e) {
