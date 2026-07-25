@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { useAuth } from '../../contexts/AuthContext'
+import Logo from '../common/Logo'
 import {
   LayoutDashboard,
   Users,
@@ -13,7 +14,6 @@ import {
   BarChart3,
   Settings,
   LogOut,
-  Truck,
   X,
 } from 'lucide-react'
 
@@ -55,13 +55,7 @@ export default function Sidebar({ isOpen, onClose }) {
       >
         {/* Logo */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200">
-          <div className="flex items-center gap-2">
-            <Truck className="w-8 h-8 text-blue-700" />
-            <div>
-              <h1 className="text-sm font-bold text-gray-900">Malibora</h1>
-              <p className="text-xs text-gray-500">Truck Clinic</p>
-            </div>
-          </div>
+          <Logo height={36} iconClassName="w-8 h-8 text-blue-700" />
           <button onClick={onClose} className="p-1 rounded hover:bg-gray-100">
             <X className="w-5 h-5" />
           </button>

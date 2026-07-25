@@ -1,10 +1,37 @@
 @import "tailwindcss";
 
+/* Lighter, airier shadow scale — the default xl/2xl shadows read heavy and
+   dark. Softening opacity and cool-tinting (slate) makes the whole app feel
+   lighter without editing the ~24 elevated surfaces individually. */
+@theme {
+  --shadow-md: 0 3px 8px -2px rgb(15 23 42 / 0.07), 0 1px 3px -1px rgb(15 23 42 / 0.05);
+  --shadow-lg: 0 8px 20px -6px rgb(15 23 42 / 0.08), 0 2px 6px -3px rgb(15 23 42 / 0.05);
+  --shadow-xl: 0 14px 32px -10px rgb(15 23 42 / 0.10), 0 4px 10px -5px rgb(15 23 42 / 0.06);
+  --shadow-2xl: 0 22px 48px -14px rgb(15 23 42 / 0.14);
+
+  /* Brand recolor: the app was built with `blue-*` as its de-facto primary
+     (500+ usages). Malibora's brand is orange (logo mark ≈ #F58220), so we
+     remap the whole blue ramp to a matching orange ramp — every existing
+     `bg-blue-600`, `text-blue-700`, etc. becomes on-brand with no markup edits.
+     Mid shades hit the logo orange; 600–800 stay deep enough for legible white
+     button text. (New code can keep using `blue-*` for primary.) */
+  --color-blue-50:  #fff6ec;
+  --color-blue-100: #ffe7d0;
+  --color-blue-200: #fecfa4;
+  --color-blue-300: #fdae70;
+  --color-blue-400: #fa9340;
+  --color-blue-500: #f58220; /* brand orange — accents, rings, icons */
+  --color-blue-600: #c95c0c; /* primary buttons — deep enough for white text */
+  --color-blue-700: #a94d0a; /* hover / headers */
+  --color-blue-800: #97430c;
+  --color-blue-900: #7c370b;
+}
+
 /* Custom theme variables */
 :root {
-  --color-primary: #1e40af;
-  --color-primary-light: #3b82f6;
-  --color-primary-dark: #1e3a8a;
+  --color-primary: #e26c12;
+  --color-primary-light: #f58220;
+  --color-primary-dark: #bd550d;
   --color-success: #059669;
   --color-warning: #d97706;
   --color-danger: #dc2626;
@@ -30,6 +57,69 @@ body {
   background-color: var(--color-gray-50);
   color: var(--color-gray-900);
   -webkit-tap-highlight-color: transparent;
+  /* Crisper glyphs — thinner strokes read lighter than the OS default. */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+html {
+  scroll-behavior: smooth;
+  /* Brand-tint native controls (checkboxes, radios, range) so they don't
+     look like heavy default blue. */
+  accent-color: var(--color-primary-light);
+}
+
+/* ============================================================
+   Global interaction layer
+   Tailwind v4's reset drops the pointer cursor on <button>, so every one of
+   the app's ~200 buttons felt un-clickable. Restore it and give every control
+   a consistent, smooth, tactile feel here — instead of touching each button.
+   ============================================================ */
+
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  summary,
+  select,
+  label:has(> input:not([type="text"]):not([type="number"])) {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+
+  /* Keyboard focus ring only — mouse/touch presses stay clean. */
+  :focus-visible {
+    outline: 2px solid var(--color-primary-light);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+}
+
+/* Smooth hover/press for every button without per-component edits. Utilities
+   like `transition-colors` on individual buttons still win where present. */
+button {
+  transition:
+    background-color var(--dur-fast) ease,
+    border-color var(--dur-fast) ease,
+    color var(--dur-fast) ease,
+    box-shadow var(--dur-fast) ease,
+    filter var(--dur-fast) ease,
+    transform var(--dur-fast) var(--ease-spring);
+}
+
+/* Tactile press. Brightness works on ANY button and never shifts layout, so
+   it is safe on absolutely-positioned toggles (eye/close icons) that already
+   use a translate transform. Normal buttons additionally get a gentle scale. */
+button:not(:disabled):active {
+  filter: brightness(0.94);
+}
+button:not(:disabled):not(.absolute):not(.fixed):active {
+  transform: scale(0.97);
+  transition-duration: 80ms;
 }
 
 /* PWA install prompt */
@@ -177,11 +267,11 @@ body {
 }
 .card-lift:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 25px -8px rgb(30 64 175 / 0.18);
+  box-shadow: 0 10px 25px -8px rgb(226 108 18 / 0.20);
 }
 .card-lift:active {
   transform: translateY(0) scale(0.98);
-  box-shadow: 0 2px 8px -4px rgb(30 64 175 / 0.15);
+  box-shadow: 0 2px 8px -4px rgb(226 108 18 / 0.16);
   transition-duration: 80ms;
 }
 

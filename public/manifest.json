@@ -4,8 +4,8 @@
   "description": "Professional Vehicle Service Management System",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#1e3a8a",
-  "theme_color": "#1e40af",
+  "background_color": "#7c370b",
+  "theme_color": "#c95c0c",
   "orientation": "any",
   "icons": [
     {

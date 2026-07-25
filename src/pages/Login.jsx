@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useLanguage } from '../contexts/LanguageContext'
-import { Truck, Eye, EyeOff, Globe } from 'lucide-react'
+import { Eye, EyeOff, Globe } from 'lucide-react'
+import Logo from '../components/common/Logo'
 import toast from 'react-hot-toast'
 
 export default function Login() {
@@ -43,8 +44,8 @@ export default function Login() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-2xl shadow-lg mb-4">
-            <Truck className="w-9 h-9 text-blue-700" />
+          <div className="inline-flex items-center justify-center bg-white rounded-2xl shadow-lg mb-4 px-5 py-4">
+            <Logo height={44} iconClassName="w-9 h-9 text-blue-700" showText={false} />
           </div>
           <h1 className="text-2xl font-bold text-white">{t('app.name')}</h1>
           <p className="text-blue-200 text-sm mt-1">{t('app.tagline')}</p>
