@@ -342,7 +342,10 @@ export default function InvoiceDetail() {
   }
 
   const handleWhatsApp = () => {
-    if (!invoice?.customers?.phone) return
+    if (!invoice?.customers?.phone) {
+      toast.error(t('invoices.noPhone'))
+      return
+    }
     const phone = invoice.customers.phone.replace(/[^0-9]/g, '')
     const msg = encodeURIComponent(
       `Habari ${invoice.customers.full_name},\n\n` +
@@ -417,11 +420,11 @@ export default function InvoiceDetail() {
   return (
     <div className="max-w-3xl mx-auto space-y-4">
       {/* Actions Bar - no-print */}
-      <div className="flex items-center justify-between no-print">
-        <button onClick={() => navigate('/admin/invoices')} className="flex items-center gap-2 text-gray-600 hover:text-gray-900">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 no-print">
+        <button onClick={() => navigate('/admin/invoices')} className="flex items-center gap-2 text-gray-600 hover:text-gray-900 self-start">
           <ArrowLeft className="w-4 h-4" /> {t('common.back')}
         </button>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 sm:justify-end">
           <button onClick={handleDownloadPDF} className="flex items-center gap-1.5 px-3 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800 text-sm font-medium">
             <Download className="w-4 h-4" /> {t('common.pdf')}
           </button>
@@ -459,7 +462,7 @@ export default function InvoiceDetail() {
       </div>
 
       {/* Invoice Document */}
-      <div className="bg-white rounded-xl border border-gray-200 p-8 print:border-0 print:shadow-none print:p-0">
+      <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-8 print:border-0 print:shadow-none print:p-0">
         {/* Header */}
         <div className="flex justify-between items-start border-b-2 border-blue-700 pb-4 mb-6">
           <div>

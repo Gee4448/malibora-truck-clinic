@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf'
-import 'jspdf-autotable'
+import autoTable from 'jspdf-autotable'
 
 const formatTZS = (amount) => {
   if (!amount && amount !== 0) return 'TZS 0'
@@ -15,8 +15,8 @@ export function generateInvoicePDF(invoice, items, showInternal = false) {
   const doc = new jsPDF()
   const pageWidth = doc.internal.pageSize.getWidth()
 
-  // Colors
-  const blue = [30, 64, 175]
+  // Colors — Malibora brand orange
+  const blue = [201, 92, 12]
   const darkGray = [55, 65, 81]
   const lightGray = [156, 163, 175]
 
@@ -82,7 +82,7 @@ export function generateInvoicePDF(invoice, items, showInternal = false) {
   const tableData = []
 
   if (partItems.length > 0) {
-    tableData.push([{ content: 'PARTS & MATERIALS', colSpan: 5, styles: { fillColor: [240, 245, 255], fontStyle: 'bold', textColor: blue } }])
+    tableData.push([{ content: 'PARTS & MATERIALS', colSpan: 5, styles: { fillColor: [255, 243, 235], fontStyle: 'bold', textColor: blue } }])
     partItems.forEach((item, i) => {
       tableData.push([
         i + 1,
@@ -120,7 +120,7 @@ export function generateInvoicePDF(invoice, items, showInternal = false) {
     })
   }
 
-  doc.autoTable({
+  autoTable(doc, {
     startY: y + 12,
     head: [['#', 'Description', 'Qty', 'Unit Price', 'Amount']],
     body: tableData,
@@ -203,7 +203,7 @@ export function generateInvoicePDF(invoice, items, showInternal = false) {
 export function generateHandoverPDF(handover) {
   const doc = new jsPDF()
   const pageWidth = doc.internal.pageSize.getWidth()
-  const blue = [30, 64, 175]
+  const blue = [201, 92, 12]
 
   // Header
   doc.setFillColor(...blue)

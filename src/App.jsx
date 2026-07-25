@@ -178,6 +178,27 @@ function MechanicPublicRoute({ children }) {
   return children
 }
 
+// Root redirect — role-aware landing.
+// The app installs as a PWA with start_url "/", so every launch hits this.
+// A staff Supabase session must win over any lingering client session,
+// otherwise a staff member on mobile is bounced into the client portal.
+function RootRedirect() {
+  const { user, loading: authLoading } = useAuth()
+  const { customer, loading: clientLoading } = useClient()
+
+  if (authLoading || clientLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-blue-900">
+        <div className="animate-spin w-10 h-10 border-4 border-white border-t-transparent rounded-full"></div>
+      </div>
+    )
+  }
+
+  if (user) return <Navigate to="/admin" replace />
+  if (customer && customer.status === 'approved') return <Navigate to="/client/dashboard" replace />
+  return <Navigate to="/client" replace />
+}
+
 // Client Public Route (redirect to dashboard if logged in)
 function ClientPublicRoute({ children }) {
   const { customer, loading } = useClient()
@@ -225,7 +246,7 @@ function App() {
                 log in with phone + password; the client guards redirect anyone
                 already signed in to their dashboard. Staff reach admin via the
                 discreet "Staff login" link on the client login screen. */}
-            <Route path="/" element={<Navigate to="/client" replace />} />
+            <Route path="/" element={<RootRedirect />} />
 
             {/* Customer view - public, no login required */}
             <Route path="/c/:token" element={<CustomerView />} />

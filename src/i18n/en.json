@@ -312,6 +312,7 @@
     "labourProfit": "Labour Profit",
     "totalProfit": "Total Profit",
     "pdfDownloaded": "PDF downloaded!",
+    "noPhone": "No phone number on file for this customer",
     "proformaGenerated": "Proforma generated!",
     "invoiceGenerated": "Invoice generated!",
     "statuses": {
