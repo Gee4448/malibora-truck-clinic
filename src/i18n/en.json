@@ -216,6 +216,8 @@
     "selectPart": "Select Part",
     "customPart": "-- Custom part (type below) --",
     "customPartHint": "Pick a catalog part to prefill its price (editable), or leave blank and type a custom part with its own price.",
+    "searchOrType": "Search the catalog or type a new name…",
+    "pickerHint": "Type to search the catalog, or enter a brand-new name to add it. Matching an item fills its price (editable).",
     "selectService": "Select Service",
     "technicianName": "Technician Name",
     "selectMechanic": "Select mechanic",

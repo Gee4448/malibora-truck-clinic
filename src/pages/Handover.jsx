@@ -160,8 +160,8 @@ export default function Handover() {
     }
   }
 
-  const handleDownloadPDF = (handover) => {
-    generateHandoverPDF(handover)
+  const handleDownloadPDF = async (handover) => {
+    await generateHandoverPDF(handover)
     toast.success(t('handover.pdfDownloaded'))
   }
 

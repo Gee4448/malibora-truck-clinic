@@ -216,6 +216,8 @@
     "selectPart": "Chagua Kipuri",
     "customPart": "-- Kipuri cha kawaida (andika chini) --",
     "customPartHint": "Chagua kipuri kutoka katalogi ili bei ijae (inaweza kuhaririwa), au acha wazi uandike kipuri chako na bei yake.",
+    "searchOrType": "Tafuta katalogi au andika jina jipya…",
+    "pickerHint": "Andika ili kutafuta katalogi, au weka jina jipya kabisa kuliongeza. Ukilingana na bidhaa bei yake itajaa (inaweza kuhaririwa).",
     "selectService": "Chagua Huduma",
     "technicianName": "Jina la Fundi",
     "selectMechanic": "Chagua fundi",

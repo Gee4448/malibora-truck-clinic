@@ -172,36 +172,38 @@ export default function JobCardDetail() {
     setLabourRates(data || [])
   }
 
-  // Picking a catalog part fills the name AND its price as editable defaults
-  // (A6). Leaving the picker blank = enter a custom part with a manual price.
-  const handlePartSelect = (partId) => {
-    const part = parts.find(p => p.id === partId)
+  // Searchable combobox (input + datalist): the staff member types to filter the
+  // catalog OR types a brand-new name to add a custom part/service. If the typed
+  // text matches a catalog entry, its price fills in as an editable default;
+  // otherwise it's a custom line with a manual price. (client req 2026-07-26 #5)
+  const handlePartInput = (name) => {
+    const part = parts.find(p => p.name?.trim().toLowerCase() === name.trim().toLowerCase())
     if (part) {
       setItemForm({
         ...itemForm,
-        part_id: partId,
-        description: part.name,
+        description: name,
+        part_id: part.id,
         cost_price: part.cost_price ?? 0,
         selling_price: part.selling_price ?? 0,
       })
     } else {
-      setItemForm({ ...itemForm, part_id: '' })
+      setItemForm({ ...itemForm, description: name, part_id: '' })
     }
   }
 
-  const handleLabourSelect = (labourId) => {
-    const labour = labourRates.find(l => l.id === labourId)
+  const handleLabourInput = (name) => {
+    const labour = labourRates.find(l => l.service_name?.trim().toLowerCase() === name.trim().toLowerCase())
     if (labour) {
       setItemForm({
         ...itemForm,
-        labour_id: labourId,
-        description: labour.service_name,
+        description: name,
+        labour_id: labour.id,
         quantity: labour.estimated_hours,
         cost_price: labour.cost_rate ?? 0,
         selling_price: labour.selling_rate ?? 0,
       })
     } else {
-      setItemForm({ ...itemForm, labour_id: '' })
+      setItemForm({ ...itemForm, description: name, labour_id: '' })
     }
   }
 
@@ -694,37 +696,36 @@ export default function JobCardDetail() {
               {itemType === 'part' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">{t('jobs.selectPart')}</label>
-                  <select value={itemForm.part_id} onChange={e => handlePartSelect(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
-                    <option value="">{t('jobs.customPart')}</option>
-                    {parts.map(p => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="text-xs text-gray-400 mt-1.5">{t('jobs.customPartHint')}</p>
+                  <input type="text" list="parts-catalog" value={itemForm.description}
+                    onChange={e => handlePartInput(e.target.value)} required
+                    placeholder={t('jobs.searchOrType')}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                  <datalist id="parts-catalog">
+                    {parts.map(p => <option key={p.id} value={p.name} />)}
+                  </datalist>
+                  <p className="text-xs text-gray-400 mt-1.5">{t('jobs.pickerHint')}</p>
                 </div>
               )}
               {itemType === 'labour' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">{t('jobs.selectService')}</label>
-                  <select value={itemForm.labour_id} onChange={e => handleLabourSelect(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
-                    <option value="">{t('jobs.selectService')}</option>
-                    {labourRates.map(l => (
-                      <option key={l.id} value={l.id}>
-                        {l.service_name}
-                      </option>
-                    ))}
-                  </select>
+                  <input type="text" list="labour-catalog" value={itemForm.description}
+                    onChange={e => handleLabourInput(e.target.value)} required
+                    placeholder={t('jobs.searchOrType')}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                  <datalist id="labour-catalog">
+                    {labourRates.map(l => <option key={l.id} value={l.service_name} />)}
+                  </datalist>
+                  <p className="text-xs text-gray-400 mt-1.5">{t('jobs.pickerHint')}</p>
                 </div>
               )}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('common.description')} *</label>
-                <input type="text" value={itemForm.description} onChange={e => setItemForm({...itemForm, description: e.target.value})} required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
-              </div>
+              {itemType === 'additional' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('common.description')} *</label>
+                  <input type="text" value={itemForm.description} onChange={e => setItemForm({...itemForm, description: e.target.value})} required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                </div>
+              )}
               <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">{t('common.quantity')}</label>

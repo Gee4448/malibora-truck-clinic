@@ -11,7 +11,64 @@ const formatDate = (dateStr) => {
   return new Date(dateStr).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
-export function generateInvoicePDF(invoice, items, showInternal = false) {
+// Load the real Malibora logo from /malibora-logo.png and crop to just the
+// lockup (same crop box as the on-screen Logo component — the asset is a lockup
+// on a padded white disc). Cached, and resolves to null if the file is missing
+// so the PDF header falls back to plain text. Runs in the browser (canvas).
+const LOGO_CROP = { x: 41, y: 135, w: 366, h: 113 }
+let _logoPromise
+function loadLogo() {
+  if (_logoPromise) return _logoPromise
+  _logoPromise = new Promise((resolve) => {
+    try {
+      const img = new Image()
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas')
+          canvas.width = LOGO_CROP.w
+          canvas.height = LOGO_CROP.h
+          const ctx = canvas.getContext('2d')
+          ctx.drawImage(img, LOGO_CROP.x, LOGO_CROP.y, LOGO_CROP.w, LOGO_CROP.h, 0, 0, LOGO_CROP.w, LOGO_CROP.h)
+          resolve({ dataUrl: canvas.toDataURL('image/png'), w: LOGO_CROP.w, h: LOGO_CROP.h })
+        } catch { resolve(null) }
+      }
+      img.onerror = () => resolve(null)
+      img.src = '/malibora-logo.png'
+    } catch { resolve(null) }
+  })
+  return _logoPromise
+}
+
+// Shared PDF header: real logo on a white band with a brand rule when available,
+// otherwise the original orange band with the wordmark as a safe fallback.
+async function drawPdfHeader(doc, pageWidth, subtitle) {
+  const brand = [201, 92, 12]
+  const logo = await loadLogo()
+  if (logo) {
+    const wMM = 52
+    const hMM = wMM * logo.h / logo.w
+    doc.addImage(logo.dataUrl, 'PNG', 14, 11, wMM, hMM)
+    doc.setTextColor(107, 114, 128)
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'normal')
+    doc.text(subtitle, 14, 11 + hMM + 5)
+    doc.setDrawColor(...brand)
+    doc.setLineWidth(1)
+    doc.line(14, 35, pageWidth - 14, 35)
+  } else {
+    doc.setFillColor(...brand)
+    doc.rect(0, 0, pageWidth, 35, 'F')
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(20)
+    doc.setFont('helvetica', 'bold')
+    doc.text('MALIBORA TRUCK CLINIC', 14, 18)
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'normal')
+    doc.text(subtitle, 14, 26)
+  }
+}
+
+export async function generateInvoicePDF(invoice, items, showInternal = false) {
   const doc = new jsPDF()
   const pageWidth = doc.internal.pageSize.getWidth()
 
@@ -20,16 +77,8 @@ export function generateInvoicePDF(invoice, items, showInternal = false) {
   const darkGray = [55, 65, 81]
   const lightGray = [156, 163, 175]
 
-  // Header
-  doc.setFillColor(...blue)
-  doc.rect(0, 0, pageWidth, 35, 'F')
-  doc.setTextColor(255, 255, 255)
-  doc.setFontSize(20)
-  doc.setFont('helvetica', 'bold')
-  doc.text('MALIBORA TRUCK CLINIC', 14, 18)
-  doc.setFontSize(9)
-  doc.setFont('helvetica', 'normal')
-  doc.text('Professional Vehicle Service & Repair | Arusha, Tanzania', 14, 26)
+  // Header (real logo, with orange-band text fallback)
+  await drawPdfHeader(doc, pageWidth, 'Professional Vehicle Service & Repair | Arusha, Tanzania')
 
   // Invoice type & number
   const typeLabel = invoice.invoice_type === 'proforma' ? 'PROFORMA INVOICE' :
@@ -200,21 +249,12 @@ export function generateInvoicePDF(invoice, items, showInternal = false) {
   return doc
 }
 
-export function generateHandoverPDF(handover) {
+export async function generateHandoverPDF(handover) {
   const doc = new jsPDF()
   const pageWidth = doc.internal.pageSize.getWidth()
-  const blue = [201, 92, 12]
 
-  // Header
-  doc.setFillColor(...blue)
-  doc.rect(0, 0, pageWidth, 35, 'F')
-  doc.setTextColor(255, 255, 255)
-  doc.setFontSize(20)
-  doc.setFont('helvetica', 'bold')
-  doc.text('MALIBORA TRUCK CLINIC', 14, 18)
-  doc.setFontSize(10)
-  doc.setFont('helvetica', 'normal')
-  doc.text('VEHICLE HANDOVER CARD', 14, 27)
+  // Header (real logo, with orange-band text fallback)
+  await drawPdfHeader(doc, pageWidth, 'VEHICLE HANDOVER CARD')
 
   // Handover number
   doc.setTextColor(55, 65, 81)
