@@ -1,8 +1,8 @@
-import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
+import { Outlet, NavLink, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { useClient } from '../../contexts/ClientAuthContext'
 import {
-  Home, Truck, ClipboardList, FileText, User, Globe, LogOut
+  Home, Truck, ClipboardList, FileText, ClipboardCheck, User, Globe, LogOut
 } from 'lucide-react'
 
 export default function ClientLayout() {
@@ -19,9 +19,9 @@ export default function ClientLayout() {
   const tabs = [
     { to: '/client/dashboard', icon: Home, label: t('client.nav.home'), end: true },
     { to: '/client/vehicles', icon: Truck, label: t('client.nav.vehicles') },
-    { to: '/client/services', icon: ClipboardList, label: t('client.nav.services') },
+    { to: '/client/services', icon: ClipboardList, label: t('client.nav.jobCards') },
     { to: '/client/invoices', icon: FileText, label: t('client.nav.invoices') },
-    { to: '/client/profile', icon: User, label: t('client.nav.profile') },
+    { to: '/client/handovers', icon: ClipboardCheck, label: t('client.nav.handovers') },
   ]
 
   return (
@@ -57,6 +57,13 @@ export default function ClientLayout() {
           </nav>
 
           <div className="flex items-center gap-2">
+            <Link
+              to="/client/profile"
+              aria-label={t('client.nav.profile')}
+              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors press cursor-pointer"
+            >
+              <User className="w-4 h-4" />
+            </Link>
             <button
               onClick={() => switchLanguage(locale === 'en' ? 'sw' : 'en')}
               className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium bg-white/10 hover:bg-white/20 transition-colors press cursor-pointer"

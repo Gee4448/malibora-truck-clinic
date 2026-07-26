@@ -782,10 +782,17 @@
   "client": {
     "nav": {
       "home": "Home",
-      "vehicles": "Vehicles",
+      "vehicles": "My Vehicles",
       "services": "Services",
+      "jobCards": "Job Cards",
       "invoices": "Invoices",
+      "handovers": "Handovers",
       "profile": "Profile"
+    },
+    "handovers": {
+      "title": "My Handovers",
+      "empty": "No handovers yet — you'll see one here when your vehicle is handed back.",
+      "warranty": "Warranty"
     },
     "login": {
       "portal": "Customer Portal",

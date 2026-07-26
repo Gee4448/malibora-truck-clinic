@@ -782,10 +782,17 @@
   "client": {
     "nav": {
       "home": "Nyumbani",
-      "vehicles": "Magari",
+      "vehicles": "Magari Yangu",
       "services": "Huduma",
+      "jobCards": "Kadi za Kazi",
       "invoices": "Ankara",
+      "handovers": "Makabidhiano",
       "profile": "Wasifu"
+    },
+    "handovers": {
+      "title": "Makabidhiano Yangu",
+      "empty": "Hakuna makabidhiano bado — utaona hapa gari lako litakapokabidhiwa.",
+      "warranty": "Dhamana"
     },
     "login": {
       "portal": "Mlango wa Mteja",
