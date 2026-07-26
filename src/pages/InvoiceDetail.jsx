@@ -412,8 +412,9 @@ export default function InvoiceDetail() {
   const amountPaid = Number(invoice.amount_paid) || 0
   const balanceOwed = Math.max(0, invoiceTotal - amountPaid)
   const vatRate = invoice.vat_rate != null ? Number(invoice.vat_rate) : 18
-  // Invoice is locked for edits once any payment has started or it's finalised.
-  const docEditable = invoice.status !== 'paid' && invoice.status !== 'cancelled' && invoice.status !== 'partial'
+  // #3 (Antony): edits/added costs allowed only while NOT yet approved or paid.
+  // Once approved (or any payment has started / it's cancelled) the invoice is locked.
+  const docEditable = !['approved', 'partial', 'paid', 'cancelled'].includes(invoice.status)
 
   const typeLabels = { proforma: t('invoices.proforma'), final: t('invoices.final'), internal: t('invoices.internal') }
   const handleSendStaffMessage = async () => {

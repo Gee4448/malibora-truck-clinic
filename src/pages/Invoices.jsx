@@ -13,7 +13,8 @@ export default function Invoices() {
   const [invoices, setInvoices] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const [typeFilter, setTypeFilter] = useState('all')
+  // #2: proforma and final invoices live in their own sections (Antony: "don't mix them").
+  const [activeTab, setActiveTab] = useState('proforma')
   const [statusFilter, setStatusFilter] = useState('all')
 
   useEffect(() => { fetchInvoices() }, [])
@@ -59,14 +60,27 @@ export default function Invoices() {
     }
   }
 
-  const filtered = invoices.filter(inv => {
+  // Search + status apply within every section; the active tab picks the type.
+  const matchesFilters = (inv) => {
     const matchSearch = inv.invoice_number?.toLowerCase().includes(search.toLowerCase()) ||
       inv.customers?.full_name?.toLowerCase().includes(search.toLowerCase()) ||
       inv.job_cards?.job_number?.toLowerCase().includes(search.toLowerCase())
-    const matchType = typeFilter === 'all' || inv.invoice_type === typeFilter
     const matchStatus = statusFilter === 'all' || inv.status === statusFilter
-    return matchSearch && matchType && matchStatus
-  })
+    return matchSearch && matchStatus
+  }
+
+  const inScope = invoices.filter(matchesFilters)
+  const counts = {
+    proforma: inScope.filter(i => i.invoice_type === 'proforma').length,
+    final: inScope.filter(i => i.invoice_type === 'final').length,
+    internal: inScope.filter(i => i.invoice_type === 'internal').length,
+  }
+  const tabs = [
+    { key: 'proforma', label: t('invoices.tabProforma') },
+    { key: 'final', label: t('invoices.tabFinal') },
+    ...(canViewInternal ? [{ key: 'internal', label: t('invoices.tabInternal') }] : []),
+  ]
+  const filtered = inScope.filter(inv => inv.invoice_type === activeTab)
 
   const typeColors = {
     proforma: 'bg-purple-100 text-purple-700',
@@ -90,6 +104,23 @@ export default function Invoices() {
         <h1 className="text-2xl font-bold text-gray-900">{t('invoices.title')}</h1>
       </div>
 
+      {/* #2: separate Proforma / Final (/ Internal) sections */}
+      <div className="flex gap-1 border-b border-gray-200 overflow-x-auto">
+        {tabs.map(tab => (
+          <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 -mb-px transition ${
+              activeTab === tab.key
+                ? 'border-blue-600 text-blue-700'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}>
+            {tab.label}
+            <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+              activeTab === tab.key ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500'
+            }`}>{counts[tab.key]}</span>
+          </button>
+        ))}
+      </div>
+
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
@@ -98,13 +129,6 @@ export default function Invoices() {
             placeholder={t('invoices.search')}
             className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white" />
         </div>
-        <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
-          className="px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm">
-          <option value="all">{t('common.all')} {t('common.type')}</option>
-          <option value="proforma">{t('invoices.proforma')}</option>
-          <option value="final">{t('invoices.final')}</option>
-          {canViewInternal && <option value="internal">{t('invoices.internal')}</option>}
-        </select>
         <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
           className="px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm">
           <option value="all">{t('common.all')} {t('invoices.status')}</option>
@@ -123,7 +147,7 @@ export default function Invoices() {
             <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full"></div>
           </div>
         ) : filtered.length === 0 ? (
-          <p className="p-8 text-center text-gray-500">{t('common.noData')}</p>
+          <p className="p-8 text-center text-gray-500">{t('invoices.noneInSection')}</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
