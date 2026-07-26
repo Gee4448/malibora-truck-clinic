@@ -412,9 +412,14 @@ export default function InvoiceDetail() {
   const amountPaid = Number(invoice.amount_paid) || 0
   const balanceOwed = Math.max(0, invoiceTotal - amountPaid)
   const vatRate = invoice.vat_rate != null ? Number(invoice.vat_rate) : 18
-  // #3 (Antony): edits/added costs allowed only while NOT yet approved or paid.
-  // Once approved (or any payment has started / it's cancelled) the invoice is locked.
-  const docEditable = !['approved', 'partial', 'paid', 'cancelled'].includes(invoice.status)
+  // #3 (Antony): "add cost to the same invoice only while not yet approved/paid."
+  // A PROFORMA is the quote the client approves, so it locks once approved — you don't
+  // silently change a quote they agreed to. A FINAL invoice is generated AFTER approval
+  // and is where costs discovered during the repair get added, so it stays editable
+  // until money actually moves (partial/paid) or it's cancelled.
+  const docEditable = invoice.invoice_type === 'proforma'
+    ? !['approved', 'partial', 'paid', 'cancelled'].includes(invoice.status)
+    : !['partial', 'paid', 'cancelled'].includes(invoice.status)
 
   const typeLabels = { proforma: t('invoices.proforma'), final: t('invoices.final'), internal: t('invoices.internal') }
   const handleSendStaffMessage = async () => {

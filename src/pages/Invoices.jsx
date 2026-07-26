@@ -82,12 +82,6 @@ export default function Invoices() {
   ]
   const filtered = inScope.filter(inv => inv.invoice_type === activeTab)
 
-  const typeColors = {
-    proforma: 'bg-purple-100 text-purple-700',
-    final: 'bg-blue-100 text-blue-700',
-    internal: 'bg-gray-100 text-gray-700',
-  }
-
   const statusColors = {
     draft: 'bg-gray-100 text-gray-600',
     sent: 'bg-blue-100 text-blue-700',
@@ -154,7 +148,6 @@ export default function Invoices() {
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
                   <th className="text-left p-3 font-medium text-gray-600">{t('invoices.number')}</th>
-                  <th className="text-left p-3 font-medium text-gray-600">{t('invoices.type')}</th>
                   <th className="text-left p-3 font-medium text-gray-600">{t('invoices.customer')}</th>
                   <th className="text-left p-3 font-medium text-gray-600 hidden md:table-cell">{t('invoices.job')}</th>
                   <th className="text-right p-3 font-medium text-gray-600">{t('invoices.total')}</th>
@@ -171,11 +164,6 @@ export default function Invoices() {
                       <Link to={`/admin/invoices/${inv.id}`} className="font-medium text-blue-700 hover:text-blue-800">
                         {inv.invoice_number}
                       </Link>
-                    </td>
-                    <td className="p-3">
-                      <span className={`text-xs px-2 py-1 rounded-full font-medium capitalize ${typeColors[inv.invoice_type]}`}>
-                        {inv.invoice_type}
-                      </span>
                     </td>
                     <td className="p-3 text-gray-700">{inv.customers?.full_name}</td>
                     <td className="p-3 hidden md:table-cell">
