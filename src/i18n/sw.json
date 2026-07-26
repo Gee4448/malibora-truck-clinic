@@ -191,6 +191,11 @@
     "assignedTo": "Amepewa",
     "mileageIn": "Maili Kuingia",
     "fuelLevel": "Kiwango cha Mafuta",
+    "itemTypes": {
+      "part": "Kipuri",
+      "labour": "Kazi",
+      "additional": "Nyongeza"
+    },
     "dateIn": "Tarehe ya Kuingia",
     "datePromised": "Tarehe ya Ahadi",
     "dateCompleted": "Tarehe ya Kukamilika",
@@ -287,6 +292,11 @@
     "partiallyPaid": "Imelipwa Kiasi",
     "paymentRecorded": "Malipo yamerekodiwa",
     "enterAmount": "Weka kiasi cha malipo zaidi ya sifuri",
+    "declaredPayments": "Malipo yanayosubiri uthibitisho",
+    "confirm": "Thibitisha",
+    "reject": "Kataa",
+    "paymentConfirmed": "Malipo yamethibitishwa",
+    "paymentRejected": "Malipo yamekataliwa",
     "refPlaceholder": "Rejea ya muamala...",
     "print": "Chapisha",
     "sendWhatsApp": "Tuma WhatsApp",
@@ -598,6 +608,13 @@
     "business": "Biashara",
     "location": "Mahali",
     "vatRate": "Kiwango cha VAT"
+  },
+  "notifications": {
+    "title": "Arifa",
+    "empty": "Hakuna arifa bado",
+    "markAllRead": "Weka zote zimesomwa",
+    "proformaRequest": "Proforma imeombwa",
+    "paymentDeclared": "Malipo yametangazwa"
   },
   "paymentMethods": {
     "cash": "Taslimu",
@@ -946,6 +963,12 @@
       "title": "Historia ya Huduma",
       "noServices": "Hakuna huduma zilizopatikana",
       "notFound": "Huduma haipatikani",
+      "workCosts": "Kazi na Gharama",
+      "estimatedTotal": "Jumla Inayokadiriwa",
+      "requestProforma": "Omba Ankara ya Proforma",
+      "requestProformaHint": "Umeridhika na gharama zilizo hapo juu? Omba ankara ya proforma nasi tutaiandaa ili uweze kulipa.",
+      "proformaRequested": "Proforma imeombwa — tunaiandaa",
+      "requestSent": "Ombi limetumwa Malibora",
       "filter": {
         "active": "Zinazoendelea",
         "completed": "Zilizokamilika",
@@ -966,7 +989,21 @@
       "agreeConfirm": "Thibitisha unakubali proforma hii?",
       "agreed": "Umekubali proforma hii",
       "depositInfo": "Amana Inahitajika",
-      "receipt": "Risiti ya Malipo"
+      "receipt": "Risiti ya Malipo",
+      "payNow": "Lipa Sasa",
+      "makePayment": "Fanya Malipo",
+      "amountToPay": "Kiasi cha kulipa",
+      "payFull": "Lipa kiasi chote",
+      "payPartial": "Lipa sehemu sasa",
+      "method": "Njia ya malipo",
+      "referenceOptional": "Kumbukumbu (si lazima)",
+      "submitPayment": "Nimelipa",
+      "paymentDeclared": "Malipo yamewasilishwa — yanasubiri uthibitisho kutoka Malibora",
+      "awaitingConfirmation": "Yanasubiri uthibitisho",
+      "amountPaid": "Kiasi kilicholipwa",
+      "balanceOwed": "Salio linalodaiwa",
+      "exceedsBalance": "Kiasi ni zaidi ya salio linalodaiwa",
+      "payHint": "Baada ya kulipa kwa M-Pesa, taslimu au benki, wasilisha hapa na Malibora watathibitisha."
     },
     "profile": {
       "title": "Wasifu Wangu",

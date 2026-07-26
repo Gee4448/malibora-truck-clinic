@@ -1,19 +1,25 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useLanguage } from '../../contexts/LanguageContext'
+import { useClient } from '../../contexts/ClientAuthContext'
 import { supabase, formatTZS, formatDate } from '../../lib/supabase'
+import { notifyStaff } from '../../lib/notifications'
 import {
   ArrowLeft, CheckCircle2, XCircle, AlertTriangle, Clock,
-  Wrench, ClipboardCheck, Phone
+  Wrench, ClipboardCheck, Phone, Receipt, Send
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function ClientServiceDetail() {
   const { id } = useParams()
   const { t } = useLanguage()
+  const { customer } = useClient()
   const [jobCard, setJobCard] = useState(null)
   const [inspection, setInspection] = useState(null)
   const [items, setItems] = useState([])
+  const [jobItems, setJobItems] = useState([])
+  const [proformaReq, setProformaReq] = useState(null)
+  const [requesting, setRequesting] = useState(false)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => { fetchData() }, [id])
@@ -47,6 +53,23 @@ export default function ClientServiceDetail() {
       if (!jc) { setLoading(false); return }
       setJobCard(jc)
 
+      // Costed line items staff added (customer-safe columns only — never cost/profit)
+      // and any existing proforma request, so the client sees the real bill and
+      // whether they've already asked for a proforma.
+      const [jobItemsRes, reqRes] = await Promise.all([
+        supabase.from('job_card_items')
+          .select('id, item_type, description, quantity, selling_price, total_selling')
+          .eq('job_card_id', id)
+          .order('item_type', { ascending: true }),
+        supabase.from('proforma_requests')
+          .select('id, status, created_at')
+          .eq('job_card_id', id)
+          .order('created_at', { ascending: false })
+          .limit(1),
+      ])
+      setJobItems(jobItemsRes.data || [])
+      setProformaReq(reqRes.data?.[0] || null)
+
       if (jc.inspection_id) {
         const [inspRes, itemsRes] = await Promise.all([
           supabase.from('inspections').select('*').eq('id', jc.inspection_id).single(),
@@ -59,6 +82,31 @@ export default function ClientServiceDetail() {
       console.error('Service detail error:', err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const requestProforma = async () => {
+    setRequesting(true)
+    try {
+      const { data, error } = await supabase.from('proforma_requests').insert({
+        job_card_id: id,
+        customer_id: customer?.id || null,
+        status: 'pending',
+      }).select('id, status, created_at').single()
+      if (error) throw error
+      setProformaReq(data)
+      await notifyStaff({
+        type: 'proforma_request',
+        title: t('client.services.requestProforma'),
+        body: `${customer?.full_name || t('invoices.customer')} — ${jobCard?.job_number}`,
+        jobCardId: id,
+        customerId: customer?.id || null,
+      })
+      toast.success(t('client.services.requestSent'))
+    } catch (err) {
+      toast.error(err.message)
+    } finally {
+      setRequesting(false)
     }
   }
 
@@ -99,6 +147,10 @@ export default function ClientServiceDetail() {
   const repairDone = items.filter(i => i.repair_status === 'done').length
   const repairPct = items.length ? Math.round((repairDone / items.length) * 100) : 0
   const repairStarted = items.some(i => i.repair_status && i.repair_status !== 'pending') || !!inspection?.repair_summary
+  const jobItemsTotal = jobItems.reduce((s, i) => s + Number(i.total_selling || (i.selling_price || 0) * (i.quantity || 1)), 0)
+  // The client can ask for a proforma once staff have priced the work, but not
+  // while a request is already pending. (Staff mark it fulfilled when they send one.)
+  const canRequestProforma = jobItems.length > 0 && (!proformaReq || proformaReq.status === 'fulfilled')
 
   if (loading) {
     return (
@@ -318,6 +370,59 @@ export default function ClientServiceDetail() {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Work & Costs — the priced job-card line items (what the client will pay) */}
+      {jobItems.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="p-4 border-b border-gray-100 bg-gray-50 flex items-center gap-2">
+            <Receipt className="w-4 h-4 text-blue-600" />
+            <h3 className="font-semibold text-gray-900 text-sm">{t('client.services.workCosts')}</h3>
+          </div>
+          <div className="divide-y divide-gray-100">
+            {jobItems.map((item) => (
+              <div key={item.id} className="flex items-center justify-between p-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-gray-900 truncate">{item.description}</p>
+                  <p className="text-xs text-gray-400 capitalize">
+                    {t(`jobs.itemTypes.${item.item_type}`)} · {item.quantity} × {formatTZS(item.selling_price)}
+                  </p>
+                </div>
+                <p className="text-sm font-medium text-gray-900 ml-3">
+                  {formatTZS(item.total_selling || (item.selling_price || 0) * (item.quantity || 1))}
+                </p>
+              </div>
+            ))}
+          </div>
+          <div className="p-4 bg-gray-50 border-t border-gray-200 flex justify-between text-sm">
+            <span className="text-gray-500">{t('client.services.estimatedTotal')}</span>
+            <span className="font-bold text-gray-900">{formatTZS(jobItemsTotal)}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Request Proforma — client asks staff to prepare a proforma to pay against */}
+      {jobItems.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          {proformaReq && proformaReq.status === 'pending' ? (
+            <div className="flex items-center gap-2 justify-center text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg py-3">
+              <Clock className="w-4 h-4" />
+              {t('client.services.proformaRequested')}
+            </div>
+          ) : (
+            <>
+              <p className="text-xs text-gray-500 mb-2.5 text-center">{t('client.services.requestProformaHint')}</p>
+              <button
+                onClick={requestProforma}
+                disabled={requesting || !canRequestProforma}
+                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-blue-700 text-white font-medium rounded-xl hover:bg-blue-800 transition active:scale-[0.98] disabled:opacity-50"
+              >
+                <Send className="w-4 h-4" />
+                {t('client.services.requestProforma')}
+              </button>
+            </>
+          )}
         </div>
       )}
 

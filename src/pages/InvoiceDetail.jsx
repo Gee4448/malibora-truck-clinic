@@ -33,6 +33,7 @@ export default function InvoiceDetail() {
   const [newMessage, setNewMessage] = useState('')
   const [sendingMessage, setSendingMessage] = useState(false)
   const [depositPct, setDepositPct] = useState(70)
+  const [declaredPayments, setDeclaredPayments] = useState([]) // client-declared, awaiting confirm
 
   useEffect(() => { fetchInvoice() }, [id])
 
@@ -94,6 +95,15 @@ export default function InvoiceDetail() {
         .eq('invoice_id', data.id)
         .order('created_at', { ascending: true })
       setMessages(msgs || [])
+
+      // Payments the customer declared from the portal, awaiting staff confirmation.
+      const { data: pays } = await supabase
+        .from('invoice_payments')
+        .select('*')
+        .eq('invoice_id', data.id)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: true })
+      setDeclaredPayments(pays || [])
     } catch (err) {
       toast.error(t('invoices.loadError'))
       navigate('/admin/invoices')
@@ -331,6 +341,44 @@ export default function InvoiceDetail() {
     }
   }
 
+  // Confirm a customer-declared payment: mark the ledger row confirmed AND apply
+  // the amount to the invoice (the only place money moves — same math as recordPayment).
+  const confirmDeclaredPayment = async (payment) => {
+    try {
+      const newPaid = amountPaid + Number(payment.amount)
+      const fullyPaid = newPaid >= invoiceTotal - 0.005
+      const invUpdate = {
+        amount_paid: newPaid,
+        payment_method: payment.method || invoice.payment_method,
+        payment_reference: payment.reference || invoice.payment_reference,
+        status: fullyPaid ? 'paid' : 'partial',
+      }
+      if (fullyPaid) invUpdate.paid_at = new Date().toISOString()
+      const { error: e1 } = await supabase.from('invoices').update(invUpdate).eq('id', id)
+      if (e1) throw e1
+      const { error: e2 } = await supabase.from('invoice_payments')
+        .update({ status: 'confirmed', confirmed_at: new Date().toISOString() })
+        .eq('id', payment.id)
+      if (e2) throw e2
+      toast.success(t('invoices.paymentConfirmed'))
+      fetchInvoice()
+    } catch (err) {
+      toast.error(err.message)
+    }
+  }
+
+  const rejectDeclaredPayment = async (payment) => {
+    try {
+      const { error } = await supabase.from('invoice_payments')
+        .update({ status: 'rejected' }).eq('id', payment.id)
+      if (error) throw error
+      toast.success(t('invoices.paymentRejected'))
+      fetchInvoice()
+    } catch (err) {
+      toast.error(err.message)
+    }
+  }
+
   const handlePrint = () => {
     window.print()
   }
@@ -460,6 +508,38 @@ export default function InvoiceDetail() {
           )}
         </div>
       </div>
+
+      {/* Customer-declared payments awaiting confirmation (no-print) */}
+      {declaredPayments.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 no-print">
+          <h3 className="text-sm font-semibold text-amber-900 mb-3 flex items-center gap-1.5">
+            <CreditCard className="w-4 h-4" /> {t('invoices.declaredPayments')}
+          </h3>
+          <div className="space-y-2">
+            {declaredPayments.map((p) => (
+              <div key={p.id} className="flex items-center justify-between gap-3 bg-white rounded-lg border border-amber-100 px-3 py-2.5">
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-gray-900">{formatTZS(p.amount)}</p>
+                  <p className="text-xs text-gray-500">
+                    {p.method ? t(`paymentMethods.${p.method}`) : '—'}
+                    {p.reference ? ` · ${p.reference}` : ''} · {formatDate(p.created_at)}
+                  </p>
+                </div>
+                <div className="flex gap-2 flex-shrink-0">
+                  <button onClick={() => confirmDeclaredPayment(p)}
+                    className="px-3 py-1.5 bg-emerald-600 text-white text-xs font-medium rounded-lg hover:bg-emerald-700">
+                    {t('invoices.confirm')}
+                  </button>
+                  <button onClick={() => rejectDeclaredPayment(p)}
+                    className="px-3 py-1.5 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg hover:bg-gray-200">
+                    {t('invoices.reject')}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Invoice Document */}
       <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-8 print:border-0 print:shadow-none print:p-0">

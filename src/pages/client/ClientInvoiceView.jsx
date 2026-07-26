@@ -3,7 +3,8 @@ import { useParams, Link } from 'react-router-dom'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { supabase, formatTZS, formatDate } from '../../lib/supabase'
 import { useClient } from '../../contexts/ClientAuthContext'
-import { ArrowLeft, FileText, CheckCircle2, XCircle, Phone, Send, MessageSquare } from 'lucide-react'
+import { notifyStaff } from '../../lib/notifications'
+import { ArrowLeft, FileText, CheckCircle2, XCircle, Phone, Send, MessageSquare, CreditCard, Clock } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function ClientInvoiceView() {
@@ -13,8 +14,12 @@ export default function ClientInvoiceView() {
   const [invoice, setInvoice] = useState(null)
   const [items, setItems] = useState([])
   const [messages, setMessages] = useState([])
+  const [payments, setPayments] = useState([])
   const [newMessage, setNewMessage] = useState('')
   const [sendingMessage, setSendingMessage] = useState(false)
+  const [showPay, setShowPay] = useState(false)
+  const [payForm, setPayForm] = useState({ mode: 'full', amount: '', method: 'mobile_money', reference: '' })
+  const [declaring, setDeclaring] = useState(false)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => { fetchInvoice() }, [id])
@@ -25,7 +30,7 @@ export default function ClientInvoiceView() {
       // profit columns (internal_cost_*, profit_*) to the client portal.
       const { data: inv } = await supabase
         .from('invoices')
-        .select('id, invoice_number, invoice_type, status, job_card_id, subtotal_parts, subtotal_labour, subtotal_additional, vat_amount, discount_amount, total_amount, deposit_percentage, deposit_amount, customer_agreed_at, paid_at, payment_method, created_at, customers(full_name, phone, company_name, address), job_cards(job_number, vehicles(registration_number, make, model))')
+        .select('id, invoice_number, invoice_type, status, job_card_id, subtotal_parts, subtotal_labour, subtotal_additional, vat_amount, discount_amount, total_amount, amount_paid, deposit_percentage, deposit_amount, customer_agreed_at, paid_at, payment_method, created_at, customers(full_name, phone, company_name, address), job_cards(job_number, vehicles(registration_number, make, model))')
         .eq('id', id)
         .single()
 
@@ -55,11 +60,53 @@ export default function ClientInvoiceView() {
           .eq('invoice_id', inv.id)
           .order('created_at', { ascending: true })
         setMessages(msgs || [])
+
+        const { data: pays } = await supabase
+          .from('invoice_payments')
+          .select('id, amount, method, status, declared_by, created_at')
+          .eq('invoice_id', inv.id)
+          .order('created_at', { ascending: false })
+        setPayments(pays || [])
       }
     } catch (err) {
       console.error('Invoice error:', err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const declarePayment = async () => {
+    const amount = payForm.mode === 'full' ? balanceOwed : Number(payForm.amount)
+    if (!amount || amount <= 0) { toast.error(t('invoices.enterAmount')); return }
+    if (amount > balanceOwed + 0.005) { toast.error(t('client.invoices.exceedsBalance')); return }
+    setDeclaring(true)
+    try {
+      const { error } = await supabase.from('invoice_payments').insert({
+        invoice_id: invoice.id,
+        customer_id: customer?.id || null,
+        amount,
+        method: payForm.method,
+        reference: payForm.reference || null,
+        declared_by: 'customer',
+        status: 'pending',
+      })
+      if (error) throw error
+      await notifyStaff({
+        type: 'payment_declared',
+        title: t('notifications.paymentDeclared'),
+        body: `${customer?.full_name || ''} — ${invoice.invoice_number} · ${formatTZS(amount)}`,
+        invoiceId: invoice.id,
+        jobCardId: invoice.job_card_id,
+        customerId: customer?.id || null,
+      })
+      setShowPay(false)
+      setPayForm({ mode: 'full', amount: '', method: 'mobile_money', reference: '' })
+      toast.success(t('client.invoices.paymentDeclared'))
+      fetchInvoice()
+    } catch (err) {
+      toast.error(err.message)
+    } finally {
+      setDeclaring(false)
     }
   }
 
@@ -107,6 +154,15 @@ export default function ClientInvoiceView() {
   const parts = items.filter(i => i.item_type === 'part')
   const labour = items.filter(i => i.item_type === 'labour')
   const additional = items.filter(i => i.item_type === 'additional')
+
+  const amountPaid = Number(invoice.amount_paid) || 0
+  const balanceOwed = Math.max(0, Number(invoice.total_amount || 0) - amountPaid)
+  const pendingDeclared = payments.filter(p => p.status === 'pending')
+  // The client can pay once staff have sent/approved the invoice for payment, and
+  // there's still a balance and no payment already awaiting staff confirmation.
+  const canPay = balanceOwed > 0.005
+    && ['sent', 'approved', 'negotiating', 'partial'].includes(invoice.status)
+    && pendingDeclared.length === 0
 
   return (
     <div className="space-y-4">
@@ -269,6 +325,113 @@ export default function ClientInvoiceView() {
           </div>
         )}
       </div>
+
+      {/* Payment status — amount paid / balance owed */}
+      {(amountPaid > 0 && invoice.status !== 'paid') && (
+        <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-1.5">
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-500">{t('client.invoices.amountPaid')}</span>
+            <span className="font-medium text-green-700">{formatTZS(amountPaid)}</span>
+          </div>
+          <div className="flex justify-between text-sm border-t border-gray-100 pt-1.5">
+            <span className="text-gray-700 font-medium">{t('client.invoices.balanceOwed')}</span>
+            <span className="font-bold text-gray-900">{formatTZS(balanceOwed)}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Payment awaiting staff confirmation */}
+      {pendingDeclared.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-2.5">
+          <Clock className="w-4 h-4 text-amber-600 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-amber-800">{t('client.invoices.paymentDeclared')}</p>
+            <p className="text-xs text-amber-700 mt-0.5">
+              {formatTZS(pendingDeclared.reduce((s, p) => s + Number(p.amount || 0), 0))} · {t('client.invoices.awaitingConfirmation')}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Pay button — client declares a full or partial payment */}
+      {canPay && (
+        <button
+          onClick={() => { setPayForm({ mode: 'full', amount: '', method: 'mobile_money', reference: '' }); setShowPay(true) }}
+          className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-blue-700 text-white font-medium rounded-xl hover:bg-blue-800 transition active:scale-[0.98]"
+        >
+          <CreditCard className="w-5 h-5" />
+          {t('client.invoices.payNow')} · {formatTZS(balanceOwed)}
+        </button>
+      )}
+
+      {/* Payment modal */}
+      {showPay && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => setShowPay(false)}>
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md p-5 space-y-4" onClick={e => e.stopPropagation()}>
+            <h2 className="text-lg font-bold text-gray-900">{t('client.invoices.makePayment')}</h2>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setPayForm(f => ({ ...f, mode: 'full' }))}
+                className={`py-2.5 rounded-xl text-sm font-medium border transition ${payForm.mode === 'full' ? 'bg-blue-700 text-white border-blue-700' : 'bg-white text-gray-600 border-gray-200'}`}
+              >{t('client.invoices.payFull')}</button>
+              <button
+                onClick={() => setPayForm(f => ({ ...f, mode: 'partial' }))}
+                className={`py-2.5 rounded-xl text-sm font-medium border transition ${payForm.mode === 'partial' ? 'bg-blue-700 text-white border-blue-700' : 'bg-white text-gray-600 border-gray-200'}`}
+              >{t('client.invoices.payPartial')}</button>
+            </div>
+
+            {payForm.mode === 'full' ? (
+              <div className="bg-gray-50 rounded-xl p-3 flex justify-between text-sm">
+                <span className="text-gray-500">{t('client.invoices.amountToPay')}</span>
+                <span className="font-bold text-gray-900">{formatTZS(balanceOwed)}</span>
+              </div>
+            ) : (
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">{t('client.invoices.amountToPay')}</label>
+                <input
+                  type="number" inputMode="numeric" value={payForm.amount}
+                  onChange={e => setPayForm(f => ({ ...f, amount: e.target.value }))}
+                  max={balanceOwed} placeholder={String(balanceOwed)}
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+                <p className="text-[11px] text-gray-400 mt-1">{t('client.invoices.balanceOwed')}: {formatTZS(balanceOwed)}</p>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">{t('client.invoices.method')}</label>
+              <select
+                value={payForm.method}
+                onChange={e => setPayForm(f => ({ ...f, method: e.target.value }))}
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+              >
+                <option value="mobile_money">{t('paymentMethods.mobile_money')}</option>
+                <option value="cash">{t('paymentMethods.cash')}</option>
+                <option value="bank_transfer">{t('paymentMethods.bank_transfer')}</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">{t('client.invoices.referenceOptional')}</label>
+              <input
+                type="text" value={payForm.reference}
+                onChange={e => setPayForm(f => ({ ...f, reference: e.target.value }))}
+                placeholder={t('invoices.refPlaceholder')}
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              />
+            </div>
+
+            <div className="flex gap-2 pt-1">
+              <button onClick={() => setShowPay(false)} className="flex-1 py-2.5 border border-gray-200 text-gray-600 font-medium rounded-xl">{t('common.cancel')}</button>
+              <button onClick={declarePayment} disabled={declaring} className="flex-1 py-2.5 bg-blue-700 text-white font-medium rounded-xl hover:bg-blue-800 disabled:opacity-50">
+                {t('client.invoices.submitPayment')}
+              </button>
+            </div>
+            <p className="text-[11px] text-gray-400 text-center">{t('client.invoices.payHint')}</p>
+          </div>
+        </div>
+      )}
 
       {/* Deposit Info */}
       {invoice.invoice_type === 'proforma' && invoice.deposit_percentage > 0 && invoice.status !== 'paid' && (

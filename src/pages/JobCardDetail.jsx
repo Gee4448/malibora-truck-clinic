@@ -301,6 +301,13 @@ export default function JobCardDetail() {
       }).select().single()
 
       if (error) throw error
+      // Generating a proforma fulfils any pending client request for one.
+      if (type === 'proforma') {
+        await supabase.from('proforma_requests')
+          .update({ status: 'fulfilled' })
+          .eq('job_card_id', id)
+          .eq('status', 'pending')
+      }
       toast.success(type === 'proforma' ? t('invoices.proformaGenerated') : t('invoices.invoiceGenerated'))
       navigate(`/admin/invoices/${data.id}`)
     } catch (err) {

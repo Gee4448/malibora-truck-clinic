@@ -191,6 +191,11 @@
     "assignedTo": "Assigned To",
     "mileageIn": "Mileage In",
     "fuelLevel": "Fuel Level",
+    "itemTypes": {
+      "part": "Part",
+      "labour": "Labour",
+      "additional": "Additional"
+    },
     "dateIn": "Date In",
     "datePromised": "Promised Date",
     "dateCompleted": "Completed Date",
@@ -287,6 +292,11 @@
     "partiallyPaid": "Partially Paid",
     "paymentRecorded": "Payment recorded",
     "enterAmount": "Enter a payment amount greater than zero",
+    "declaredPayments": "Payments awaiting confirmation",
+    "confirm": "Confirm",
+    "reject": "Reject",
+    "paymentConfirmed": "Payment confirmed",
+    "paymentRejected": "Payment rejected",
     "refPlaceholder": "Transaction reference...",
     "print": "Print",
     "sendWhatsApp": "Send via WhatsApp",
@@ -598,6 +608,13 @@
     "business": "Business",
     "location": "Location",
     "vatRate": "VAT Rate"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "No notifications yet",
+    "markAllRead": "Mark all read",
+    "proformaRequest": "Proforma requested",
+    "paymentDeclared": "Payment declared"
   },
   "paymentMethods": {
     "cash": "Cash",
@@ -946,6 +963,12 @@
       "title": "Service History",
       "noServices": "No services found",
       "notFound": "Service not found",
+      "workCosts": "Work & Costs",
+      "estimatedTotal": "Estimated Total",
+      "requestProforma": "Request Proforma Invoice",
+      "requestProformaHint": "Happy with the costs above? Request a proforma invoice and we'll prepare it so you can pay.",
+      "proformaRequested": "Proforma requested — we're preparing it",
+      "requestSent": "Request sent to Malibora",
       "filter": {
         "active": "Active",
         "completed": "Completed",
@@ -966,7 +989,21 @@
       "agreeConfirm": "Confirm you agree to this proforma?",
       "agreed": "You agreed to this proforma",
       "depositInfo": "Deposit Required",
-      "receipt": "Payment Receipt"
+      "receipt": "Payment Receipt",
+      "payNow": "Pay Now",
+      "makePayment": "Make a Payment",
+      "amountToPay": "Amount to pay",
+      "payFull": "Pay full amount",
+      "payPartial": "Pay part now",
+      "method": "Payment method",
+      "referenceOptional": "Reference (optional)",
+      "submitPayment": "I've Paid",
+      "paymentDeclared": "Payment submitted — awaiting confirmation from Malibora",
+      "awaitingConfirmation": "Awaiting confirmation",
+      "amountPaid": "Amount paid",
+      "balanceOwed": "Balance owed",
+      "exceedsBalance": "Amount is more than the balance owed",
+      "payHint": "After you pay by M-Pesa, cash or bank, submit here and Malibora will confirm it."
     },
     "profile": {
       "title": "My Profile",
