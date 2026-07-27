@@ -6,6 +6,7 @@ import { supabase, formatTZS, formatDate } from '../lib/supabase'
 import { ArrowLeft, Printer, Download, MessageCircle, CheckCircle, CreditCard, Send, MessageSquare, Save, Pencil, Trash2, Plus, FileText } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { generateInvoicePDF } from '../lib/pdf'
+import { sendSMS, smsTemplates } from '../lib/sms'
 
 export default function InvoiceDetail() {
   const { id } = useParams()
@@ -122,6 +123,21 @@ export default function InvoiceDetail() {
     }
   }
 
+  // #2 fix: ping the customer by SMS when an already-sent, client-facing invoice's
+  // figures change, so a different total doesn't surprise them at payment. Silent for
+  // drafts (not sent yet), internal invoices, and cancelled ones. Fire-and-forget.
+  const notifyClientInvoiceChanged = (newTotal) => {
+    if (!invoice) return
+    if (invoice.invoice_type === 'internal') return
+    if (invoice.status === 'draft' || invoice.status === 'cancelled') return
+    sendSMS({
+      to: invoice.customers?.phone,
+      message: smsTemplates.invoice_updated(invoice.customers?.full_name, invoice.invoice_number, formatTZS(newTotal)),
+      event: 'invoice_updated',
+      customerId: invoice.customer_id,
+    })
+  }
+
   const saveVatRate = async () => {
     const newRate = Number(vatInput)
     if (isNaN(newRate) || newRate < 0 || newRate > 100) {
@@ -146,6 +162,7 @@ export default function InvoiceDetail() {
         profit_margin: totalAmount > 0 ? (profitTotal / totalAmount * 100) : 0,
       }).eq('id', id)
       if (error) throw error
+      notifyClientInvoiceChanged(totalAmount)
       toast.success(t('invoices.updated'))
       setEditingVat(false)
       fetchInvoice()
@@ -298,6 +315,7 @@ export default function InvoiceDetail() {
         profit_margin: totalAmount > 0 ? (profitTotal / totalAmount * 100) : 0,
       }).eq('id', id)
       if (invErr) throw invErr
+      notifyClientInvoiceChanged(totalAmount)
       toast.success(t('invoices.updated'))
       setEditItems(false)
       setDraftItems([])

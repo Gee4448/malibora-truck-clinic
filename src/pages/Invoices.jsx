@@ -14,10 +14,30 @@ export default function Invoices() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   // #2: proforma and final invoices live in their own sections (Antony: "don't mix them").
-  const [activeTab, setActiveTab] = useState('proforma')
+  // Remember the last section the user was on; ignore a stale 'internal' pref for
+  // non-managers (that tab isn't rendered for them).
+  const [activeTab, setActiveTab] = useState(() => {
+    const saved = localStorage.getItem('malibora_invoice_tab')
+    if (saved === 'internal' && !canViewInternal) return 'proforma'
+    return saved || 'proforma'
+  })
   const [statusFilter, setStatusFilter] = useState('all')
 
+  const selectTab = (key) => {
+    setActiveTab(key)
+    localStorage.setItem('malibora_invoice_tab', key)
+  }
+
   useEffect(() => { fetchInvoices() }, [])
+
+  // First visit only (no saved preference): if the default Proforma section is empty,
+  // land on the first section that actually has invoices instead of a blank list.
+  useEffect(() => {
+    if (loading || localStorage.getItem('malibora_invoice_tab')) return
+    const order = ['proforma', 'final', ...(canViewInternal ? ['internal'] : [])]
+    const firstNonEmpty = order.find(k => invoices.some(i => i.invoice_type === k))
+    if (firstNonEmpty) setActiveTab(firstNonEmpty)
+  }, [loading]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchInvoices = async () => {
     try {
@@ -101,7 +121,7 @@ export default function Invoices() {
       {/* #2: separate Proforma / Final (/ Internal) sections */}
       <div className="flex gap-1 border-b border-gray-200 overflow-x-auto">
         {tabs.map(tab => (
-          <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+          <button key={tab.key} onClick={() => selectTab(tab.key)}
             className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 -mb-px transition ${
               activeTab === tab.key
                 ? 'border-blue-600 text-blue-700'

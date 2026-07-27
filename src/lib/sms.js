@@ -38,6 +38,8 @@ export const smsTemplates = {
     `Habari ${name || ''}, ukaguzi wa gari ${vehicle || ''} umekamilika. Tutakupa taarifa zaidi. Malibora Truck Clinic.`.trim(),
   invoice_ready: (name, number, total) =>
     `Habari ${name || ''}, ankara yako ${number || ''} iko tayari. Jumla: ${total || ''}. Malibora Truck Clinic.`.trim(),
+  invoice_updated: (name, number, total) =>
+    `Habari ${name || ''}, ankara yako ${number || ''} imesasishwa. Jumla mpya: ${total || ''}. Malibora Truck Clinic.`.trim(),
   car_ready: (name, vehicle) =>
     `Habari ${name || ''}, gari lako ${vehicle || ''} liko tayari kuchukuliwa. Asante - Malibora Truck Clinic.`.trim(),
 }
