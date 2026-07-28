@@ -6,6 +6,7 @@ import { supabase, formatTZS, formatDate } from '../lib/supabase'
 import { ArrowLeft, Printer, Download, MessageCircle, CheckCircle, CreditCard, Send, MessageSquare, Save, Pencil, Trash2, Plus, FileText } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { generateInvoicePDF } from '../lib/pdf'
+import { syncProformaTotals } from '../lib/proforma'
 import { sendSMS, smsTemplates } from '../lib/sms'
 
 export default function InvoiceDetail() {
@@ -352,6 +353,9 @@ export default function InvoiceDetail() {
         profit_margin: subtotal > 0 ? (profitTotal / subtotal * 100) : 0,
       }).eq('id', id)
       if (invErr) throw invErr
+      // A final invoice with no frozen snapshot edits the JOB CARD's items, so
+      // this job's proforma would silently fall out of step with them.
+      if (itemsSource === 'job_card_items') await syncProformaTotals(invoice.job_card_id)
       notifyClientInvoiceChanged(totalAmount)
       toast.success(t('invoices.updated'))
       setEditItems(false)
@@ -476,7 +480,8 @@ export default function InvoiceDetail() {
   // silently change a quote they agreed to. A FINAL invoice is generated AFTER approval
   // and is where costs discovered during the repair get added, so it stays editable
   // until money actually moves (partial/paid) or it's cancelled.
-  const docEditable = invoice.invoice_type === 'proforma'
+  const isProforma = invoice.invoice_type === 'proforma'
+  const docEditable = isProforma
     ? !['approved', 'partial', 'paid', 'cancelled'].includes(invoice.status)
     : !['partial', 'paid', 'cancelled'].includes(invoice.status)
 
@@ -652,8 +657,24 @@ export default function InvoiceDetail() {
           </div>
         </div>
 
+        {/* A proforma's lines are the JOB CARD's lines — the table above reads
+            job_card_items directly. Editing them from here worked but split the
+            job in two places, so the customer's quote could disagree with the
+            work order. Antony, 28 Jul 2026: "the details of proforma cannot be
+            editable. We can edit those things only in job cards." */}
+        {isProforma && (
+          <div className="no-print flex justify-end mb-2">
+            <Link
+              to={`/admin/job-cards/${invoice.job_card_id}`}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium"
+            >
+              <Pencil className="w-3.5 h-3.5" /> {t('invoices.editOnJobCard')}
+            </Link>
+          </div>
+        )}
+
         {/* Items edit toolbar (no-print) */}
-        {docEditable && (
+        {docEditable && !isProforma && (
           <div className="no-print flex justify-end mb-2">
             {!editItems ? (
               <button onClick={startEditItems}

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useLanguage } from '../contexts/LanguageContext'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase, formatTZS, formatDate } from '../lib/supabase'
+import { findLiveProforma, syncProformaTotals, totalsFromJobItems, DEFAULT_VAT_RATE } from '../lib/proforma'
 import { Plus, Trash2, FileText, Printer, ArrowLeft, Package, Wrench, DollarSign, X, CheckCircle2, XCircle, UserPlus, AlertCircle, Share2, Pencil } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -16,6 +17,7 @@ export default function JobCardDetail() {
   const [parts, setParts] = useState([])
   const [labourRates, setLabourRates] = useState([])
   const [inspectionItems, setInspectionItems] = useState([])
+  const [liveProforma, setLiveProforma] = useState(null)
   const [loading, setLoading] = useState(true)
   const [showAddItem, setShowAddItem] = useState(false)
   const [showAssignTech, setShowAssignTech] = useState(false)
@@ -74,6 +76,10 @@ export default function JobCardDetail() {
           .order('sort_order')
         setInspectionItems(inspItems || [])
       }
+
+      // Drives the button label: there is at most one live proforma per job
+      // card now, so the action is "create" once and "update" forever after.
+      setLiveProforma(await findLiveProforma(id).catch(() => null))
     } catch (err) {
       toast.error(t('jobs.loadError'))
       navigate('/admin/job-cards')
@@ -156,6 +162,7 @@ export default function JobCardDetail() {
         approved_by: profile?.full_name || 'Unknown',
       }).eq('id', itemId)
       toast.success(approved ? t('jobs.serviceApproved') : t('jobs.serviceRejected'))
+      await syncProformaTotals(id)
       fetchJob()
     } catch (err) {
       toast.error(err.message)
@@ -234,6 +241,9 @@ export default function JobCardDetail() {
       toast.success(t('jobs.itemAdded'))
       setShowAddItem(false)
       setItemForm({ part_id: '', labour_id: '', description: '', quantity: 1, cost_price: 0, selling_price: 0 })
+      // The job card is the only place these lines are edited, so it is also
+      // the only place that can keep the quote honest.
+      await syncProformaTotals(id)
       fetchJob()
       fetchParts()
     } catch (err) {
@@ -261,6 +271,7 @@ export default function JobCardDetail() {
     try {
       await supabase.from('job_card_items').delete().eq('id', itemId)
       toast.success(t('jobs.itemRemoved'))
+      await syncProformaTotals(id)
       fetchJob()
     } catch (err) {
       toast.error(err.message)
@@ -269,42 +280,36 @@ export default function JobCardDetail() {
 
   const generateInvoice = async (type) => {
     try {
-      const partItems = items.filter(i => i.item_type === 'part')
-      const labourItems = items.filter(i => i.item_type === 'labour')
-      const additionalItems = items.filter(i => i.item_type === 'additional')
+      // One proforma per job card (client req 28 Jul 2026). Pressing this button
+      // twice used to mint a second quote for the same work; it now refreshes
+      // the one that already exists so the customer keeps seeing one document.
+      const existing = type === 'proforma' ? await findLiveProforma(id) : null
+      if (existing && ['approved', 'partial', 'paid'].includes(existing.status)) {
+        toast.error(t('invoices.proformaLocked'))
+        navigate(`/admin/invoices/${existing.id}`)
+        return
+      }
 
-      const subtotalParts = partItems.reduce((sum, i) => sum + Number(i.total_selling || 0), 0)
-      const subtotalLabour = labourItems.reduce((sum, i) => sum + Number(i.total_selling || 0), 0)
-      const subtotalAdditional = additionalItems.reduce((sum, i) => sum + Number(i.total_selling || 0), 0)
-      const subtotal = subtotalParts + subtotalLabour + subtotalAdditional
-      const VAT_RATE = 18 // default; editable per-invoice on the invoice page
-      const vatAmount = subtotal * VAT_RATE / 100
-      const totalAmount = subtotal + vatAmount
+      const totals = totalsFromJobItems(items, existing?.vat_rate ?? DEFAULT_VAT_RATE)
 
-      const costParts = partItems.reduce((sum, i) => sum + Number(i.total_cost || 0), 0)
-      const costLabour = labourItems.reduce((sum, i) => sum + Number(i.total_cost || 0), 0)
+      let invoiceId
+      if (existing) {
+        const { data, error } = await supabase.from('invoices')
+          .update(totals).eq('id', existing.id).select('id')
+        if (error) throw error
+        if (!data || data.length === 0) throw new Error(t('invoices.loadError'))
+        invoiceId = existing.id
+      } else {
+        const { data, error } = await supabase.from('invoices').insert({
+          job_card_id: id,
+          customer_id: job.customer_id,
+          invoice_type: type,
+          ...totals,
+        }).select('id').single()
+        if (error) throw error
+        invoiceId = data.id
+      }
 
-      const { data, error } = await supabase.from('invoices').insert({
-        job_card_id: id,
-        customer_id: job.customer_id,
-        invoice_type: type,
-        subtotal_parts: subtotalParts,
-        subtotal_labour: subtotalLabour,
-        subtotal_additional: subtotalAdditional,
-        vat_rate: VAT_RATE,
-        vat_amount: vatAmount,
-        total_amount: totalAmount,
-        internal_cost_parts: costParts,
-        internal_cost_labour: costLabour,
-        profit_parts: subtotalParts - costParts,
-        profit_labour: subtotalLabour - costLabour,
-        // Profit is measured against the pre-VAT subtotal: VAT is collected for
-        // the TRA and passed on, so counting it as profit overstates every job.
-        profit_total: subtotal - costParts - costLabour,
-        profit_margin: subtotal > 0 ? ((subtotal - costParts - costLabour) / subtotal * 100) : 0,
-      }).select().single()
-
-      if (error) throw error
       // Generating a proforma fulfils any pending client request for one.
       if (type === 'proforma') {
         await supabase.from('proforma_requests')
@@ -320,8 +325,12 @@ export default function JobCardDetail() {
             .eq('id', id)
         }
       }
-      toast.success(type === 'proforma' ? t('invoices.proformaGenerated') : t('invoices.invoiceGenerated'))
-      navigate(`/admin/invoices/${data.id}`)
+      toast.success(
+        type !== 'proforma' ? t('invoices.invoiceGenerated')
+          : existing ? t('invoices.proformaUpdated')
+          : t('invoices.proformaGenerated')
+      )
+      navigate(`/admin/invoices/${invoiceId}`)
     } catch (err) {
       toast.error(err.message)
     }
@@ -388,7 +397,10 @@ export default function JobCardDetail() {
                from inside the proforma, so quoting always precedes billing. */
             <button onClick={() => generateInvoice('proforma')}
               className="flex items-center gap-1.5 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium">
-              <FileText className="w-4 h-4" /> {t('jobs.generateProforma')}
+              <FileText className="w-4 h-4" />
+              {liveProforma
+                ? `${t('jobs.updateProforma')} · ${liveProforma.invoice_number}`
+                : t('jobs.generateProforma')}
             </button>
           )}
         </div>
