@@ -1180,6 +1180,7 @@
       "submitPayment": "Nimelipa",
       "paymentDeclared": "Malipo yamewasilishwa — yanasubiri uthibitisho kutoka Malibora",
       "awaitingConfirmation": "Yanasubiri uthibitisho",
+      "nothingToPay": "Hati hii bado haina kiasi. Karakana itaweka bei kisha utaweza kulipa hapa.",
       "amountPaid": "Kiasi kilicholipwa",
       "balanceOwed": "Salio linalodaiwa",
       "exceedsBalance": "Kiasi ni zaidi ya salio linalodaiwa",

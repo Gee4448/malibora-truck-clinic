@@ -180,6 +180,11 @@ export default function ClientInvoiceView() {
     && ['draft', 'sent', 'approved', 'negotiating', 'partial'].includes(invoice.status)
     && pendingDeclared.length === 0
 
+  // Payable in principle, but carrying no amount — the garage has not priced it.
+  const nothingToPay = balanceOwed <= 0.005
+    && pendingDeclared.length === 0
+    && !['paid', 'cancelled'].includes(invoice.status)
+
   return (
     <div className="space-y-4">
       <Link to="/client/invoices" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700">
@@ -366,6 +371,16 @@ export default function ClientInvoiceView() {
               {formatTZS(pendingDeclared.reduce((s, p) => s + Number(p.amount || 0), 0))} · {t('client.invoices.awaitingConfirmation')}
             </p>
           </div>
+        </div>
+      )}
+
+      {/* An invoice with no amount on it hid the Pay button and said nothing,
+          which reads as "the app is broken" rather than "we haven't priced this
+          yet". That is exactly how the stale-totals bug stayed invisible. */}
+      {!canPay && nothingToPay && (
+        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex items-start gap-2.5">
+          <Clock className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+          <p className="text-sm text-gray-600">{t('client.invoices.nothingToPay')}</p>
         </div>
       )}
 

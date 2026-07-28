@@ -1180,6 +1180,7 @@
       "submitPayment": "I've Paid",
       "paymentDeclared": "Payment submitted — awaiting confirmation from Malibora",
       "awaitingConfirmation": "Awaiting confirmation",
+      "nothingToPay": "There is no amount on this document yet. The garage will add the prices and you'll be able to pay here.",
       "amountPaid": "Amount paid",
       "balanceOwed": "Balance owed",
       "exceedsBalance": "Amount is more than the balance owed",
