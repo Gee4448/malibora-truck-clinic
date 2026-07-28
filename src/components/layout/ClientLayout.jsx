@@ -2,7 +2,7 @@ import { Outlet, NavLink, Link, useNavigate, useLocation } from 'react-router-do
 import { useLanguage } from '../../contexts/LanguageContext'
 import { useClient } from '../../contexts/ClientAuthContext'
 import {
-  Home, Truck, ClipboardList, FileText, ClipboardCheck, User, Globe, LogOut
+  Home, Truck, ClipboardList, FileText, ClipboardCheck, Search, User, Globe, LogOut
 } from 'lucide-react'
 
 export default function ClientLayout() {
@@ -20,6 +20,7 @@ export default function ClientLayout() {
     { to: '/client/dashboard', icon: Home, label: t('client.nav.home'), end: true },
     { to: '/client/vehicles', icon: Truck, label: t('client.nav.vehicles') },
     { to: '/client/services', icon: ClipboardList, label: t('client.nav.jobCards') },
+    { to: '/client/inspections', icon: Search, label: t('client.nav.inspections') },
     { to: '/client/invoices', icon: FileText, label: t('client.nav.invoices') },
     { to: '/client/handovers', icon: ClipboardCheck, label: t('client.nav.handovers') },
   ]
@@ -96,13 +97,16 @@ export default function ClientLayout() {
               to={tab.to}
               end={tab.end}
               className={({ isActive }) =>
-                `flex-1 flex flex-col items-center gap-0.5 py-2 pt-2.5 text-[10px] font-medium transition-colors duration-200 ${
+                // min-w-0 + a truncating label: with six tabs each cell is ~62px
+                // on a 375px phone, and a long translation would otherwise push
+                // the bar into a horizontal scroll.
+                `flex-1 min-w-0 flex flex-col items-center gap-0.5 py-2 pt-2.5 text-[10px] font-medium transition-colors duration-200 ${
                   isActive ? 'text-blue-700 nav-tab-active' : 'text-gray-400 hover:text-gray-600'
                 }`
               }
             >
-              <tab.icon className="w-5 h-5" />
-              {tab.label}
+              <tab.icon className="w-5 h-5 flex-shrink-0" />
+              <span className="max-w-full truncate px-0.5">{tab.label}</span>
               <span className="nav-dot" />
             </NavLink>
           ))}

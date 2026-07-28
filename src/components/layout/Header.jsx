@@ -27,6 +27,7 @@ export default function Header({ onMenuToggle }) {
     setOpen(false)
     if (notif.invoice_id) navigate(`/admin/invoices/${notif.invoice_id}`)
     else if (notif.job_card_id) navigate(`/admin/job-cards/${notif.job_card_id}`)
+    else if (notif.inspection_id) navigate(`/admin/inspections/${notif.inspection_id}`)
   }
 
   return (

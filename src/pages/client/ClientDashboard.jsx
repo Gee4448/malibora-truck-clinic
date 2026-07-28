@@ -85,7 +85,7 @@ export default function ClientDashboard() {
   const statCards = [
     { to: '/client/vehicles', icon: Truck, iconBg: 'bg-blue-100', iconColor: 'text-blue-600', value: stats.vehicles, label: t('client.dashboard.vehicles') },
     { to: '/client/services', icon: ClipboardList, iconBg: 'bg-yellow-100', iconColor: 'text-yellow-600', value: stats.activeJobs, label: t('client.dashboard.activeServices') },
-    { to: '/client/services', icon: ClipboardCheck, iconBg: 'bg-purple-100', iconColor: 'text-purple-600', value: stats.inspections, label: t('client.dashboard.inspections') },
+    { to: '/client/inspections', icon: ClipboardCheck, iconBg: 'bg-purple-100', iconColor: 'text-purple-600', value: stats.inspections, label: t('client.dashboard.inspections') },
     { to: '/client/invoices', icon: FileText, iconBg: 'bg-green-100', iconColor: 'text-green-600', value: stats.pendingInvoices, label: t('client.dashboard.pendingInvoices') },
   ]
 
@@ -200,6 +200,11 @@ export default function ClientDashboard() {
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div className="flex items-center justify-between p-4 border-b border-gray-100">
           <h2 className="font-semibold text-gray-900">{t('client.dashboard.inspectionsTitle')}</h2>
+          {recentInspections.length > 0 && (
+            <Link to="/client/inspections" className="text-sm text-blue-600 flex items-center gap-1">
+              {t('client.dashboard.viewAll')} <ArrowRight className="w-3 h-3" />
+            </Link>
+          )}
         </div>
         <div className="divide-y divide-gray-100">
           {recentInspections.length === 0 ? (
@@ -211,7 +216,11 @@ export default function ClientDashboard() {
             recentInspections.map((insp) => {
               const cfg = inspectionStatusConfig[insp.status] || inspectionStatusConfig.in_progress
               return (
-                <div key={insp.id} className="flex items-center gap-3 p-4">
+                <Link
+                  key={insp.id}
+                  to={`/client/inspections/${insp.id}`}
+                  className="flex items-center gap-3 p-4 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                >
                   <div className={`w-10 h-10 rounded-xl ${cfg.bg} flex items-center justify-center flex-shrink-0`}>
                     <ClipboardCheck className={`w-5 h-5 ${cfg.color}`} />
                   </div>
@@ -226,7 +235,7 @@ export default function ClientDashboard() {
                   <span className={`text-xs px-2 py-1 rounded-full font-medium ${cfg.bg} ${cfg.color}`}>
                     {t(`inspection.statuses.${insp.status}`)}
                   </span>
-                </div>
+                </Link>
               )
             })
           )}

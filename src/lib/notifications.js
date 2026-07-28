@@ -5,7 +5,7 @@ import { supabase } from './supabase'
 // RLS ("Anon raise notifications", migration 015) constrains type + is_read.
 // Fire-and-forget: a failed notification must never block the customer's action,
 // so errors are swallowed and logged, not thrown.
-export async function notifyStaff({ type, title, body, jobCardId, invoiceId, customerId }) {
+export async function notifyStaff({ type, title, body, jobCardId, invoiceId, inspectionId, customerId }) {
   try {
     const { error } = await supabase.from('notifications').insert({
       type,
@@ -13,6 +13,7 @@ export async function notifyStaff({ type, title, body, jobCardId, invoiceId, cus
       body: body || null,
       job_card_id: jobCardId || null,
       invoice_id: invoiceId || null,
+      inspection_id: inspectionId || null,
       customer_id: customerId || null,
       is_read: false,
     })

@@ -33,6 +33,8 @@ import ClientServices from './pages/client/ClientServices'
 import ClientServiceDetail from './pages/client/ClientServiceDetail'
 import ClientInvoices from './pages/client/ClientInvoices'
 import ClientInvoiceView from './pages/client/ClientInvoiceView'
+import ClientInspections from './pages/client/ClientInspections'
+import ClientInspectionDetail from './pages/client/ClientInspectionDetail'
 import ClientHandovers from './pages/client/ClientHandovers'
 import ClientProfile from './pages/client/ClientProfile'
 import ClientRegister from './pages/client/ClientRegister'
@@ -262,6 +264,8 @@ function App() {
                 <Route path="vehicles" element={<ClientVehicles />} />
                 <Route path="services" element={<ClientServices />} />
                 <Route path="services/:id" element={<ClientServiceDetail />} />
+                <Route path="inspections" element={<ClientInspections />} />
+                <Route path="inspections/:id" element={<ClientInspectionDetail />} />
                 <Route path="invoices" element={<ClientInvoices />} />
                 <Route path="invoices/:id" element={<ClientInvoiceView />} />
                 <Route path="handovers" element={<ClientHandovers />} />
