@@ -3,10 +3,13 @@ import { Link } from 'react-router-dom'
 import { useLanguage } from '../contexts/LanguageContext'
 import { supabase, formatDate } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
-import { Plus, Search, Phone, Mail, Car, Edit2, Trash2, X, CheckCircle2, XCircle, ArrowLeft, ArrowRight, UserPlus, Globe, Users } from 'lucide-react'
+import { Plus, Search, Phone, Mail, Car, Edit2, Trash2, X, CheckCircle2, XCircle, ArrowLeft, ArrowRight, UserPlus, Globe, Users, MessageCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { emptyVehicle } from '../lib/vehicleOptions'
 import VehicleFormBlock from '../components/vehicles/VehicleFormBlock'
+import NotifyCustomerModal from '../components/customers/NotifyCustomerModal'
+import { sendSMS, smsTemplates } from '../lib/sms'
+import { portalUrl } from '../lib/whatsapp'
 
 export default function Customers() {
   const { t } = useLanguage()
@@ -22,6 +25,9 @@ export default function Customers() {
   const [step, setStep] = useState(1) // 1 = personal info, 2 = vehicles (new clients only)
   const [submitting, setSubmitting] = useState(false)
   const [vehicles, setVehicles] = useState([])
+  // { customer, kind: 'approved' | 'rejected' } — drives the notify modal that
+  // opens after a decision, and can be reopened later from the row.
+  const [notify, setNotify] = useState(null)
   const [form, setForm] = useState({
     full_name: '', phone: '', email: '', company_name: '',
     tin_number: '', vrn_number: '', address: '',
@@ -186,27 +192,47 @@ export default function Customers() {
     setStep(1)
   }
 
-  const handleApprove = async (id) => {
+  // Approving is only ever reachable from a 'pending' row, so this is always the
+  // pending -> approved transition. That matters: walk-ins are created 'approved'
+  // with no password, and telling them to "log in" would send them to a login
+  // they can't pass.
+  const handleApprove = async (customer) => {
     try {
       const { error } = await supabase.from('customers').update({
         status: 'approved',
         approved_by: profile?.id,
         approved_at: new Date().toISOString(),
-      }).eq('id', id)
+      }).eq('id', customer.id)
       if (error) throw error
       toast.success(t('customers.approved'))
+      // Fire-and-forget; dormant until the Africa's Talking secrets are set, at
+      // which point this starts delivering without any further code change.
+      sendSMS({
+        to: customer.phone,
+        message: smsTemplates.account_approved(customer.full_name, portalUrl()),
+        event: 'account_approved',
+        customerId: customer.id,
+      })
+      setNotify({ customer, kind: 'approved' })
       fetchCustomers()
     } catch (err) {
       toast.error(err.message)
     }
   }
 
-  const handleReject = async (id) => {
+  const handleReject = async (customer) => {
     if (!confirm(t('customers.rejectConfirm'))) return
     try {
-      const { error } = await supabase.from('customers').update({ status: 'rejected' }).eq('id', id)
+      const { error } = await supabase.from('customers').update({ status: 'rejected' }).eq('id', customer.id)
       if (error) throw error
       toast.success(t('customers.rejected'))
+      sendSMS({
+        to: customer.phone,
+        message: smsTemplates.account_rejected(customer.full_name),
+        event: 'account_rejected',
+        customerId: customer.id,
+      })
+      setNotify({ customer, kind: 'rejected' })
       fetchCustomers()
     } catch (err) {
       toast.error(err.message)
@@ -386,15 +412,29 @@ export default function Customers() {
                       <div className="flex items-center justify-end gap-1">
                         {customer.status === 'pending' && (
                           <>
-                            <button onClick={() => handleApprove(customer.id)}
+                            <button onClick={() => handleApprove(customer)}
                               className="p-1.5 rounded hover:bg-green-50" title={t('customers.approve')}>
                               <CheckCircle2 className="w-4 h-4 text-green-600" />
                             </button>
-                            <button onClick={() => handleReject(customer.id)}
+                            <button onClick={() => handleReject(customer)}
                               className="p-1.5 rounded hover:bg-red-50" title={t('customers.reject')}>
                               <XCircle className="w-4 h-4 text-red-500" />
                             </button>
                           </>
+                        )}
+                        {/* Re-send the decision message — for when the first
+                            WhatsApp was missed, or the customer calls asking.
+                            Online registrants only: walk-ins have no portal
+                            password, so "log in" would be wrong for them. */}
+                        {customer.registered_via === 'online' && customer.status !== 'pending' && (
+                          <button
+                            onClick={() => setNotify({
+                              customer,
+                              kind: customer.status === 'rejected' ? 'rejected' : 'approved',
+                            })}
+                            className="p-1.5 rounded hover:bg-green-50" title={t('customers.notify.resend')}>
+                            <MessageCircle className="w-4 h-4 text-green-600" />
+                          </button>
                         )}
                         <button onClick={() => handleEdit(customer)} className="p-1.5 rounded hover:bg-gray-100" title="Edit">
                           <Edit2 className="w-4 h-4 text-gray-500" />
@@ -411,6 +451,16 @@ export default function Customers() {
           </div>
         )}
       </div>
+
+      {/* Tell the customer the outcome (WhatsApp / copy) */}
+      {notify && (
+        <NotifyCustomerModal
+          customer={notify.customer}
+          kind={notify.kind}
+          onClose={() => setNotify(null)}
+          t={t}
+        />
+      )}
 
       {/* Add/Edit Modal */}
       {showForm && (
