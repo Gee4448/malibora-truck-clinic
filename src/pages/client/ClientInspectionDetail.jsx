@@ -367,9 +367,11 @@ export default function ClientInspectionDetail() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm cursor-pointer"
                   >
                     <option value="mobile_money">{t('paymentMethods.mobile_money')}</option>
-                    <option value="cash">{t('paymentMethods.cash')}</option>
+                    <option value="lipa_namba">{t('paymentMethods.lipa_namba')}</option>
                     <option value="bank_transfer">{t('paymentMethods.bank_transfer')}</option>
+                    <option value="cash">{t('paymentMethods.cash')}</option>
                     <option value="cheque">{t('paymentMethods.cheque')}</option>
+                    <option value="other">{t('paymentMethods.other')}</option>
                   </select>
                 </div>
                 <div>

@@ -699,6 +699,7 @@
     "types": {
       "bank": "Bank",
       "mobile_money": "Mobile Money",
+      "pay_number": "Pay Number (Lipa Namba)",
       "cash": "Cash",
       "other": "Other"
     }
@@ -706,9 +707,11 @@
   "paymentMethods": {
     "cash": "Cash",
     "mobile_money": "Mobile Money",
+    "lipa_namba": "Pay Number (Lipa Namba)",
     "bank_transfer": "Bank Transfer",
     "cheque": "Cheque",
-    "credit": "Credit"
+    "credit": "Credit",
+    "other": "Other"
   },
   "customerView": {
     "serviceReport": "Vehicle Service Report",

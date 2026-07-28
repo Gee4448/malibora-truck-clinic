@@ -699,6 +699,7 @@
     "types": {
       "bank": "Benki",
       "mobile_money": "Pesa Mtandao",
+      "pay_number": "Lipa Namba",
       "cash": "Taslimu",
       "other": "Nyingine"
     }
@@ -706,9 +707,11 @@
   "paymentMethods": {
     "cash": "Taslimu",
     "mobile_money": "Pesa Mtandao",
+    "lipa_namba": "Lipa Namba",
     "bank_transfer": "Uhamisho wa Benki",
     "cheque": "Hundi",
-    "credit": "Mkopo"
+    "credit": "Mkopo",
+    "other": "Nyingine"
   },
   "customerView": {
     "serviceReport": "Ripoti ya Huduma ya Gari",

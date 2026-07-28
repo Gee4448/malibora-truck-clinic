@@ -169,6 +169,7 @@ export default function PaymentChannelsManager() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer"
                 >
                   <option value="mobile_money">{t('payments.types.mobile_money')}</option>
+                  <option value="pay_number">{t('payments.types.pay_number')}</option>
                   <option value="bank">{t('payments.types.bank')}</option>
                   <option value="cash">{t('payments.types.cash')}</option>
                   <option value="other">{t('payments.types.other')}</option>

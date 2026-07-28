@@ -1045,8 +1045,12 @@ export default function InvoiceDetail() {
                   <option value="cash">{t('paymentMethods.cash')}</option>
                   <option value="bank_transfer">{t('paymentMethods.bank_transfer')}</option>
                   <option value="mobile_money">{t('paymentMethods.mobile_money')}</option>
+                  {/* Must mirror the customer's options, or a declared Lipa
+                      Namba payment cannot be confirmed with the method used. */}
+                  <option value="lipa_namba">{t('paymentMethods.lipa_namba')}</option>
                   <option value="cheque">{t('paymentMethods.cheque')}</option>
                   <option value="credit">{t('paymentMethods.credit')}</option>
+                  <option value="other">{t('paymentMethods.other')}</option>
                 </select>
               </div>
               <div>

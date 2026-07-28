@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { supabase } from '../../lib/supabase'
-import { Landmark, Smartphone, Banknote, Wallet, Copy, Check } from 'lucide-react'
+import { Landmark, Smartphone, Hash, Banknote, Wallet, Copy, Check } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const CHANNEL_ICONS = {
   bank: Landmark,
   mobile_money: Smartphone,
+  pay_number: Hash,
   cash: Banknote,
   other: Wallet,
 }

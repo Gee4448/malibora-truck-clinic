@@ -441,9 +441,12 @@ export default function ClientInvoiceView() {
                 onChange={e => setPayForm(f => ({ ...f, method: e.target.value }))}
                 className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none"
               >
+                {/* Ordered the way customers here actually pay. */}
                 <option value="mobile_money">{t('paymentMethods.mobile_money')}</option>
-                <option value="cash">{t('paymentMethods.cash')}</option>
+                <option value="lipa_namba">{t('paymentMethods.lipa_namba')}</option>
                 <option value="bank_transfer">{t('paymentMethods.bank_transfer')}</option>
+                <option value="cash">{t('paymentMethods.cash')}</option>
+                <option value="other">{t('paymentMethods.other')}</option>
               </select>
             </div>
 
