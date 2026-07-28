@@ -65,6 +65,13 @@
         "title": "Handover",
         "subtitle": "Customer reports for completed jobs",
         "empty": "No handover reports yet"
+      },
+      "messages": {
+        "title": "Customer Messages",
+        "subtitle": "Negotiations and requests from the portal",
+        "empty": "No customer messages yet",
+        "unread": "unread",
+        "markAllRead": "Mark all read"
       }
     }
   },
@@ -512,6 +519,11 @@
     "recommendedAction": "Recommended Action",
     "estimatedCost": "Estimated Cost",
     "confirmPayment": "Confirm Payment",
+    "enterAmount": "Enter a valid amount",
+    "setFee": "Set Inspection Fee",
+    "setFeeHint": "The customer asked for this inspection from the portal. Name the fee to send it to them for payment.",
+    "feeSet": "Fee sent to the customer",
+    "customerLocation": "Vehicle Location",
     "startInspection": "Start Inspection",
     "completeInspection": "Complete Inspection",
     "generatePreJobCard": "Generate Pre-Job Card",
@@ -551,6 +563,7 @@
     "totalEstimatedCost": "Total Estimated Cost",
     "amount": "Amount",
     "statuses": {
+      "requested": "Requested",
       "pending_payment": "Pending Payment",
       "paid": "Paid",
       "in_progress": "In Progress",
@@ -651,7 +664,9 @@
     "empty": "No notifications yet",
     "markAllRead": "Mark all read",
     "proformaRequest": "Proforma requested",
-    "paymentDeclared": "Payment declared"
+    "paymentDeclared": "Payment declared",
+    "inspectionRequest": "Inspection requested",
+    "invoiceBargain": "Message on invoice"
   },
   "paymentMethods": {
     "cash": "Cash",
@@ -835,7 +850,7 @@
       "vehicles": "My Vehicles",
       "services": "Services",
       "jobCards": "Job Cards",
-      "inspections": "Checks",
+      "inspections": "Inspections",
       "invoices": "Invoices",
       "handovers": "Handovers",
       "profile": "Profile"
@@ -844,6 +859,8 @@
       "title": "My Inspections",
       "filter": { "all": "All", "awaiting": "Needs you", "completed": "Completed" },
       "empty": "No inspection reports yet.",
+      "requestNew": "Request Inspection",
+      "awaitingQuote": "Waiting for the garage to set the fee",
       "needsYourReply": "Waiting for your answer",
       "notFound": "That inspection report could not be found.",
       "backToList": "Back to inspections",
@@ -1056,7 +1073,10 @@
       "clearAll": "Clear all",
       "otherNotes": "Anything else? (optional)",
       "otherNotesPlaceholder": "If something is not on the list, describe it briefly",
-      "selectAtLeastOne": "Please select at least one part or describe the problem"
+      "selectAtLeastOne": "Please select at least one part or describe the problem",
+      "inspectionTitle": "Request an Inspection",
+      "inspectionSuccess": "Inspection requested — the garage will send you the fee",
+      "inspectionHint": "Tell us where the vehicle is and what you have noticed. The garage will reply with the inspection fee."
     },
     "vehicles": {
       "title": "My Vehicles",

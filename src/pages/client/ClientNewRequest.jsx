@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { useClient } from '../../contexts/ClientAuthContext'
 import { supabase } from '../../lib/supabase'
+import { notifyStaff } from '../../lib/notifications'
 import { PART_CATEGORIES, categoryForVehicleType, buildReportedPartsText } from '../../lib/partsCatalog'
 import { Truck, Wrench, Search, MapPin, ArrowLeft, Send, ChevronDown, Check, X } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -11,13 +12,17 @@ export default function ClientNewRequest() {
   const { t, locale } = useLanguage()
   const { customer } = useClient()
   const navigate = useNavigate()
+  // The Inspections tab's ADD button deep-links here with ?type=inspection so
+  // the customer lands on the right form instead of on the parts tree.
+  const [searchParams] = useSearchParams()
+  const askedForInspection = searchParams.get('type') === 'inspection'
   const [vehicles, setVehicles] = useState([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
 
   const [form, setForm] = useState({
     vehicle_id: '',
-    request_type: 'known_problem',
+    request_type: askedForInspection ? 'inspection_needed' : 'known_problem',
     description: '',
     customer_location: '',
   })
@@ -96,16 +101,53 @@ export default function ClientNewRequest() {
       return
     }
 
-    let description = form.description
-    if (form.request_type === 'known_problem') {
-      if (selectedKeys.size === 0 && !form.description.trim()) {
-        toast.error(t('client.newRequest.selectAtLeastOne'))
-        return
+    // "I need an inspection" is not a job card. It used to be inserted into
+    // job_cards with request_type = 'inspection_needed', which meant staff had
+    // to spot it in the Job Cards tab and hand-create the matching inspection.
+    // It now goes straight onto the Inspections board (migration 022).
+    if (form.request_type === 'inspection_needed') {
+      setSubmitting(true)
+      try {
+        const { data, error } = await supabase
+          .from('inspections')
+          .insert({
+            customer_id: customer.id,
+            vehicle_id: form.vehicle_id,
+            description: form.description.trim() || null,
+            customer_location: form.customer_location.trim() || null,
+            // Pinned by the RLS WITH CHECK — the customer never sets a fee.
+            status: 'requested',
+            payment_status: 'unpaid',
+            payment_amount: 0,
+          })
+          .select('id, inspection_number')
+          .single()
+        if (error) throw error
+
+        toast.success(t('client.newRequest.inspectionSuccess'))
+        notifyStaff({
+          type: 'inspection_request',
+          title: t('notifications.inspectionRequest'),
+          body: `${customer.full_name} — ${data?.inspection_number || ''}${form.customer_location ? ` · ${form.customer_location}` : ''}`,
+          inspectionId: data?.id,
+          customerId: customer.id,
+        })
+        navigate('/client/inspections')
+      } catch (err) {
+        toast.error(err.message)
+      } finally {
+        setSubmitting(false)
       }
-      description = selectedKeys.size > 0
-        ? buildReportedPartsText(categoryId, selectedKeys, form.description, locale)
-        : form.description
+      return
     }
+
+    if (selectedKeys.size === 0 && !form.description.trim()) {
+      toast.error(t('client.newRequest.selectAtLeastOne'))
+      return
+    }
+    const description = selectedKeys.size > 0
+      ? buildReportedPartsText(categoryId, selectedKeys, form.description, locale)
+      : form.description
 
     setSubmitting(true)
     try {
@@ -114,7 +156,7 @@ export default function ClientNewRequest() {
         vehicle_id: form.vehicle_id,
         status: 'customer_request',
         request_type: form.request_type,
-        description: description || `Inspection requested at ${form.customer_location}`,
+        description,
         customer_location: form.customer_location || null,
         section: 'service',
         priority: 'normal',
@@ -161,7 +203,11 @@ export default function ClientNewRequest() {
         <ArrowLeft className="w-4 h-4" /> {t('common.back')}
       </button>
 
-      <h1 className="text-lg font-bold text-gray-900">{t('client.newRequest.title')}</h1>
+      <h1 className="text-lg font-bold text-gray-900">
+        {form.request_type === 'inspection_needed'
+          ? t('client.newRequest.inspectionTitle')
+          : t('client.newRequest.title')}
+      </h1>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Select Vehicle */}
@@ -368,6 +414,8 @@ export default function ClientNewRequest() {
 
         {form.request_type === 'inspection_needed' && (
           <>
+            <p className="text-xs text-gray-500 px-1">{t('client.newRequest.inspectionHint')}</p>
+
             {/* Description */}
             <div className="bg-white rounded-xl border border-gray-200 p-4">
               <label className="block text-sm font-medium text-gray-700 mb-1.5">

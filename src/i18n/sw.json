@@ -65,6 +65,13 @@
         "title": "Kabidhiano",
         "subtitle": "Ripoti za wateja kwa kazi zilizokamilika",
         "empty": "Hakuna ripoti za kabidhiano bado"
+      },
+      "messages": {
+        "title": "Ujumbe wa Wateja",
+        "subtitle": "Mazungumzo ya bei na maombi kutoka kwa wateja",
+        "empty": "Hakuna ujumbe wa wateja bado",
+        "unread": "hazijasomwa",
+        "markAllRead": "Weka zote zimesomwa"
       }
     }
   },
@@ -512,6 +519,11 @@
     "recommendedAction": "Hatua Inayopendekezwa",
     "estimatedCost": "Gharama Inayokadiriwa",
     "confirmPayment": "Thibitisha Malipo",
+    "enterAmount": "Weka kiasi sahihi",
+    "setFee": "Weka Ada ya Ukaguzi",
+    "setFeeHint": "Mteja ameomba ukaguzi huu kupitia mtandao. Weka ada ili ampelekewe alipe.",
+    "feeSet": "Ada imepelekwa kwa mteja",
+    "customerLocation": "Mahali Gari Lilipo",
     "startInspection": "Anza Ukaguzi",
     "completeInspection": "Maliza Ukaguzi",
     "generatePreJobCard": "Tengeneza Kadi ya Awali",
@@ -551,6 +563,7 @@
     "totalEstimatedCost": "Jumla ya Gharama Inayokadiriwa",
     "amount": "Kiasi",
     "statuses": {
+      "requested": "Imeombwa",
       "pending_payment": "Inasubiri Malipo",
       "paid": "Imelipwa",
       "in_progress": "Inaendelea",
@@ -651,7 +664,9 @@
     "empty": "Hakuna arifa bado",
     "markAllRead": "Weka zote zimesomwa",
     "proformaRequest": "Proforma imeombwa",
-    "paymentDeclared": "Malipo yametangazwa"
+    "paymentDeclared": "Malipo yametangazwa",
+    "inspectionRequest": "Ukaguzi umeombwa",
+    "invoiceBargain": "Ujumbe kuhusu ankara"
   },
   "paymentMethods": {
     "cash": "Taslimu",
@@ -844,6 +859,8 @@
       "title": "Ukaguzi Wangu",
       "filter": { "all": "Zote", "awaiting": "Zinakusubiri", "completed": "Zilizokamilika" },
       "empty": "Hakuna ripoti za ukaguzi bado.",
+      "requestNew": "Omba Ukaguzi",
+      "awaitingQuote": "Inasubiri karakana kuweka ada",
       "needsYourReply": "Inasubiri jibu lako",
       "notFound": "Ripoti hiyo ya ukaguzi haikupatikana.",
       "backToList": "Rudi kwenye ukaguzi",
@@ -1056,7 +1073,10 @@
       "clearAll": "Futa vyote",
       "otherNotes": "Kuna kitu kingine? (hiari)",
       "otherNotesPlaceholder": "Kama tatizo halipo kwenye orodha, eleza kwa ufupi",
-      "selectAtLeastOne": "Tafadhali chagua angalau sehemu moja au eleza tatizo"
+      "selectAtLeastOne": "Tafadhali chagua angalau sehemu moja au eleza tatizo",
+      "inspectionTitle": "Omba Ukaguzi",
+      "inspectionSuccess": "Ukaguzi umeombwa — karakana itakutumia ada",
+      "inspectionHint": "Tuambie gari lilipo na ulichokiona. Karakana itakujibu na ada ya ukaguzi."
     },
     "vehicles": {
       "title": "Magari Yangu",

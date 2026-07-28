@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { useClient } from '../../contexts/ClientAuthContext'
 import { supabase, formatTZS, formatDate } from '../../lib/supabase'
-import { ClipboardCheck, ArrowRight, AlertTriangle } from 'lucide-react'
+import { ClipboardCheck, ArrowRight, AlertTriangle, Plus, Clock } from 'lucide-react'
 import { ListSkeleton } from '../../components/common/Skeleton'
 
 // The customer's own inspection reports. Until now these were visible on the
@@ -54,6 +54,10 @@ export default function ClientInspections() {
   }
 
   const statusConfig = {
+    // 'requested' = the customer raised it from here and the garage has not
+    // named a fee yet (migration 022). Deliberately not amber like
+    // pending_payment: nothing is owed until staff quote it.
+    requested: { color: 'text-gray-600', bg: 'bg-gray-100', border: 'border-gray-200' },
     pending_payment: { color: 'text-amber-600', bg: 'bg-amber-100', border: 'border-amber-200' },
     paid: { color: 'text-blue-600', bg: 'bg-blue-100', border: 'border-blue-200' },
     in_progress: { color: 'text-yellow-600', bg: 'bg-yellow-100', border: 'border-yellow-200' },
@@ -71,7 +75,16 @@ export default function ClientInspections() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-bold text-gray-900">{t('client.inspections.title')}</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-lg font-bold text-gray-900">{t('client.inspections.title')}</h1>
+        <Link
+          to="/client/new-request?type=inspection"
+          className="flex items-center gap-1.5 px-3.5 py-2 bg-blue-700 text-white rounded-xl text-sm font-medium hover:bg-blue-800 active:scale-[0.98] transition shrink-0"
+        >
+          <Plus className="w-4 h-4" />
+          {t('client.inspections.requestNew')}
+        </Link>
+      </div>
 
       <div className="flex gap-2">
         {['all', 'awaiting', 'completed'].map((f) => (
@@ -93,6 +106,13 @@ export default function ClientInspections() {
         <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
           <ClipboardCheck className="w-12 h-12 text-gray-300 mx-auto mb-3" />
           <p className="text-gray-500 text-sm">{t('client.inspections.empty')}</p>
+          <Link
+            to="/client/new-request?type=inspection"
+            className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-blue-700 text-white rounded-xl text-sm font-medium hover:bg-blue-800 transition"
+          >
+            <Plus className="w-4 h-4" />
+            {t('client.inspections.requestNew')}
+          </Link>
         </div>
       ) : (
         <div className="space-y-3">
@@ -119,7 +139,12 @@ export default function ClientInspections() {
                     <p className="text-sm text-gray-600 mt-0.5">
                       {insp.vehicles?.registration_number} — {insp.vehicles?.make} {insp.vehicles?.model}
                     </p>
-                    {needsYou && (
+                    {insp.status === 'requested' ? (
+                      <p className="text-xs text-gray-500 font-medium mt-1.5 flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {t('client.inspections.awaitingQuote')}
+                      </p>
+                    ) : needsYou && (
                       <p className="text-xs text-orange-600 font-medium mt-1.5 flex items-center gap-1">
                         <AlertTriangle className="w-3 h-3" />
                         {t('client.inspections.needsYourReply')}

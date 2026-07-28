@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useLanguage } from '../contexts/LanguageContext'
 import { supabase, formatDate, formatTZS } from '../lib/supabase'
-import { Plus, Search, Eye, X, ClipboardCheck, CreditCard } from 'lucide-react'
+import { Plus, Search, Eye, X, ClipboardCheck, CreditCard, MapPin } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function Inspections() {
@@ -94,6 +94,7 @@ export default function Inspections() {
   }
 
   const statusColors = {
+    requested: 'bg-orange-100 text-orange-700',
     pending_payment: 'bg-red-100 text-red-700',
     paid: 'bg-blue-100 text-blue-700',
     in_progress: 'bg-yellow-100 text-yellow-700',
@@ -103,7 +104,10 @@ export default function Inspections() {
 
   // Dashboard widget aliases collapse multiple DB statuses into one chip.
   const statusAliasMap = {
-    requested: ['pending_payment'],
+    // 'requested' (migration 022) is a customer-raised request with no fee yet;
+    // both it and pending_payment are "waiting on us / waiting on them" and
+    // belong under the same Requested chip. Mirrored in Dashboard.jsx.
+    requested: ['requested', 'pending_payment'],
     ongoing: ['paid', 'in_progress'],
     completed: ['completed'],
   }
@@ -177,7 +181,9 @@ export default function Inspections() {
                     <span className={`text-xs px-2 py-1 rounded-full font-medium ${statusColors[insp.status]}`}>
                       {t(`inspection.statuses.${insp.status}`)}
                     </span>
-                    {insp.payment_status === 'unpaid' && (
+                    {/* Nothing is owed until staff have named a fee, so a
+                        customer-raised request must not read as "unpaid". */}
+                    {insp.payment_status === 'unpaid' && insp.status !== 'requested' && (
                       <span className="flex items-center gap-1 text-xs text-red-600">
                         <CreditCard className="w-3 h-3" /> {t('inspection.pendingPayment')}
                       </span>
@@ -188,6 +194,11 @@ export default function Inspections() {
                     <span>{insp.customers?.full_name}</span>
                     <span className="text-xs text-gray-400">{formatDate(insp.created_at)}</span>
                   </div>
+                  {insp.customer_location && (
+                    <p className="flex items-center gap-1 mt-1 text-xs text-gray-500">
+                      <MapPin className="w-3 h-3 shrink-0" /> {insp.customer_location}
+                    </p>
+                  )}
                   <div className="flex items-center gap-4 mt-1">
                     <span className="text-xs text-gray-500">
                       <ClipboardCheck className="w-3 h-3 inline mr-1" />

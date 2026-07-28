@@ -16,11 +16,13 @@ export default function ClientLayout() {
     navigate('/client')
   }
 
+  // Order follows the customer's own journey: inspection first (that is where a
+  // job starts), then the job card it turns into, then the bill, then handback.
   const tabs = [
     { to: '/client/dashboard', icon: Home, label: t('client.nav.home'), end: true },
     { to: '/client/vehicles', icon: Truck, label: t('client.nav.vehicles') },
-    { to: '/client/services', icon: ClipboardList, label: t('client.nav.jobCards') },
     { to: '/client/inspections', icon: Search, label: t('client.nav.inspections') },
+    { to: '/client/services', icon: ClipboardList, label: t('client.nav.jobCards') },
     { to: '/client/invoices', icon: FileText, label: t('client.nav.invoices') },
     { to: '/client/handovers', icon: ClipboardCheck, label: t('client.nav.handovers') },
   ]

@@ -24,6 +24,9 @@ export default function InspectionDetail() {
     problem_description: '', severity: 'medium', recommended_action: '', estimated_cost: '', notes: ''
   })
   const [paymentForm, setPaymentForm] = useState({ payment_method: 'cash', payment_reference: '' })
+  const [showFee, setShowFee] = useState(false)
+  const [feeAmount, setFeeAmount] = useState('')
+  const [savingFee, setSavingFee] = useState(false)
   const [declaredPayments, setDeclaredPayments] = useState([])
   const [situation, setSituation] = useState('')
   const [savingSituation, setSavingSituation] = useState(false)
@@ -59,6 +62,37 @@ export default function InspectionDetail() {
       navigate('/admin/inspections')
     } finally {
       setLoading(false)
+    }
+  }
+
+  // A customer-raised request (status 'requested', migration 022) arrives with
+  // no fee on it. Naming the fee is what turns it into something payable and
+  // moves it onto the normal pending_payment -> paid path.
+  const setInspectionFee = async (e) => {
+    e.preventDefault()
+    const amount = Number(feeAmount)
+    if (!Number.isFinite(amount) || amount <= 0) {
+      toast.error(t('inspection.enterAmount'))
+      return
+    }
+    setSavingFee(true)
+    try {
+      const { data, error } = await supabase
+        .from('inspections')
+        .update({ payment_amount: amount, status: 'pending_payment' })
+        .eq('id', id)
+        .select('id')
+      if (error) throw error
+      if (!data || data.length === 0) throw new Error(t('inspection.loadError'))
+
+      toast.success(t('inspection.feeSet'))
+      setShowFee(false)
+      setFeeAmount('')
+      fetchInspection()
+    } catch (err) {
+      toast.error(err.message)
+    } finally {
+      setSavingFee(false)
     }
   }
 
@@ -314,6 +348,7 @@ export default function InspectionDetail() {
   if (loading) return <div className="flex justify-center p-8"><div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full"></div></div>
   if (!inspection) return null
 
+  const isRequested = inspection.status === 'requested'
   const isPending = inspection.status === 'pending_payment'
   const isPaid = inspection.status === 'paid'
   const isInProgress = inspection.status === 'in_progress'
@@ -333,6 +368,7 @@ export default function InspectionDetail() {
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-2xl font-bold text-gray-900">{inspection.inspection_number}</h1>
             <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
+              isRequested ? 'bg-orange-100 text-orange-700' :
               isPending ? 'bg-red-100 text-red-700' :
               isPaid ? 'bg-blue-100 text-blue-700' :
               isInProgress ? 'bg-yellow-100 text-yellow-700' :
@@ -355,6 +391,12 @@ export default function InspectionDetail() {
             }}
               className="flex items-center gap-1.5 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium">
               <Share2 className="w-4 h-4" /> {t('inspection.shareLink')}
+            </button>
+          )}
+          {isRequested && (
+            <button onClick={() => { setFeeAmount(''); setShowFee(true) }}
+              className="flex items-center gap-1.5 px-4 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800 text-sm font-medium">
+              <CreditCard className="w-4 h-4" /> {t('inspection.setFee')}
             </button>
           )}
           {isPending && (
@@ -415,6 +457,10 @@ export default function InspectionDetail() {
             <p><span className="text-gray-500">{t('vehicles.make')}:</span> {inspection.vehicles?.make} {inspection.vehicles?.model}</p>
             <p><span className="text-gray-500">{t('inspection.mileageIn')}:</span> {inspection.mileage_in?.toLocaleString() || '-'} km</p>
             <p><span className="text-gray-500">{t('inspection.fuelLevel')}:</span> {inspection.fuel_level || '-'}</p>
+            {/* Where the customer said the truck is — only they can tell us. */}
+            {inspection.customer_location && (
+              <p><span className="text-gray-500">{t('inspection.customerLocation')}:</span> <span className="font-medium">{inspection.customer_location}</span></p>
+            )}
           </div>
         </div>
       </div>
@@ -423,10 +469,15 @@ export default function InspectionDetail() {
       <div className="bg-white rounded-xl border border-gray-200 p-5">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold text-gray-900">{t('inspection.paymentDetails')}</h3>
+          {/* A request has no fee yet, so it is neither paid nor overdue. */}
           <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-            inspection.payment_status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+            isRequested ? 'bg-orange-100 text-orange-700'
+              : inspection.payment_status === 'paid' ? 'bg-green-100 text-green-700'
+              : 'bg-red-100 text-red-700'
           }`}>
-            {inspection.payment_status === 'paid' ? t('inspection.statuses.paid') : t('inspection.pendingPayment')}
+            {isRequested ? t('inspection.statuses.requested')
+              : inspection.payment_status === 'paid' ? t('inspection.statuses.paid')
+              : t('inspection.pendingPayment')}
           </span>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
@@ -634,6 +685,42 @@ export default function InspectionDetail() {
             >
               <Send className="w-4 h-4" /> {t('inspection.updateSituation')}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Set-fee Modal — only reachable from a customer-raised request */}
+      {showFee && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm">
+            <div className="flex items-center justify-between p-5 border-b">
+              <h2 className="text-lg font-bold">{t('inspection.setFee')}</h2>
+              <button onClick={() => setShowFee(false)} className="p-1 rounded hover:bg-gray-100">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={setInspectionFee} className="p-5 space-y-4">
+              <p className="text-sm text-gray-500">{t('inspection.setFeeHint')}</p>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('inspection.paymentAmount')} (TZS) *
+                </label>
+                <input type="number" min="1" step="any" value={feeAmount} autoFocus
+                  onChange={e => setFeeAmount(e.target.value)} required
+                  placeholder="e.g. 50000"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button type="submit" disabled={savingFee}
+                  className="flex-1 py-2.5 bg-blue-700 text-white font-medium rounded-lg hover:bg-blue-800 transition disabled:opacity-40">
+                  {t('common.save')}
+                </button>
+                <button type="button" onClick={() => setShowFee(false)}
+                  className="px-6 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition">
+                  {t('common.cancel')}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
