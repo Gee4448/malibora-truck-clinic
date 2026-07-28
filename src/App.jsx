@@ -25,6 +25,7 @@ import LabourRates from './pages/LabourRates'
 import Handover from './pages/Handover'
 import Reports from './pages/Reports'
 import Settings from './pages/Settings'
+import RoleUnlock from './pages/RoleUnlock'
 import ClientLogin from './pages/client/ClientLogin'
 import ClientDashboard from './pages/client/ClientDashboard'
 import ClientVehicles from './pages/client/ClientVehicles'
@@ -301,6 +302,7 @@ function App() {
               <Route path="handover" element={<Handover />} />
               <Route path="reports" element={<Reports />} />
               <Route path="settings" element={<Settings />} />
+              <Route path="unlock" element={<RoleUnlock />} />
             </Route>
 
             {/* Catch all */}

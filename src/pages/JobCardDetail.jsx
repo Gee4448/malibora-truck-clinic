@@ -298,8 +298,10 @@ export default function JobCardDetail() {
         internal_cost_labour: costLabour,
         profit_parts: subtotalParts - costParts,
         profit_labour: subtotalLabour - costLabour,
-        profit_total: totalAmount - costParts - costLabour,
-        profit_margin: totalAmount > 0 ? ((totalAmount - costParts - costLabour) / totalAmount * 100) : 0,
+        // Profit is measured against the pre-VAT subtotal: VAT is collected for
+        // the TRA and passed on, so counting it as profit overstates every job.
+        profit_total: subtotal - costParts - costLabour,
+        profit_margin: subtotal > 0 ? ((subtotal - costParts - costLabour) / subtotal * 100) : 0,
       }).select().single()
 
       if (error) throw error
@@ -309,6 +311,14 @@ export default function JobCardDetail() {
           .update({ status: 'fulfilled' })
           .eq('job_card_id', id)
           .eq('status', 'pending')
+
+        // Quoting the customer moves the job into processing (client request
+        // 27 Jul 2026). Left alone once the job is finished or cancelled.
+        if (job.status !== 'completed' && job.status !== 'cancelled') {
+          await supabase.from('job_cards')
+            .update({ status: 'in_progress' })
+            .eq('id', id)
+        }
       }
       toast.success(type === 'proforma' ? t('invoices.proformaGenerated') : t('invoices.invoiceGenerated'))
       navigate(`/admin/invoices/${data.id}`)
@@ -374,16 +384,12 @@ export default function JobCardDetail() {
               </button>
             </>
           ) : (
-            <>
-              <button onClick={() => generateInvoice('proforma')}
-                className="flex items-center gap-1.5 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium">
-                <FileText className="w-4 h-4" /> {t('jobs.generateProforma')}
-              </button>
-              <button onClick={() => generateInvoice('final')}
-                className="flex items-center gap-1.5 px-3 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800 text-sm font-medium">
-                <FileText className="w-4 h-4" /> {t('jobs.generateInvoice')}
-              </button>
-            </>
+            /* Only the proforma starts here — the final invoice is generated
+               from inside the proforma, so quoting always precedes billing. */
+            <button onClick={() => generateInvoice('proforma')}
+              className="flex items-center gap-1.5 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium">
+              <FileText className="w-4 h-4" /> {t('jobs.generateProforma')}
+            </button>
           )}
         </div>
       </div>

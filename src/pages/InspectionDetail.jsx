@@ -188,6 +188,26 @@ export default function InspectionDetail() {
       }).select().single()
       if (jobError) throw jobError
 
+      // 3. Carry the inspection fee onto the job card as a billable line.
+      // Without this the fee stays stranded on the inspection record and never
+      // reaches the job card total, the invoice, or the customer's portal.
+      const inspectionFee = Number(inspection.payment_amount) || 0
+      if (inspectionFee > 0) {
+        const { error: feeError } = await supabase.from('job_card_items').insert({
+          job_card_id: jobCard.id,
+          item_type: 'additional',
+          description: `${t('inspection.fee')} — ${inspection.inspection_number}`,
+          quantity: 1,
+          cost_price: 0,
+          selling_price: inspectionFee,
+          is_additional: false,
+          requires_approval: false,
+          approval_status: 'approved',
+        })
+        // The fee line is important but must not strand a created job card.
+        if (feeError) toast.error(feeError.message)
+      }
+
       // Notify the customer that their inspection is done (non-blocking).
       sendSMS({
         to: inspection.customers?.phone,

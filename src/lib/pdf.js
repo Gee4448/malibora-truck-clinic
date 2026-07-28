@@ -110,7 +110,14 @@ export async function generateInvoicePDF(invoice, items, showInternal = false) {
   doc.setFontSize(9)
   doc.text(invoice.customers?.phone || '', 14, y); y += 5
   if (invoice.customers?.email) { doc.text(invoice.customers.email, 14, y); y += 5 }
+  // Structured address, falling back to the legacy single-line field.
+  const custAddress = [
+    invoice.customers?.street, invoice.customers?.district, invoice.customers?.region,
+  ].filter(Boolean).join(', ') || invoice.customers?.address
+  if (custAddress) { doc.text(custAddress, 14, y); y += 5 }
+  if (invoice.customers?.po_box) { doc.text(`P.O. Box: ${invoice.customers.po_box}`, 14, y); y += 5 }
   if (invoice.customers?.tin_number) { doc.text(`TIN: ${invoice.customers.tin_number}`, 14, y); y += 5 }
+  if (invoice.customers?.vrn_number) { doc.text(`VRN: ${invoice.customers.vrn_number}`, 14, y); y += 5 }
 
   // Vehicle info
   doc.setFont('helvetica', 'bold')

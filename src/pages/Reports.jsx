@@ -21,7 +21,8 @@ export default function Reports() {
     try {
       const now = new Date()
       let startDate
-      if (period === 'week') startDate = new Date(now - 7 * 24 * 60 * 60 * 1000)
+      if (period === 'today') startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+      else if (period === 'week') startDate = new Date(now - 7 * 24 * 60 * 60 * 1000)
       else if (period === 'month') startDate = new Date(now.getFullYear(), now.getMonth(), 1)
       else if (period === 'quarter') startDate = new Date(now.getFullYear(), now.getMonth() - 3, 1)
       else startDate = new Date(now.getFullYear(), 0, 1)
@@ -89,7 +90,7 @@ export default function Reports() {
           <p className="text-sm text-gray-500 mt-0.5">{t('reports.subtitle')}</p>
         </div>
         <div className="flex gap-2">
-          {['week', 'month', 'quarter', 'year'].map(p => (
+          {['today', 'week', 'month', 'quarter', 'year'].map(p => (
             <button key={p} onClick={() => setPeriod(p)}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition capitalize ${
                 period === p ? 'bg-blue-700 text-white' : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'

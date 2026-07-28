@@ -24,7 +24,9 @@ export default function Customers() {
   const [vehicles, setVehicles] = useState([])
   const [form, setForm] = useState({
     full_name: '', phone: '', email: '', company_name: '',
-    tin_number: '', address: '', id_type: '', id_number: '', notes: ''
+    tin_number: '', vrn_number: '', address: '',
+    region: '', district: '', street: '', po_box: '',
+    id_type: '', id_number: '', notes: ''
   })
 
   const updateVehicle = (index, updates) =>
@@ -70,7 +72,8 @@ export default function Customers() {
     setSubmitting(true)
     try {
       const payload = { ...form }
-      const optionalFields = ['email', 'company_name', 'tin_number', 'address', 'id_type', 'id_number', 'notes']
+      const optionalFields = ['email', 'company_name', 'tin_number', 'vrn_number', 'address',
+        'region', 'district', 'street', 'po_box', 'id_type', 'id_number', 'notes']
       optionalFields.forEach(f => { if (!payload[f]) payload[f] = null })
 
       if (editingId) {
@@ -138,7 +141,12 @@ export default function Customers() {
       email: customer.email || '',
       company_name: customer.company_name || '',
       tin_number: customer.tin_number || '',
+      vrn_number: customer.vrn_number || '',
       address: customer.address || '',
+      region: customer.region || '',
+      district: customer.district || '',
+      street: customer.street || '',
+      po_box: customer.po_box || '',
       id_type: customer.id_type || '',
       id_number: customer.id_number || '',
       notes: customer.notes || '',
@@ -167,7 +175,12 @@ export default function Customers() {
   }
 
   const resetForm = () => {
-    setForm({ full_name: '', phone: '', email: '', company_name: '', tin_number: '', address: '', id_type: '', id_number: '', notes: '' })
+    setForm({
+      full_name: '', phone: '', email: '', company_name: '',
+      tin_number: '', vrn_number: '', address: '',
+      region: '', district: '', street: '', po_box: '',
+      id_type: '', id_number: '', notes: ''
+    })
     setEditingId(null)
     setVehicles([])
     setStep(1)
@@ -442,11 +455,47 @@ export default function Customers() {
                     <input type="text" value={form.company_name} onChange={e => setForm({...form, company_name: e.target.value})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
                   </div>
-                  <div className="sm:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('customers.address')}</label>
-                    <input type="text" value={form.address} onChange={e => setForm({...form, address: e.target.value})}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('customers.tin')}</label>
+                    <input type="text" value={form.tin_number} onChange={e => setForm({...form, tin_number: e.target.value})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('customers.vrn')}</label>
+                    <input type="text" value={form.vrn_number} onChange={e => setForm({...form, vrn_number: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                  </div>
+                  {/* Address split into region / district / street per client request */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('customers.region')}</label>
+                    <input type="text" value={form.region} onChange={e => setForm({...form, region: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('customers.district')}</label>
+                    <input type="text" value={form.district} onChange={e => setForm({...form, district: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('customers.street')}</label>
+                    <input type="text" value={form.street} onChange={e => setForm({...form, street: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('customers.poBox')}</label>
+                    <input type="text" value={form.po_box} onChange={e => setForm({...form, po_box: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                  </div>
+                  {/* Legacy single-line address: only shown when it still holds
+                      data, so old records stay editable without reappearing
+                      as an empty field on every new customer. */}
+                  {form.address && (
+                    <div className="sm:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('customers.address')}</label>
+                      <input type="text" value={form.address} onChange={e => setForm({...form, address: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                    </div>
+                  )}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">{t('customers.idType')}</label>
                     <select value={form.id_type} onChange={e => setForm({...form, id_type: e.target.value})}

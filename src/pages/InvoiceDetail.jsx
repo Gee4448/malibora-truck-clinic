@@ -44,7 +44,8 @@ export default function InvoiceDetail() {
         .from('invoices')
         .select(`
           *,
-          customers(full_name, phone, email, company_name, tin_number, address),
+          customers(full_name, phone, email, company_name, tin_number, vrn_number,
+                    address, region, district, street, po_box),
           job_cards(
             job_number, description, section,
             vehicles(registration_number, make, model, year)
@@ -153,13 +154,15 @@ export default function InvoiceDetail() {
       const totalAmount = subtotal + vatAmount
       const costParts = Number(invoice.internal_cost_parts) || 0
       const costLabour = Number(invoice.internal_cost_labour) || 0
-      const profitTotal = totalAmount - costParts - costLabour
+      // Profit is measured against the pre-VAT subtotal: VAT is collected for
+      // the TRA and passed on, so counting it as profit overstates every job.
+      const profitTotal = subtotal - costParts - costLabour
       const { error } = await supabase.from('invoices').update({
         vat_rate: newRate,
         vat_amount: vatAmount,
         total_amount: totalAmount,
         profit_total: profitTotal,
-        profit_margin: totalAmount > 0 ? (profitTotal / totalAmount * 100) : 0,
+        profit_margin: subtotal > 0 ? (profitTotal / subtotal * 100) : 0,
       }).eq('id', id)
       if (error) throw error
       notifyClientInvoiceChanged(totalAmount)
@@ -170,6 +173,24 @@ export default function InvoiceDetail() {
       toast.error(err.message)
     } finally {
       setSavingVat(false)
+    }
+  }
+
+  // Billing milestones drive the job card's status so staff don't have to keep
+  // the two in sync by hand (client request 27 Jul 2026). Never touches a job
+  // that is already finished or cancelled, and never fails the caller — the
+  // money operation matters more than the status bookkeeping.
+  const syncJobStatus = async (status) => {
+    if (!invoice?.job_card_id) return
+    try {
+      const update = { status }
+      if (status === 'completed') update.date_completed = new Date().toISOString()
+      await supabase.from('job_cards')
+        .update(update)
+        .eq('id', invoice.job_card_id)
+        .not('status', 'in', '("completed","cancelled")')
+    } catch (err) {
+      console.error('Job status sync failed:', err)
     }
   }
 
@@ -214,6 +235,8 @@ export default function InvoiceDetail() {
         const { error: itErr } = await supabase.from('invoice_items').insert(rows)
         if (itErr) throw itErr
       }
+      // Issuing the final invoice puts the job back into processing.
+      await syncJobStatus('in_progress')
       toast.success(t('invoices.finalGenerated'))
       navigate(`/admin/invoices/${newInv.id}`)
     } catch (err) {
@@ -300,7 +323,8 @@ export default function InvoiceDetail() {
       const totalAmount = subtotal + vatAmount
       const costParts = sumCost('part')
       const costLabour = sumCost('labour')
-      const profitTotal = totalAmount - costParts - costLabour
+      // Pre-VAT subtotal is the profit base — see saveVat above.
+      const profitTotal = subtotal - costParts - costLabour
       const { error: invErr } = await supabase.from('invoices').update({
         subtotal_parts: subtotalParts,
         subtotal_labour: subtotalLabour,
@@ -312,7 +336,7 @@ export default function InvoiceDetail() {
         profit_parts: subtotalParts - costParts,
         profit_labour: subtotalLabour - costLabour,
         profit_total: profitTotal,
-        profit_margin: totalAmount > 0 ? (profitTotal / totalAmount * 100) : 0,
+        profit_margin: subtotal > 0 ? (profitTotal / subtotal * 100) : 0,
       }).eq('id', id)
       if (invErr) throw invErr
       notifyClientInvoiceChanged(totalAmount)
@@ -351,6 +375,8 @@ export default function InvoiceDetail() {
       if (fullyPaid) update.paid_at = new Date().toISOString()
       const { error } = await supabase.from('invoices').update(update).eq('id', id)
       if (error) throw error
+      // Settling a final invoice in full closes the job.
+      if (fullyPaid && invoice.invoice_type === 'final') await syncJobStatus('completed')
       toast.success(fullyPaid ? t('invoices.updated') : t('invoices.paymentRecorded'))
       setShowPayment(false)
       fetchInvoice()
@@ -378,6 +404,8 @@ export default function InvoiceDetail() {
         .update({ status: 'confirmed', confirmed_at: new Date().toISOString() })
         .eq('id', payment.id)
       if (e2) throw e2
+      // Settling a final invoice in full closes the job.
+      if (fullyPaid && invoice.invoice_type === 'final') await syncJobStatus('completed')
       toast.success(t('invoices.paymentConfirmed'))
       fetchInvoice()
     } catch (err) {

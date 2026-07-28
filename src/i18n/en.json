@@ -77,7 +77,12 @@
     "email": "Email",
     "company": "Company",
     "tin": "TIN Number",
+    "vrn": "VRN Number",
     "address": "Address",
+    "region": "Region",
+    "district": "District",
+    "street": "Street",
+    "poBox": "P.O. Box",
     "idType": "ID Type",
     "idNumber": "ID Number",
     "notes": "Notes",
@@ -768,6 +773,19 @@
     "half": "1/2",
     "three_quarter": "3/4",
     "full": "Full"
+  },
+  "roleUnlock": {
+    "title": "Manager Access",
+    "subtitle": "Enter your access code to unlock reports and profit figures",
+    "codeLabel": "Access Code",
+    "submit": "Unlock Access",
+    "enterCode": "Have an access code?",
+    "success": "Access unlocked. You are now:",
+    "invalid": "Incorrect access code",
+    "tooManyAttempts": "Too many attempts. Try again in 15 minutes.",
+    "notAuthenticated": "Please sign in first",
+    "alreadyUnlocked": "Unlocked",
+    "hint": "Ask the owner for the code. It only changes your own account."
   },
   "staffGate": {
     "title": "Staff Access",

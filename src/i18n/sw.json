@@ -77,7 +77,12 @@
     "email": "Barua Pepe",
     "company": "Kampuni",
     "tin": "Nambari ya TIN",
+    "vrn": "Nambari ya VRN",
     "address": "Anwani",
+    "region": "Mkoa",
+    "district": "Wilaya",
+    "street": "Mtaa",
+    "poBox": "S.L.P.",
     "idType": "Aina ya Kitambulisho",
     "idNumber": "Nambari ya Kitambulisho",
     "notes": "Maelezo",
@@ -768,6 +773,19 @@
     "half": "1/2",
     "three_quarter": "3/4",
     "full": "Imejaa"
+  },
+  "roleUnlock": {
+    "title": "Ufikiaji wa Meneja",
+    "subtitle": "Weka msimbo wako kufungua ripoti na takwimu za faida",
+    "codeLabel": "Msimbo wa Ufikiaji",
+    "submit": "Fungua Ufikiaji",
+    "enterCode": "Una msimbo wa ufikiaji?",
+    "success": "Ufikiaji umefunguliwa. Sasa wewe ni:",
+    "invalid": "Msimbo si sahihi",
+    "tooManyAttempts": "Majaribio mengi mno. Jaribu tena baada ya dakika 15.",
+    "notAuthenticated": "Tafadhali ingia kwanza",
+    "alreadyUnlocked": "Imefunguliwa",
+    "hint": "Muulize mmiliki msimbo. Unabadilisha akaunti yako pekee."
   },
   "staffGate": {
     "title": "Mlango wa Wafanyakazi",

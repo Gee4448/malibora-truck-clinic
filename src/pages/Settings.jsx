@@ -1,8 +1,9 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useLanguage } from '../contexts/LanguageContext'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
-import { Globe, User, Lock, Building, Save } from 'lucide-react'
+import { Globe, User, Lock, Building, Save, KeyRound } from 'lucide-react'
 import toast from 'react-hot-toast'
 import MechanicsManager from '../components/admin/MechanicsManager'
 
@@ -98,6 +99,12 @@ export default function Settings() {
             <label className="block text-sm font-medium text-gray-700 mb-1">{t('settings.role')}</label>
             <input type="text" value={profile?.role || ''} disabled
               className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 capitalize" />
+            {/* The role is set server-side; an access code is the only way to
+                change your own (migration 018). */}
+            <Link to="/admin/unlock"
+              className="inline-flex items-center gap-1.5 mt-2 text-sm text-amber-700 hover:text-amber-800 font-medium">
+              <KeyRound className="w-3.5 h-3.5" /> {t('roleUnlock.enterCode')}
+            </Link>
           </div>
           <button type="submit" disabled={saving}
             className="flex items-center gap-2 px-4 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800 text-sm font-medium disabled:opacity-50">

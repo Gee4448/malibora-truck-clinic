@@ -125,7 +125,16 @@ export default function CustomerDetail() {
     { icon: Mail, label: t('customers.email'), value: customer.email },
     { icon: Building2, label: t('customers.company'), value: customer.company_name },
     { icon: CreditCard, label: t('customers.tin'), value: customer.tin_number },
-    { icon: MapPin, label: t('customers.address'), value: customer.address },
+    { icon: CreditCard, label: t('customers.vrn'), value: customer.vrn_number },
+    // Structured address, falling back to the legacy single-line field for
+    // records created before migration 017.
+    {
+      icon: MapPin,
+      label: t('customers.address'),
+      value: [customer.street, customer.district, customer.region]
+        .filter(Boolean).join(', ') || customer.address,
+    },
+    { icon: MapPin, label: t('customers.poBox'), value: customer.po_box },
     { icon: User, label: t('customers.idType'), value: customer.id_type },
     { icon: CreditCard, label: t('customers.idNumber'), value: customer.id_number },
   ].filter(r => r.value)

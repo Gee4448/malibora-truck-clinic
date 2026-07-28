@@ -93,6 +93,15 @@ export function AuthProvider({ children }) {
     return data
   }
 
+  // Re-read the profile after something changes it server-side (e.g. redeeming
+  // a role code), so the new role reaches canViewInternal without a re-login.
+  const refreshProfile = async () => {
+    if (!user) return null
+    const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+    if (data) setProfile(data)
+    return data
+  }
+
   const signOut = async () => {
     const { error } = await supabase.auth.signOut()
     if (error) throw error
@@ -113,6 +122,7 @@ export function AuthProvider({ children }) {
       signUp,
       signInWithGoogle,
       signOut,
+      refreshProfile,
       isOwner,
       isManager,
       canViewInternal,
