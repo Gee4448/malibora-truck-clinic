@@ -20,8 +20,11 @@ export function useNotifications() {
 
   useEffect(() => {
     fetch()
+    // Unique topic per mounted instance. The Header bell and the Dashboard
+    // messages panel both use this hook, and a Phoenix socket accepts only one
+    // join per topic — a shared name would leave the second subscriber dead.
     const channel = supabase
-      .channel('staff-notifications')
+      .channel(`staff-notifications-${Math.random().toString(36).slice(2)}`)
       .on('postgres_changes',
         { event: '*', schema: 'public', table: 'notifications' },
         () => fetch())

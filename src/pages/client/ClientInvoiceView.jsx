@@ -141,6 +141,17 @@ export default function ClientInvoiceView() {
       if (invoice.status === 'sent') {
         await supabase.from('invoices').update({ status: 'negotiating' }).eq('id', invoice.id)
       }
+
+      // This message used to land in the thread and nowhere else: no bell, no
+      // dashboard entry. Staff only found it by opening that invoice.
+      notifyStaff({
+        type: 'invoice_bargain',
+        title: t('notifications.invoiceBargain'),
+        body: `${customer?.full_name || ''} — ${invoice.invoice_number}`,
+        invoiceId: invoice.id,
+        customerId: customer?.id,
+      })
+
       setNewMessage('')
       toast.success(t('invoices.messageSent'))
       fetchInvoice()

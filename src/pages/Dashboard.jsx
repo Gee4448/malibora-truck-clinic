@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useLanguage } from '../contexts/LanguageContext'
 import { useAuth } from '../contexts/AuthContext'
-import { supabase, formatDate } from '../lib/supabase'
+import { useNotifications } from '../hooks/useNotifications'
+import { supabase, formatDate, formatDateTime } from '../lib/supabase'
 import {
   ClipboardCheck,
   ClipboardList,
@@ -11,7 +12,11 @@ import {
   Clock,
   CheckCircle2,
   ArrowRight,
-  AlertTriangle,
+  MessageSquare,
+  Handshake,
+  CreditCard,
+  FileText,
+  CheckCheck,
   Wrench,
   Truck,
 } from 'lucide-react'
@@ -19,13 +24,26 @@ import {
 // Status alias groups — mirrored on the destination pages so the deep-links
 // stay in sync. Keep these in lock-step with Inspections.jsx / JobCards.jsx.
 const INSPECTION_GROUPS = {
-  requested: ['pending_payment'],
+  requested: ['requested', 'pending_payment'],
   ongoing: ['paid', 'in_progress'],
   completed: ['completed'],
 }
 const JOB_GROUPS = {
   requested: ['customer_request', 'pre_job_card', 'pending_approval'],
   in_progress: ['open', 'in_progress', 'waiting_parts'],
+}
+
+// What the portal can raise, mapped to how it should look on the board. The
+// bargaining types come first in the list because they are the ones that stall
+// a job until somebody answers them.
+const NOTIF_STYLES = {
+  inspection_bargain: { Icon: Handshake, color: 'text-amber-700', bg: 'bg-amber-100' },
+  invoice_bargain: { Icon: Handshake, color: 'text-amber-700', bg: 'bg-amber-100' },
+  inspection_request: { Icon: ClipboardCheck, color: 'text-orange-700', bg: 'bg-orange-100' },
+  inspection_decision: { Icon: CheckCircle2, color: 'text-green-700', bg: 'bg-green-100' },
+  payment_declared: { Icon: CreditCard, color: 'text-green-700', bg: 'bg-green-100' },
+  inspection_payment_declared: { Icon: CreditCard, color: 'text-green-700', bg: 'bg-green-100' },
+  proforma_request: { Icon: FileText, color: 'text-blue-700', bg: 'bg-blue-100' },
 }
 
 export default function Dashboard() {
@@ -38,6 +56,11 @@ export default function Dashboard() {
   })
   const [recentHandovers, setRecentHandovers] = useState([])
   const [loading, setLoading] = useState(true)
+  // Same feed as the Header bell. It lives here too because the bell is a badge
+  // you have to notice and click — a customer's counter-offer was sitting behind
+  // it unread while the job waited.
+  const { items: notifications, unreadCount, markAllRead, markRead } = useNotifications()
+  const navigate = useNavigate()
 
   useEffect(() => {
     fetchDashboardData()
@@ -76,6 +99,14 @@ export default function Dashboard() {
     }
   }
 
+  // Same routing rule as the Header bell — keep the two in step.
+  const openNotification = (notif) => {
+    markRead(notif.id)
+    if (notif.invoice_id) navigate(`/admin/invoices/${notif.invoice_id}`)
+    else if (notif.job_card_id) navigate(`/admin/job-cards/${notif.job_card_id}`)
+    else if (notif.inspection_id) navigate(`/admin/inspections/${notif.inspection_id}`)
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -94,6 +125,70 @@ export default function Dashboard() {
         <p className="text-gray-500 text-sm mt-1">
           {new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
         </p>
+      </div>
+
+      {/* Customer messages — negotiations, requests and declared payments.
+          Sits above the counters because it is the only thing here that is
+          waiting on a human reply. */}
+      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+        <div className="flex items-center justify-between p-5 border-b border-gray-100">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-11 h-11 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0 relative">
+              <MessageSquare className="w-5 h-5 text-amber-600" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-bold text-white bg-red-500 rounded-full">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </div>
+            <div className="min-w-0">
+              <h2 className="font-semibold text-gray-900">{t('dashboard.widgets.messages.title')}</h2>
+              <p className="text-xs text-gray-500 truncate">{t('dashboard.widgets.messages.subtitle')}</p>
+            </div>
+          </div>
+          {unreadCount > 0 && (
+            <button
+              onClick={markAllRead}
+              className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1 flex-shrink-0 cursor-pointer"
+            >
+              <CheckCheck className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">{t('dashboard.widgets.messages.markAllRead')}</span>
+            </button>
+          )}
+        </div>
+        <div className="divide-y divide-gray-100">
+          {notifications.length === 0 ? (
+            <div className="p-8 text-center">
+              <MessageSquare className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+              <p className="text-sm text-gray-500">{t('dashboard.widgets.messages.empty')}</p>
+            </div>
+          ) : (
+            notifications.slice(0, 6).map((n) => {
+              const style = NOTIF_STYLES[n.type] || { Icon: MessageSquare, color: 'text-gray-600', bg: 'bg-gray-100' }
+              return (
+                <button
+                  key={n.id}
+                  onClick={() => openNotification(n)}
+                  className={`w-full text-left flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors cursor-pointer ${
+                    n.is_read ? '' : 'bg-amber-50/40'
+                  }`}
+                >
+                  <div className={`w-10 h-10 rounded-xl ${style.bg} flex items-center justify-center flex-shrink-0`}>
+                    <style.Icon className={`w-5 h-5 ${style.color}`} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{n.title}</p>
+                    {n.body && <p className="text-xs text-gray-500 truncate">{n.body}</p>}
+                  </div>
+                  <span className="text-xs text-gray-400 flex-shrink-0 hidden sm:block">
+                    {formatDateTime(n.created_at)}
+                  </span>
+                  {!n.is_read && <span className="w-2 h-2 bg-red-500 rounded-full flex-shrink-0" />}
+                </button>
+              )
+            })
+          )}
+        </div>
       </div>
 
       {/* Inspections Widget */}
