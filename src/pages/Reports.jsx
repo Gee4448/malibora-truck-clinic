@@ -8,7 +8,7 @@ export default function Reports() {
   const { t } = useLanguage()
   const [period, setPeriod] = useState('month')
   const [stats, setStats] = useState({
-    totalRevenue: 0, totalCost: 0, totalProfit: 0, avgMargin: 0,
+    totalRevenue: 0, totalNetRevenue: 0, totalCost: 0, totalProfit: 0, avgMargin: 0,
     jobsCompleted: 0, invoicesPaid: 0, partsProfit: 0, labourProfit: 0,
   })
   const [recentInvoices, setRecentInvoices] = useState([])
@@ -38,10 +38,18 @@ export default function Reports() {
 
       const inv = invoices || []
       const totalRevenue = inv.reduce((s, i) => s + Number(i.total_amount || 0), 0)
+      // Revenue excluding VAT. VAT is collected for the TRA and passed on, so it
+      // is not ours to earn a margin on — and per-invoice profit_total is already
+      // measured against the pre-VAT subtotal. Margin must use the same base or
+      // the dashboard disagrees with every invoice page.
+      const totalNetRevenue = inv.reduce(
+        (s, i) => s + Number(i.total_amount || 0) - Number(i.vat_amount || 0), 0)
       const totalCostParts = inv.reduce((s, i) => s + Number(i.internal_cost_parts || 0), 0)
       const totalCostLabour = inv.reduce((s, i) => s + Number(i.internal_cost_labour || 0), 0)
       const totalProfit = inv.reduce((s, i) => s + Number(i.profit_total || 0), 0)
-      const avgMargin = inv.length > 0 ? inv.reduce((s, i) => s + Number(i.profit_margin || 0), 0) / inv.length : 0
+      // Weighted, not the mean of each invoice's percentage: averaging margins
+      // lets a 10,000 TZS job count as much as a 5,000,000 TZS one.
+      const avgMargin = totalNetRevenue > 0 ? (totalProfit / totalNetRevenue * 100) : 0
       const partsProfit = inv.reduce((s, i) => s + Number(i.profit_parts || 0), 0)
       const labourProfit = inv.reduce((s, i) => s + Number(i.profit_labour || 0), 0)
 
@@ -53,7 +61,7 @@ export default function Reports() {
         .gte('date_completed', startDate.toISOString())
 
       setStats({
-        totalRevenue, totalCost: totalCostParts + totalCostLabour,
+        totalRevenue, totalNetRevenue, totalCost: totalCostParts + totalCostLabour,
         totalProfit, avgMargin, jobsCompleted: jobsCompleted || 0,
         invoicesPaid: inv.length, partsProfit, labourProfit,
       })
@@ -63,6 +71,15 @@ export default function Reports() {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Bar widths are percentages of net revenue. Clamped because a loss-making
+  // period would otherwise produce >100% (overflowing the track) or a negative
+  // width, which is invalid CSS and silently renders no bar at all.
+  const barWidth = (value) => {
+    const base = stats.totalNetRevenue
+    if (!base || base <= 0) return '0%'
+    return `${Math.min(100, Math.max(0, (value / base) * 100))}%`
   }
 
   const colorMap = {
@@ -89,7 +106,7 @@ export default function Reports() {
           </h1>
           <p className="text-sm text-gray-500 mt-0.5">{t('reports.subtitle')}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {['today', 'week', 'month', 'quarter', 'year'].map(p => (
             <button key={p} onClick={() => setPeriod(p)}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition capitalize ${
@@ -140,7 +157,7 @@ export default function Reports() {
                   <span className="font-medium">{formatTZS(stats.totalCost)}</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-3">
-                  <div className="bg-red-400 rounded-full h-3" style={{ width: stats.totalRevenue > 0 ? `${(stats.totalCost / stats.totalRevenue * 100)}%` : '0%' }}></div>
+                  <div className="bg-red-400 rounded-full h-3" style={{ width: barWidth(stats.totalCost) }}></div>
                 </div>
               </div>
               <div>
@@ -149,7 +166,7 @@ export default function Reports() {
                   <span className="font-bold text-green-700">{formatTZS(stats.totalProfit)}</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-3">
-                  <div className="bg-green-500 rounded-full h-3" style={{ width: stats.totalRevenue > 0 ? `${(stats.totalProfit / stats.totalRevenue * 100)}%` : '0%' }}></div>
+                  <div className="bg-green-500 rounded-full h-3" style={{ width: barWidth(stats.totalProfit) }}></div>
                 </div>
               </div>
             </div>
@@ -187,6 +204,13 @@ export default function Reports() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
+                  {recentInvoices.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="p-6 text-center text-gray-400">
+                        {t('reports.noInvoices')}
+                      </td>
+                    </tr>
+                  )}
                   {recentInvoices.map(inv => (
                     <tr key={inv.id} className="hover:bg-gray-50">
                       <td className="p-3 font-medium text-blue-700">{inv.invoice_number}</td>

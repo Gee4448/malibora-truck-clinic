@@ -471,6 +471,7 @@
     "netProfit": "Net Profit",
     "jobsCompleted": "Jobs Completed",
     "recentPaidInvoices": "Recent Paid Invoices",
+    "noInvoices": "No paid invoices in this period",
     "margin": "Margin"
   },
   "inspection": {
