@@ -91,12 +91,21 @@ export default function CustomerDetail() {
   const handleDeleteVehicle = async (vehicleId) => {
     if (!confirm(t('customers.detail.deleteVehicleConfirm'))) return
     try {
-      const { error } = await supabase.from('vehicles').delete().eq('id', vehicleId)
+      // Same silent no-op as the customer delete: without .select(), an RLS
+      // block returns error = null and the UI claims success. See migration 019.
+      const { data, error } = await supabase
+        .from('vehicles').delete().eq('id', vehicleId).select('id')
       if (error) throw error
+      if (!data || data.length === 0) {
+        toast.error(t('customers.detail.vehicleDeleteBlocked'))
+        return
+      }
       toast.success(t('customers.detail.vehicleDeleted'))
       fetchAll()
     } catch (err) {
-      toast.error(err.message)
+      // A vehicle with job cards / inspections against it can't be removed.
+      if (err.code === '23503') toast.error(t('customers.detail.vehicleHasRecords'))
+      else toast.error(err.message)
     }
   }
 

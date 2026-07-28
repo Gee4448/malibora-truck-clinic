@@ -171,12 +171,26 @@ export default function Customers() {
   const handleDelete = async (id) => {
     if (!confirm(t('customers.deleteConfirm'))) return
     try {
-      const { error } = await supabase.from('customers').delete().eq('id', id)
+      // .select() makes PostgREST return the rows it actually removed. Without
+      // it a delete blocked by RLS is indistinguishable from a successful one —
+      // both come back with error = null — which is exactly how this page spent
+      // months reporting deletions that never happened. Counting the returned
+      // rows is what makes a no-op visible.
+      const { data, error } = await supabase
+        .from('customers').delete().eq('id', id).select('id')
       if (error) throw error
+      if (!data || data.length === 0) {
+        toast.error(t('customers.deleteBlocked'))
+        return
+      }
       toast.success(t('customers.deleted'))
       fetchCustomers()
     } catch (err) {
-      toast.error(err.message)
+      // 23503 = foreign key violation: the customer still has job cards,
+      // invoices, inspections or handovers hanging off them. Those are
+      // financial records, so refusing is correct — just say why.
+      if (err.code === '23503') toast.error(t('customers.deleteHasRecords'))
+      else toast.error(err.message)
     }
   }
 

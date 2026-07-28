@@ -115,7 +115,16 @@ export default function InspectionDetail() {
   // Delete problem
   const deleteProblem = async (itemId) => {
     try {
-      await supabase.from('inspection_items').delete().eq('id', itemId)
+      // This one discarded the result entirely, so it reported success even on
+      // a hard error. .select() also lets an RLS no-op be detected — the bug
+      // migration 019 fixes.
+      const { data, error } = await supabase
+        .from('inspection_items').delete().eq('id', itemId).select('id')
+      if (error) throw error
+      if (!data || data.length === 0) {
+        toast.error(t('inspection.problemRemoveBlocked'))
+        return
+      }
       toast.success(t('inspection.problemRemoved'))
       fetchInspection()
     } catch (err) {
