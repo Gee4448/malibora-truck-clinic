@@ -6,7 +6,7 @@ import { supabase, formatTZS, formatDate } from '../../lib/supabase'
 import { notifyStaff } from '../../lib/notifications'
 import {
   ArrowLeft, CheckCircle2, XCircle, AlertTriangle, ClipboardCheck,
-  MessageCircle, Send, Lock, Wrench,
+  MessageCircle, Send, Lock, Wrench, CreditCard, Clock,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { DashboardSkeleton } from '../../components/common/Skeleton'
@@ -35,6 +35,11 @@ export default function ClientInspectionDetail() {
   const [bargainAmount, setBargainAmount] = useState('')
   const [sending, setSending] = useState(false)
 
+  const [payments, setPayments] = useState([])
+  const [payOpen, setPayOpen] = useState(false)
+  const [payForm, setPayForm] = useState({ amount: '', method: 'mobile_money', reference: '' })
+  const [declaring, setDeclaring] = useState(false)
+
   useEffect(() => {
     if (customer?.id) fetchAll()
   }, [id, customer?.id])
@@ -50,17 +55,21 @@ export default function ClientInspectionDetail() {
       if (error || !insp) { setNotFound(true); return }
       setInspection(insp)
 
-      const [itemsRes, jobRes, msgRes] = await Promise.all([
+      const [itemsRes, jobRes, msgRes, payRes] = await Promise.all([
         supabase.from('inspection_items').select('*')
           .eq('inspection_id', id).order('sort_order'),
         supabase.from('job_cards').select('id, job_number, status')
           .eq('inspection_id', id).order('created_at', { ascending: false }).limit(1),
         supabase.from('inspection_negotiations').select('*')
           .eq('inspection_id', id).order('created_at'),
+        supabase.from('inspection_payments')
+          .select('id, amount, method, reference, status, declared_by, created_at')
+          .eq('inspection_id', id).order('created_at', { ascending: false }),
       ])
       setItems(itemsRes.data || [])
       setJobCard(jobRes.data?.[0] || null)
       setMessages(msgRes.data || [])
+      setPayments(payRes.data || [])
     } catch (err) {
       console.error('Inspection detail error:', err)
       setNotFound(true)
@@ -177,6 +186,52 @@ export default function ClientInspectionDetail() {
     }
   }
 
+  // The customer DECLARES a payment; they never mark the inspection paid.
+  // Staff confirm it in the admin screen, and only that confirmation writes
+  // inspections.payment_status. Same rule as invoices (migrations 015 / 021).
+  const declarePayment = async (e) => {
+    e.preventDefault()
+    if (declaring) return
+    const amount = Number(payForm.amount)
+    if (!Number.isFinite(amount) || amount <= 0) {
+      toast.error(t('client.inspections.enterAmount'))
+      return
+    }
+    setDeclaring(true)
+    try {
+      const { data, error } = await supabase
+        .from('inspection_payments')
+        .insert({
+          inspection_id: id,
+          customer_id: customer.id,
+          amount,
+          method: payForm.method,
+          reference: payForm.reference || null,
+          declared_by: 'customer',
+          status: 'pending',
+        })
+        .select()
+      if (error) throw error
+
+      setPayments(prev => [...(data || []), ...prev])
+      setPayOpen(false)
+      setPayForm({ amount: '', method: 'mobile_money', reference: '' })
+      toast.success(t('client.inspections.paymentDeclared'))
+
+      notifyStaff({
+        type: 'inspection_payment_declared',
+        title: t('client.inspections.notifyPaymentTitle'),
+        body: `${customer.full_name} — ${inspection.inspection_number} · ${formatTZS(amount)}`,
+        inspectionId: id,
+        customerId: customer.id,
+      })
+    } catch (err) {
+      toast.error(t('client.inspections.paymentFailed'))
+    } finally {
+      setDeclaring(false)
+    }
+  }
+
   const severityStyles = {
     low: 'bg-gray-100 text-gray-600',
     medium: 'bg-yellow-100 text-yellow-700',
@@ -202,6 +257,14 @@ export default function ClientInspectionDetail() {
   const approvedItems = items.filter(i => i.customer_approved === true)
   const approvedTotal = approvedItems.reduce((s, i) => s + Number(i.estimated_cost || 0), 0)
   const undecided = items.filter(i => i.customer_approved === null).length
+
+  const fee = Number(inspection.payment_amount) || 0
+  const feePaid = inspection.payment_status === 'paid'
+  const awaitingConfirmation = payments.find(p => p.status === 'pending')
+  // Nothing to pay if there's no fee, staff already marked it paid, or the
+  // customer has a declaration sitting with staff. One open declaration at a
+  // time keeps the ledger readable and stops double-declaring.
+  const canDeclarePayment = fee > 0 && !feePaid && !awaitingConfirmation
 
   return (
     <div className="space-y-4">
@@ -234,6 +297,142 @@ export default function ClientInspectionDetail() {
           </div>
         )}
       </div>
+
+      {/* Inspection fee — the customer pays the garage for the diagnosis */}
+      {fee > 0 && (
+        <div className={`rounded-xl border overflow-hidden ${
+          feePaid ? 'bg-white border-gray-200'
+            : awaitingConfirmation ? 'bg-amber-50 border-amber-200'
+            : 'bg-white border-blue-300'
+        }`}>
+          <div className="p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-medium text-gray-500">{t('client.inspections.inspectionFee')}</p>
+                <p className="text-2xl font-bold text-gray-900 mt-0.5">{formatTZS(fee)}</p>
+              </div>
+              <span className={`text-xs px-2.5 py-1 rounded-full font-medium flex-shrink-0 ${
+                feePaid ? 'bg-green-100 text-green-700'
+                  : awaitingConfirmation ? 'bg-amber-100 text-amber-700'
+                  : 'bg-red-100 text-red-700'
+              }`}>
+                {feePaid ? t('client.inspections.feePaid')
+                  : awaitingConfirmation ? t('client.inspections.feeChecking')
+                  : t('client.inspections.feeUnpaid')}
+              </span>
+            </div>
+
+            {awaitingConfirmation && (
+              <div className="flex items-start gap-2 mt-3 pt-3 border-t border-amber-200">
+                <Clock className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-700">
+                  {t('client.inspections.feeCheckingHint').replace('{amount}', formatTZS(awaitingConfirmation.amount))}
+                </p>
+              </div>
+            )}
+
+            {canDeclarePayment && !payOpen && (
+              <button
+                onClick={() => { setPayForm(f => ({ ...f, amount: String(fee) })); setPayOpen(true) }}
+                className="w-full mt-3 flex items-center justify-center gap-2 px-4 py-3 bg-blue-700 text-white font-medium rounded-xl hover:bg-blue-800 transition active:scale-[0.98] cursor-pointer"
+              >
+                <CreditCard className="w-4 h-4" />
+                {t('client.inspections.payFee')}
+              </button>
+            )}
+
+            {payOpen && (
+              <form onSubmit={declarePayment} className="mt-3 pt-3 border-t border-gray-200 space-y-3">
+                <p className="text-xs text-gray-500">{t('client.inspections.payHint')}</p>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                    {t('client.inspections.amountPaid')}
+                  </label>
+                  <input
+                    type="number" min="0" step="any" inputMode="decimal"
+                    value={payForm.amount}
+                    onChange={(e) => setPayForm({ ...payForm, amount: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                    {t('client.inspections.payMethod')}
+                  </label>
+                  <select
+                    value={payForm.method}
+                    onChange={(e) => setPayForm({ ...payForm, method: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm cursor-pointer"
+                  >
+                    <option value="mobile_money">{t('paymentMethods.mobile_money')}</option>
+                    <option value="cash">{t('paymentMethods.cash')}</option>
+                    <option value="bank_transfer">{t('paymentMethods.bank_transfer')}</option>
+                    <option value="cheque">{t('paymentMethods.cheque')}</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                    {t('client.inspections.payReference')}{' '}
+                    <span className="text-gray-400">({t('client.inspections.optional')})</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={payForm.reference}
+                    onChange={(e) => setPayForm({ ...payForm, reference: e.target.value })}
+                    placeholder={t('client.inspections.payReferencePlaceholder')}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    disabled={declaring}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-700 text-white font-medium rounded-xl hover:bg-blue-800 transition active:scale-[0.98] disabled:opacity-40 text-sm cursor-pointer disabled:cursor-not-allowed"
+                  >
+                    <CreditCard className="w-4 h-4" />
+                    {declaring ? t('client.inspections.sending') : t('client.inspections.confirmPaid')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPayOpen(false)}
+                    className="px-4 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition text-sm cursor-pointer"
+                  >
+                    {t('common.cancel')}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+
+          {/* Payment history */}
+          {payments.length > 0 && (
+            <div className="border-t border-gray-200 divide-y divide-gray-100 bg-gray-50/60">
+              {payments.map((p) => (
+                <div key={p.id} className="px-4 py-2.5 flex items-center justify-between gap-2 text-xs">
+                  {/* truncate, not just min-w-0: these are inline spans on one
+                      line, so a long M-Pesa reference would otherwise spill
+                      across the date and status badge on a phone. */}
+                  <div className="min-w-0 truncate">
+                    <span className="font-medium text-gray-900">{formatTZS(p.amount)}</span>
+                    <span className="text-gray-400"> · {t(`paymentMethods.${p.method}`)}</span>
+                    {p.reference && <span className="text-gray-400"> · {p.reference}</span>}
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <span className="text-gray-400">{formatDate(p.created_at)}</span>
+                    <span className={`px-2 py-0.5 rounded-full font-medium ${
+                      p.status === 'confirmed' ? 'bg-green-100 text-green-700'
+                        : p.status === 'rejected' ? 'bg-red-100 text-red-700'
+                        : 'bg-amber-100 text-amber-700'
+                    }`}>
+                      {t(`client.inspections.payStatus.${p.status}`)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Why the buttons aren't there yet */}
       {!findingsFinal && (
@@ -357,12 +556,6 @@ export default function ClientInspectionDetail() {
                   {t('client.inspections.approvedTotal')} ({approvedItems.length})
                 </span>
                 <span className="font-bold text-green-700">{formatTZS(approvedTotal)}</span>
-              </div>
-            )}
-            {Number(inspection.payment_amount) > 0 && (
-              <div className="flex justify-between text-sm pt-2 border-t border-gray-200">
-                <span className="text-gray-500">{t('client.inspections.inspectionFee')}</span>
-                <span className="font-medium">{formatTZS(inspection.payment_amount)}</span>
               </div>
             )}
           </div>

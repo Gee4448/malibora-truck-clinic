@@ -24,6 +24,7 @@ export default function InspectionDetail() {
     problem_description: '', severity: 'medium', recommended_action: '', estimated_cost: '', notes: ''
   })
   const [paymentForm, setPaymentForm] = useState({ payment_method: 'cash', payment_reference: '' })
+  const [declaredPayments, setDeclaredPayments] = useState([])
   const [situation, setSituation] = useState('')
   const [savingSituation, setSavingSituation] = useState(false)
 
@@ -45,6 +46,14 @@ export default function InspectionDetail() {
         .eq('inspection_id', id)
         .order('sort_order')
       setItems(problemItems || [])
+
+      // Payments the customer declared from the portal, awaiting confirmation.
+      const { data: declared } = await supabase
+        .from('inspection_payments')
+        .select('*')
+        .eq('inspection_id', id)
+        .order('created_at', { ascending: false })
+      setDeclaredPayments(declared || [])
     } catch (err) {
       toast.error(t('inspection.loadError'))
       navigate('/admin/inspections')
@@ -67,6 +76,56 @@ export default function InspectionDetail() {
       if (error) throw error
       toast.success(t('inspection.paymentConfirmed'))
       setShowPayment(false)
+      fetchInspection()
+    } catch (err) {
+      toast.error(err.message)
+    }
+  }
+
+  // Accept a payment the customer declared from the portal. This is the only
+  // path that turns a declaration into money received: the portal (anon role)
+  // can insert a 'pending' row but can never mark the inspection paid itself.
+  const confirmDeclaredPayment = async (payment) => {
+    try {
+      const { data, error } = await supabase
+        .from('inspection_payments')
+        .update({
+          status: 'confirmed',
+          confirmed_at: new Date().toISOString(),
+          confirmed_by: profile?.id || null,
+        })
+        .eq('id', payment.id)
+        .select('id')
+      if (error) throw error
+      if (!data || data.length === 0) throw new Error('blocked')
+
+      const { error: inspErr } = await supabase.from('inspections').update({
+        payment_status: 'paid',
+        payment_method: payment.method,
+        payment_reference: payment.reference || null,
+        status: 'paid',
+        date_paid: new Date().toISOString(),
+      }).eq('id', id)
+      if (inspErr) throw inspErr
+
+      toast.success(t('inspection.paymentConfirmed'))
+      fetchInspection()
+    } catch (err) {
+      toast.error(err.message)
+    }
+  }
+
+  const rejectDeclaredPayment = async (payment) => {
+    if (!confirm(t('inspection.rejectPaymentConfirm'))) return
+    try {
+      const { data, error } = await supabase
+        .from('inspection_payments')
+        .update({ status: 'rejected', confirmed_by: profile?.id || null })
+        .eq('id', payment.id)
+        .select('id')
+      if (error) throw error
+      if (!data || data.length === 0) throw new Error('blocked')
+      toast.success(t('inspection.paymentRejected'))
       fetchInspection()
     } catch (err) {
       toast.error(err.message)
@@ -394,6 +453,57 @@ export default function InspectionDetail() {
             </div>
           )}
         </div>
+
+        {/* Payments the customer declared from the portal. Confirming here is
+            what actually marks the inspection paid — the portal can only ask. */}
+        {declaredPayments.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <p className="text-sm font-medium text-gray-700 mb-2">{t('inspection.declaredPayments')}</p>
+            <div className="space-y-2">
+              {declaredPayments.map((p) => (
+                <div
+                  key={p.id}
+                  className={`flex items-center justify-between gap-3 p-3 rounded-lg border ${
+                    p.status === 'pending' ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 border-gray-200'
+                  }`}
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-gray-900">
+                      {formatTZS(p.amount)}
+                      <span className="font-normal text-gray-500"> · {t(`paymentMethods.${p.method}`)}</span>
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {p.reference && <>{p.reference} · </>}
+                      {formatDate(p.created_at)} · {t(`inspection.declaredBy.${p.declared_by}`)}
+                    </p>
+                  </div>
+                  {p.status === 'pending' ? (
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <button
+                        onClick={() => confirmDeclaredPayment(p)}
+                        className="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700 active:scale-95 transition cursor-pointer"
+                      >
+                        {t('inspection.confirmPaymentBtn')}
+                      </button>
+                      <button
+                        onClick={() => rejectDeclaredPayment(p)}
+                        className="px-3 py-1.5 border border-gray-300 text-gray-600 text-xs font-medium rounded-lg hover:bg-red-50 hover:text-red-600 active:scale-95 transition cursor-pointer"
+                      >
+                        {t('inspection.rejectPaymentBtn')}
+                      </button>
+                    </div>
+                  ) : (
+                    <span className={`text-xs px-2 py-1 rounded-full font-medium flex-shrink-0 ${
+                      p.status === 'confirmed' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                    }`}>
+                      {t(`inspection.payStatus.${p.status}`)}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Customer Complaint */}
