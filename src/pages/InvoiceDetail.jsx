@@ -199,11 +199,23 @@ export default function InvoiceDetail() {
   const generateFinalFromProforma = async () => {
     setGeneratingFinal(true)
     try {
+      // Carry any money already taken against the proforma (typically the 70%
+      // deposit) onto the final invoice. Without this the final starts at zero
+      // paid and bills the customer the full amount a second time.
+      const carriedPaid = Number(invoice.amount_paid) || 0
+      const invoiceTotalAmount = Number(invoice.total_amount) || 0
+      const carriedFullyPaid = carriedPaid >= invoiceTotalAmount - 0.005 // rounding tolerance
+      const carriedStatus = carriedFullyPaid ? 'paid' : (carriedPaid > 0 ? 'partial' : 'draft')
+
       const { data: newInv, error } = await supabase.from('invoices').insert({
         job_card_id: invoice.job_card_id,
         customer_id: invoice.customer_id,
         invoice_type: 'final',
-        status: 'draft',
+        status: carriedStatus,
+        amount_paid: carriedPaid,
+        paid_at: carriedFullyPaid ? new Date().toISOString() : null,
+        payment_method: invoice.payment_method,
+        payment_reference: invoice.payment_reference,
         source_proforma_id: invoice.id,
         subtotal_parts: invoice.subtotal_parts,
         subtotal_labour: invoice.subtotal_labour,
@@ -235,8 +247,9 @@ export default function InvoiceDetail() {
         const { error: itErr } = await supabase.from('invoice_items').insert(rows)
         if (itErr) throw itErr
       }
-      // Issuing the final invoice puts the job back into processing.
-      await syncJobStatus('in_progress')
+      // Issuing the final invoice puts the job back into processing — unless the
+      // proforma deposit already covered the whole bill, in which case it closes.
+      await syncJobStatus(carriedFullyPaid ? 'completed' : 'in_progress')
       toast.success(t('invoices.finalGenerated'))
       navigate(`/admin/invoices/${newInv.id}`)
     } catch (err) {

@@ -196,7 +196,11 @@ export default function InspectionDetail() {
         const { error: feeError } = await supabase.from('job_card_items').insert({
           job_card_id: jobCard.id,
           item_type: 'additional',
-          description: `${t('inspection.fee')} — ${inspection.inspection_number}`,
+          // Deliberately not translated: this string is persisted and shown on
+          // the customer's invoice and PDF forever, so it must not depend on
+          // which language the staff member happened to be using. Matches the
+          // wording migration 017 used to backfill older job cards.
+          description: `Inspection Fee - ${inspection.inspection_number}`,
           quantity: 1,
           cost_price: 0,
           selling_price: inspectionFee,
