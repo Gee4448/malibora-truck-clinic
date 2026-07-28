@@ -4,6 +4,7 @@ import { useLanguage } from '../../contexts/LanguageContext'
 import { useClient } from '../../contexts/ClientAuthContext'
 import { supabase, formatTZS, formatDate } from '../../lib/supabase'
 import { notifyStaff } from '../../lib/notifications'
+import PaymentChannels from '../../components/common/PaymentChannels'
 import {
   ArrowLeft, CheckCircle2, XCircle, AlertTriangle, ClipboardCheck,
   MessageCircle, Send, Lock, Wrench, CreditCard, Clock,
@@ -355,6 +356,7 @@ export default function ClientInspectionDetail() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
                   />
                 </div>
+                <PaymentChannels />
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1.5">
                     {t('client.inspections.payMethod')}

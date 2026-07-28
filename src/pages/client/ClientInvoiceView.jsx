@@ -4,6 +4,7 @@ import { useLanguage } from '../../contexts/LanguageContext'
 import { supabase, formatTZS, formatDate } from '../../lib/supabase'
 import { useClient } from '../../contexts/ClientAuthContext'
 import { notifyStaff } from '../../lib/notifications'
+import PaymentChannels from '../../components/common/PaymentChannels'
 import { ArrowLeft, FileText, CheckCircle2, XCircle, Phone, Send, MessageSquare, CreditCard, Clock } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -171,8 +172,12 @@ export default function ClientInvoiceView() {
   const pendingDeclared = payments.filter(p => p.status === 'pending')
   // The client can pay once staff have sent/approved the invoice for payment, and
   // there's still a balance and no payment already awaiting staff confirmation.
+  // 'draft' is in this list because the portal already SHOWS draft invoices —
+  // leaving it out was why a customer could open a proforma and find no way to
+  // pay it at all (Antony, 28 Jul 2026). If it is visible to them, it is
+  // payable by them; staff still confirm every declared payment.
   const canPay = balanceOwed > 0.005
-    && ['sent', 'approved', 'negotiating', 'partial'].includes(invoice.status)
+    && ['draft', 'sent', 'approved', 'negotiating', 'partial'].includes(invoice.status)
     && pendingDeclared.length === 0
 
   return (
@@ -409,6 +414,10 @@ export default function ClientInvoiceView() {
                 <p className="text-[11px] text-gray-400 mt-1">{t('client.invoices.balanceOwed')}: {formatTZS(balanceOwed)}</p>
               </div>
             )}
+
+            {/* The garage's own accounts — without these "pay" meant ringing up
+                to ask for a number. */}
+            <PaymentChannels />
 
             <div>
               <label className="block text-xs text-gray-500 mb-1">{t('client.invoices.method')}</label>

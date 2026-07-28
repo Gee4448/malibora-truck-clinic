@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase'
 import { Globe, User, Lock, Building, Save, KeyRound } from 'lucide-react'
 import toast from 'react-hot-toast'
 import MechanicsManager from '../components/admin/MechanicsManager'
+import PaymentChannelsManager from '../components/admin/PaymentChannelsManager'
 
 export default function Settings() {
   const { t, locale, switchLanguage } = useLanguage()
@@ -140,6 +141,10 @@ export default function Settings() {
 
       {/* Mechanics (owner/manager only) */}
       {isManager && <MechanicsManager />}
+
+      {/* Payment channels — these are what the customer is told to pay into,
+          so they are owner/manager only for the same reason mechanics are. */}
+      {isManager && <PaymentChannelsManager />}
 
       {/* Business Info */}
       <div className="bg-white rounded-xl border border-gray-200 p-5">
