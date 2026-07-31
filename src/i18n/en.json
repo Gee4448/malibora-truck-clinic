@@ -610,7 +610,7 @@
     "acceptOffer": "Accept & set as fee",
     "confirmNewFee": "Set the inspection fee to {amount}? The customer will be asked to pay this amount.",
     "sendAsNewFee": "Send {amount} as the new fee",
-    "sendAsNewFeeEmpty": "Enter a price to send it as the new fee",
+    "bargainSendBtn": "Send",
     "feeUpdatedSent": "New fee sent — the customer can pay it now",
     "feeNegotiationHint": "Sending a price replaces the inspection fee and puts the inspection back on Awaiting Payment, so the customer can pay the agreed amount from their portal."
   },

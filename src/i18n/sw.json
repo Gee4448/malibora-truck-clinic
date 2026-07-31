@@ -610,7 +610,7 @@
     "acceptOffer": "Kubali na uweke kama ada",
     "confirmNewFee": "Weka ada ya ukaguzi kuwa {amount}? Mteja ataombwa kulipa kiasi hiki.",
     "sendAsNewFee": "Tuma {amount} kama ada mpya",
-    "sendAsNewFeeEmpty": "Weka bei ili kuituma kama ada mpya",
+    "bargainSendBtn": "Tuma",
     "feeUpdatedSent": "Ada mpya imetumwa — mteja anaweza kulipa sasa",
     "feeNegotiationHint": "Kutuma bei kunabadilisha ada ya ukaguzi na kurudisha ukaguzi kwenye Inasubiri Malipo, ili mteja alipe kiasi mlichokubaliana kupitia akaunti yake."
   },

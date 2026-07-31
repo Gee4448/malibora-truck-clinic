@@ -35,6 +35,7 @@ export default function InspectionDetail() {
   const [messages, setMessages] = useState([])
   const [reply, setReply] = useState('')
   const [replyAmount, setReplyAmount] = useState('')
+  const [amountTouched, setAmountTouched] = useState(false)
   const [sendingReply, setSendingReply] = useState(false)
 
   useEffect(() => { fetchInspection() }, [id])
@@ -310,6 +311,26 @@ export default function InspectionDetail() {
     }
   }
 
+  // Pull a price out of a typed sentence: "make it 300000" -> 300000.
+  // Deliberately conservative — a wrong guess here would put a wrong number in
+  // front of a paying customer, so anything phone-shaped or implausibly small
+  // is ignored, and the result only ever lands in the visible price box.
+  const parseAmountFromText = (text) => {
+    const candidates = String(text || '').match(/\d[\d,.]*/g) || []
+    let found = null
+    for (const raw of candidates) {
+      const digits = raw.replace(/\D/g, '')
+      if (digits.length >= 9) continue   // phone-length
+      if (/^0\d/.test(digits)) continue  // leading zero, e.g. 0755...
+      const n = Number(digits)
+      // 5,000 floor, not 1,000: it keeps a year ("by 31 Jul 2026") from being
+      // read as a price, and no real inspection fee is under a dollar anyway.
+      if (!Number.isFinite(n) || n < 5000) continue
+      found = n                          // last qualifying number wins
+    }
+    return found
+  }
+
   // Post a staff message on the thread, optionally settling the inspection fee
   // at the same time. sender_type 'staff' is what the portal renders as coming
   // from the garage; the customer can never forge it.
@@ -391,6 +412,7 @@ export default function InspectionDetail() {
       await postReply({ message, amount, newFee: updateFee ? amount : null })
       setReply('')
       setReplyAmount('')
+      setAmountTouched(false)
       toast.success(updateFee ? t('inspection.feeUpdatedSent') : t('inspection.bargainReplySent'))
       if (updateFee) fetchInspection()
     } catch (err) {
@@ -528,6 +550,9 @@ export default function InspectionDetail() {
   const canReviseFee = (isRequested || isPending)
     && inspection.payment_status !== 'paid'
     && !awaitingDeclared
+  // A price on the reply means "this is the fee now" — the customer has to be
+  // able to pay the number they were just quoted.
+  const willSetFee = canReviseFee && Number(replyAmount) > 0
 
   const approvedItems = items.filter(i => i.customer_approved === true)
   const approvedTotal = approvedItems.reduce((sum, i) => sum + Number(i.estimated_cost || 0), 0)
@@ -798,12 +823,26 @@ export default function InspectionDetail() {
             )}
           </div>
 
-          <form onSubmit={sendReply} className="p-3 border-t border-gray-100 space-y-2">
+          <form
+            onSubmit={(e) => sendReply(e, { updateFee: willSetFee })}
+            className="p-3 border-t border-gray-100 space-y-2"
+          >
             <div className="flex gap-2">
               <input
                 type="text"
                 value={reply}
-                onChange={e => setReply(e.target.value)}
+                onChange={e => {
+                  setReply(e.target.value)
+                  // Staff type the price into the sentence ("make it 300000"),
+                  // not into the price box. Mirror it across so the fee
+                  // actually moves — into the visible box, never straight into
+                  // the send, so what gets applied is always what they can see
+                  // and correct.
+                  if (!amountTouched) {
+                    const found = parseAmountFromText(e.target.value)
+                    setReplyAmount(found === null ? '' : String(found))
+                  }
+                }}
                 placeholder={t('inspection.bargainReplyPlaceholder')}
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
               />
@@ -812,33 +851,27 @@ export default function InspectionDetail() {
                 min="0"
                 step="any"
                 value={replyAmount}
-                onChange={e => setReplyAmount(e.target.value)}
+                onChange={e => { setAmountTouched(true); setReplyAmount(e.target.value) }}
                 placeholder={t('inspection.bargainReplyAmount')}
-                className="w-32 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                className={`w-32 px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none ${
+                  willSetFee ? 'border-green-400 bg-green-50 font-semibold' : 'border-gray-300'
+                }`}
               />
-              <button
-                type="submit"
-                disabled={!reply.trim() || sendingReply}
-                className="px-3 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800 transition disabled:opacity-40 flex-shrink-0"
-              >
-                <Send className="w-4 h-4" />
-              </button>
             </div>
-            {/* Settle the fee and hand the ball back to the customer. This is
-                what turns an agreed number into something they can pay. */}
-            {canReviseFee && (
-              <button
-                type="button"
-                onClick={(e) => sendReply(e, { updateFee: true })}
-                disabled={!(Number(replyAmount) > 0) || sendingReply}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-              >
-                <CreditCard className="w-4 h-4" />
-                {Number(replyAmount) > 0
-                  ? t('inspection.sendAsNewFee').replace('{amount}', formatTZS(Number(replyAmount)))
-                  : t('inspection.sendAsNewFeeEmpty')}
-              </button>
-            )}
+            {/* One button. If there is a price on it, sending settles the fee —
+                that is what makes the customer able to pay the agreed number. */}
+            <button
+              type="submit"
+              disabled={(!reply.trim() && !(Number(replyAmount) > 0)) || sendingReply}
+              className={`w-full flex items-center justify-center gap-2 px-4 py-2 text-white text-sm font-medium rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer ${
+                willSetFee ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-700 hover:bg-blue-800'
+              }`}
+            >
+              {willSetFee ? <CreditCard className="w-4 h-4" /> : <Send className="w-4 h-4" />}
+              {willSetFee
+                ? t('inspection.sendAsNewFee').replace('{amount}', formatTZS(Number(replyAmount)))
+                : t('inspection.bargainSendBtn')}
+            </button>
             <p className="text-xs text-gray-400">
               {canReviseFee ? t('inspection.feeNegotiationHint') : t('inspection.bargainReplyHint')}
             </p>
