@@ -27,7 +27,15 @@ export default function Header({ onMenuToggle }) {
     setOpen(false)
     if (notif.invoice_id) navigate(`/admin/invoices/${notif.invoice_id}`)
     else if (notif.job_card_id) navigate(`/admin/job-cards/${notif.job_card_id}`)
-    else if (notif.inspection_id) navigate(`/admin/inspections/${notif.inspection_id}`)
+    // A bargain alert usually fires while staff are ALREADY looking at that
+    // inspection, so a plain navigate to the same route does nothing visible
+    // and the bell feels broken. The state tells the page to bring the thread
+    // into view; every navigate() gets a fresh location key, so repeat clicks
+    // keep working.
+    else if (notif.inspection_id) {
+      navigate(`/admin/inspections/${notif.inspection_id}`,
+        notif.type === 'inspection_bargain' ? { state: { focus: 'negotiation' } } : undefined)
+    }
   }
 
   return (

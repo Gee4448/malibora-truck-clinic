@@ -45,6 +45,42 @@ export default function ClientInspectionDetail() {
     if (customer?.id) fetchAll()
   }, [id, customer?.id])
 
+  // The garage answers the bargain from the admin screen. Without this the
+  // customer sat looking at their own unanswered message until they reloaded.
+  //
+  // The inspections row matters just as much: when the garage settles a
+  // negotiated fee it rewrites payment_amount, and the customer needs the Pay
+  // button to charge the price they just agreed to — not the one they were
+  // looking at when the page loaded.
+  useEffect(() => {
+    if (!customer?.id) return
+    const channel = supabase
+      .channel(`client-bargain-${id}`)
+      .on('postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'inspection_negotiations', filter: `inspection_id=eq.${id}` },
+        async () => {
+          const { data } = await supabase.from('inspection_negotiations')
+            .select('*').eq('inspection_id', id).order('created_at')
+          setMessages(data || [])
+        })
+      .on('postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'inspections', filter: `id=eq.${id}` },
+        (payload) => {
+          fetchAll()
+          // If the payment form is already open, its amount was pre-filled from
+          // the OLD fee. Re-sync it, or the customer declares a price that no
+          // longer exists. (Harmless when the form is shut — opening it
+          // pre-fills from the fee anyway.)
+          const next = payload?.new?.payment_amount
+          if (next !== null && next !== undefined) {
+            setPayForm(f => (String(f.amount) === String(next) ? f : { ...f, amount: String(next) }))
+          }
+        })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, customer?.id])
+
   const fetchAll = async () => {
     try {
       const { data: insp, error } = await supabase

@@ -49,6 +49,14 @@ function firstName(name) {
 export const smsTemplates = {
   inspection_complete: (name, vehicle) =>
     `Habari ${name || ''}, ukaguzi wa gari ${vehicle || ''} umekamilika. Tutakupa taarifa zaidi. Malibora Truck Clinic.`.trim(),
+  // The garage answered a price the customer questioned. The reply itself lives
+  // in the portal thread — this only tells them to go and read it.
+  inspection_bargain_reply: (name, number) =>
+    `Habari ${firstName(name)}, tumejibu ombi lako la bei kwa ukaguzi ${number || ''}. Tafadhali ingia kwenye akaunti yako kuona jibu. Malibora Truck Clinic.`.trim(),
+  // The haggling ended and the fee actually changed. This one carries the
+  // number, because it is what the customer is now being asked to pay.
+  inspection_fee_updated: (name, number, amount) =>
+    `Habari ${firstName(name)}, ada ya ukaguzi ${number || ''} imesasishwa: ${amount || ''}. Tafadhali ingia kwenye akaunti yako kulipa ili tuendelee. Malibora Truck Clinic.`.trim(),
   invoice_ready: (name, number, total) =>
     `Habari ${name || ''}, ankara yako ${number || ''} iko tayari. Jumla: ${total || ''}. Malibora Truck Clinic.`.trim(),
   invoice_updated: (name, number, total) =>
