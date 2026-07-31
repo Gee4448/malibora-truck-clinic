@@ -430,10 +430,6 @@ export default function ClientInvoiceView() {
               </div>
             )}
 
-            {/* The garage's own accounts — without these "pay" meant ringing up
-                to ask for a number. */}
-            <PaymentChannels />
-
             <div>
               <label className="block text-xs text-gray-500 mb-1">{t('client.invoices.method')}</label>
               <select
@@ -449,6 +445,10 @@ export default function ClientInvoiceView() {
                 <option value="other">{t('paymentMethods.other')}</option>
               </select>
             </div>
+
+            {/* The garage's own account for the method they just chose —
+                without these "pay" meant ringing up to ask for a number. */}
+            <PaymentChannels method={payForm.method} />
 
             <div>
               <label className="block text-xs text-gray-500 mb-1">{t('client.invoices.referenceOptional')}</label>

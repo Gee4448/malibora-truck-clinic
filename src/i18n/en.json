@@ -716,6 +716,15 @@
     "payInto": "Pay into",
     "copied": "Copied",
     "noChannels": "The garage has not published its payment details yet. Please call us to arrange payment.",
+    "noChannelForMethod": "The garage has not published details for {method} yet. Pick another method, or call us to arrange payment.",
+    "howTo": {
+      "mobile_money": "Send the amount to the number below from your mobile money menu, then enter the confirmation code you receive in the reference field.",
+      "lipa_namba": "On your mobile money menu choose to pay by number (Lipa Namba), enter the number below, then the amount. Enter the confirmation code you receive in the reference field.",
+      "bank_transfer": "Transfer the amount to the account below. Put your name or the document number as the reference so we can match it.",
+      "cheque": "Write the cheque to the account name below and deliver it to the garage. We will confirm once it clears.",
+      "cash": "Pay at the garage and ask for a receipt, then fill this in so we can confirm it.",
+      "other": "Use the details below, then fill this in so we can confirm your payment."
+    },
     "types": {
       "bank": "Bank",
       "mobile_money": "Mobile Money",

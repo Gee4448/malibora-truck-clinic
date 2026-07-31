@@ -392,7 +392,6 @@ export default function ClientInspectionDetail() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
                   />
                 </div>
-                <PaymentChannels />
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1.5">
                     {t('client.inspections.payMethod')}
@@ -410,6 +409,9 @@ export default function ClientInspectionDetail() {
                     <option value="other">{t('paymentMethods.other')}</option>
                   </select>
                 </div>
+                {/* After the choice, not before it: the details shown are the
+                    ones for the method they just picked. */}
+                <PaymentChannels method={payForm.method} />
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1.5">
                     {t('client.inspections.payReference')}{' '}

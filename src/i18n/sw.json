@@ -716,6 +716,15 @@
     "payInto": "Lipa kupitia",
     "copied": "Imenakiliwa",
     "noChannels": "Karakana bado haijaweka namba za malipo. Tafadhali tupigie simu ili kupanga malipo.",
+    "noChannelForMethod": "Karakana bado haijaweka namba za {method}. Chagua njia nyingine, au tupigie simu ili kupanga malipo.",
+    "howTo": {
+      "mobile_money": "Tuma kiasi kwenye namba iliyo hapa chini kupitia menyu ya simu yako, kisha weka namba ya uthibitisho uliyopokea kwenye sehemu ya kumbukumbu.",
+      "lipa_namba": "Kwenye menyu ya simu yako chagua kulipa kwa namba (Lipa Namba), weka namba iliyo hapa chini, kisha kiasi. Weka namba ya uthibitisho uliyopokea kwenye sehemu ya kumbukumbu.",
+      "bank_transfer": "Tuma kiasi kwenye akaunti iliyo hapa chini. Andika jina lako au namba ya hati kama kumbukumbu ili tuweze kuilinganisha.",
+      "cheque": "Andika hundi kwa jina la akaunti lililo hapa chini na uilete karakana. Tutathibitisha itakapokamilika.",
+      "cash": "Lipa karakana na uombe risiti, kisha jaza hapa ili tuweze kuthibitisha.",
+      "other": "Tumia maelezo yaliyo hapa chini, kisha jaza hapa ili tuweze kuthibitisha malipo yako."
+    },
     "types": {
       "bank": "Benki",
       "mobile_money": "Pesa Mtandao",
