@@ -859,10 +859,13 @@ export default function InspectionDetail() {
               />
             </div>
             {/* One button. If there is a price on it, sending settles the fee —
-                that is what makes the customer able to pay the agreed number. */}
+                that is what makes the customer able to pay the agreed number.
+                A price alone is only sendable down that path, which writes its
+                own message; otherwise there must be something to say, or the
+                click would do nothing at all. */}
             <button
               type="submit"
-              disabled={(!reply.trim() && !(Number(replyAmount) > 0)) || sendingReply}
+              disabled={sendingReply || (!willSetFee && !reply.trim())}
               className={`w-full flex items-center justify-center gap-2 px-4 py-2 text-white text-sm font-medium rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer ${
                 willSetFee ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-700 hover:bg-blue-800'
               }`}
