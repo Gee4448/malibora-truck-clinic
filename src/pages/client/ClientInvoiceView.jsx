@@ -16,6 +16,7 @@ export default function ClientInvoiceView() {
   const [items, setItems] = useState([])
   const [messages, setMessages] = useState([])
   const [payments, setPayments] = useState([])
+  const [refunds, setRefunds] = useState([])
   const [newMessage, setNewMessage] = useState('')
   const [sendingMessage, setSendingMessage] = useState(false)
   const [showPay, setShowPay] = useState(false)
@@ -68,6 +69,16 @@ export default function ClientInvoiceView() {
           .eq('invoice_id', inv.id)
           .order('created_at', { ascending: false })
         setPayments(pays || [])
+
+        // Money handed back to this customer (migration 027). They should see it
+        // on their own copy — a refund they can't see is indistinguishable from
+        // money that went missing.
+        const { data: refs } = await supabase
+          .from('invoice_refunds')
+          .select('id, amount, method, reason, created_at')
+          .eq('invoice_id', inv.id)
+          .order('created_at', { ascending: false })
+        setRefunds(refs || [])
       }
     } catch (err) {
       console.error('Invoice error:', err)
@@ -370,6 +381,31 @@ export default function ClientInvoiceView() {
             <p className="text-xs text-amber-700 mt-0.5">
               {formatTZS(pendingDeclared.reduce((s, p) => s + Number(p.amount || 0), 0))} · {t('client.invoices.awaitingConfirmation')}
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* Money the garage has handed back (migration 027). Shown to the customer
+          because a refund they can't see is indistinguishable from money that
+          went missing. */}
+      {refunds.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <p className="font-semibold text-gray-900 text-sm mb-2">{t('invoices.refundsMade')}</p>
+          <div className="space-y-1.5 text-sm">
+            {refunds.map(r => (
+              <div key={r.id} className="flex justify-between text-gray-600">
+                <span>
+                  {formatDate(r.created_at)}
+                  {r.method && <span className="capitalize"> · {r.method.replace('_', ' ')}</span>}
+                  {r.reason && <span className="text-gray-400"> — {r.reason}</span>}
+                </span>
+                <span className="font-medium text-gray-900 whitespace-nowrap ml-3">−{formatTZS(r.amount)}</span>
+              </div>
+            ))}
+          </div>
+          <div className="flex justify-between border-t border-gray-200 mt-2 pt-2 text-sm font-semibold text-gray-900">
+            <span>{t('invoices.totalRefunded')}</span>
+            <span>{formatTZS(refunds.reduce((s, r) => s + Number(r.amount || 0), 0))}</span>
           </div>
         </div>
       )}

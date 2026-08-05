@@ -98,6 +98,36 @@ export function overpaymentOn(amountPaid, total) {
   return over > PAID_EPSILON ? over : 0
 }
 
+// What an invoice's money columns become after money is handed back.
+//
+// `amount_paid` is the NET amount currently held, so a refund decrements it just
+// as a payment increments it (migration 027) — every balance in the app is
+// `total_amount - amount_paid` and keeps working untouched. The gross history
+// lives in the invoice_refunds ledger.
+//
+// A refund that empties the invoice can't leave it labelled `paid`, and
+// statusAfterRetotal deliberately says nothing when nothing is held, so the
+// fully-refunded case is decided here: back to `approved`, which is where a
+// quote the customer agreed to but has not paid belongs.
+export function invoiceAfterRefund(invoice, refundAmount) {
+  const held = Number(invoice?.amount_paid) || 0
+  const amount = Math.min(Math.max(Number(refundAmount) || 0, 0), held)
+  const newPaid = held - amount
+
+  if (newPaid <= PAID_EPSILON) {
+    return { amount_paid: 0, status: 'approved', paid_at: null }
+  }
+  return {
+    amount_paid: newPaid,
+    ...statusAfterRetotal(invoice?.status, newPaid, invoice?.total_amount, invoice?.paid_at),
+  }
+}
+
+// The most that can be handed back: you cannot refund money you never took.
+export function refundLimitFor(invoice) {
+  return Math.max(0, Number(invoice?.amount_paid) || 0)
+}
+
 // The complete set of columns a live proforma should be updated to, given the
 // job card's current items. One function so the "generate/update proforma"
 // button and the automatic refresh after a job-card edit cannot disagree about

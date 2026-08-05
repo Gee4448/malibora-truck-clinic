@@ -127,6 +127,20 @@ export default function ClientServiceDetail() {
       await supabase.from('inspection_items').update({ customer_approved: approved }).eq('id', itemId)
       setItems(prev => prev.map(i => i.id === itemId ? { ...i, customer_approved: approved } : i))
       toast.success(approved ? t('customerView.approved') : t('customerView.declined'))
+
+      // Declining is the customer saying he isn't satisfied, and it can happen
+      // after the job is already quoted (Antony, 5 Aug 2026). Staff have to hear
+      // about it or the proforma keeps billing for work he has just refused.
+      if (approved === false) {
+        const item = items.find(i => i.id === itemId)
+        await notifyStaff({
+          type: 'item_declined',
+          title: t('client.services.declinedNotice'),
+          body: `${customer?.full_name || t('invoices.customer')} — ${jobCard?.job_number}${item ? `: ${item.problem_description}` : ''}`,
+          jobCardId: id,
+          customerId: customer?.id || null,
+        })
+      }
     } catch {
       toast.error(t('customerView.failedUpdate'))
     }

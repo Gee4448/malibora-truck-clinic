@@ -12,6 +12,8 @@ import {
   depositAfterRetotal,
   overpaymentOn,
   proformaUpdateFor,
+  invoiceAfterRefund,
+  refundLimitFor,
   DEFAULT_VAT_RATE,
 } from './billing.js'
 
@@ -155,4 +157,60 @@ test('update: an empty job card zeroes the quote without producing NaN', () => {
   const u = proformaUpdateFor({ status: 'draft', amount_paid: 0, vat_rate: 18 }, [])
   assert.equal(u.total_amount, 0)
   assert.equal(u.profit_margin, 0)
+})
+
+// --- refunds (migration 027) ---
+
+test('refund: handing back an over-collection settles the invoice exactly', () => {
+  // Paid 635,000, job shrank to 135,000 — 500,000 is owed back.
+  const inv = { status: 'paid', amount_paid: 635000, total_amount: 135000, paid_at: OLD_DATE }
+  assert.equal(overpaymentOn(inv.amount_paid, inv.total_amount), 500000)
+
+  const after = invoiceAfterRefund(inv, 500000)
+  assert.equal(after.amount_paid, 135000)
+  assert.equal(after.status, 'paid')
+  assert.equal(after.paid_at, OLD_DATE)
+  assert.equal(overpaymentOn(after.amount_paid, inv.total_amount), 0, 'refund clears the warning')
+})
+
+test('refund: a partial refund drops a settled invoice back to partial', () => {
+  const inv = { status: 'paid', amount_paid: 635000, total_amount: 635000, paid_at: OLD_DATE }
+  const after = invoiceAfterRefund(inv, 100000)
+  assert.equal(after.amount_paid, 535000)
+  assert.equal(after.status, 'partial')
+  assert.equal(after.paid_at, null)
+})
+
+test('refund: giving everything back returns the invoice to approved, not paid', () => {
+  const inv = { status: 'paid', amount_paid: 635000, total_amount: 635000, paid_at: OLD_DATE }
+  const after = invoiceAfterRefund(inv, 635000)
+  assert.deepEqual(after, { amount_paid: 0, status: 'approved', paid_at: null })
+})
+
+test('refund: cannot hand back more than was taken', () => {
+  const inv = { status: 'partial', amount_paid: 400000, total_amount: 635000, paid_at: null }
+  const after = invoiceAfterRefund(inv, 999999)
+  assert.equal(after.amount_paid, 0, 'clamped to what was held')
+  assert.equal(after.status, 'approved')
+  assert.equal(refundLimitFor(inv), 400000)
+})
+
+test('refund: junk and negative amounts leave the money alone', () => {
+  const inv = { status: 'partial', amount_paid: 400000, total_amount: 635000, paid_at: null }
+  for (const bad of [0, -50, null, undefined, NaN, 'abc']) {
+    assert.equal(invoiceAfterRefund(inv, bad).amount_paid, 400000, `refund of ${String(bad)}`)
+  }
+})
+
+test('refund: nothing taken means nothing can be given back', () => {
+  assert.equal(refundLimitFor({ amount_paid: 0 }), 0)
+  assert.equal(refundLimitFor({}), 0)
+  assert.equal(refundLimitFor(null), 0)
+})
+
+test('refund: sub-cent remainder settles to zero rather than leaving a dust balance', () => {
+  const inv = { status: 'paid', amount_paid: 635000, total_amount: 635000, paid_at: OLD_DATE }
+  const after = invoiceAfterRefund(inv, 634999.999)
+  assert.equal(after.amount_paid, 0)
+  assert.equal(after.status, 'approved')
 })

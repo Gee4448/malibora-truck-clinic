@@ -3,16 +3,16 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useLanguage } from '../contexts/LanguageContext'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase, formatTZS, formatDate } from '../lib/supabase'
-import { ArrowLeft, Printer, Download, MessageCircle, CheckCircle, CreditCard, Send, MessageSquare, Save, Pencil, Trash2, Plus, FileText } from 'lucide-react'
+import { ArrowLeft, Printer, Download, MessageCircle, CheckCircle, CreditCard, Send, MessageSquare, Save, Pencil, Trash2, Plus, FileText, Undo2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { generateInvoicePDF } from '../lib/pdf'
-import { syncProformaTotals, statusAfterRetotal, depositAfterRetotal, overpaymentOn } from '../lib/proforma'
+import { syncProformaTotals, statusAfterRetotal, depositAfterRetotal, overpaymentOn, invoiceAfterRefund, refundLimitFor } from '../lib/proforma'
 import { sendSMS, smsTemplates } from '../lib/sms'
 
 export default function InvoiceDetail() {
   const { id } = useParams()
   const { t } = useLanguage()
-  const { canViewInternal } = useAuth()
+  const { canViewInternal, user } = useAuth()
   const navigate = useNavigate()
   const [invoice, setInvoice] = useState(null)
   const [items, setItems] = useState([])
@@ -36,6 +36,10 @@ export default function InvoiceDetail() {
   const [sendingMessage, setSendingMessage] = useState(false)
   const [depositPct, setDepositPct] = useState(70)
   const [declaredPayments, setDeclaredPayments] = useState([]) // client-declared, awaiting confirm
+  const [refunds, setRefunds] = useState([])                   // money handed back (migration 027)
+  const [showRefund, setShowRefund] = useState(false)
+  const [savingRefund, setSavingRefund] = useState(false)
+  const [refundForm, setRefundForm] = useState({ amount: '', method: 'cash', reference: '', reason: '' })
 
   useEffect(() => { fetchInvoice() }, [id])
 
@@ -107,6 +111,16 @@ export default function InvoiceDetail() {
         .eq('status', 'pending')
         .order('created_at', { ascending: true })
       setDeclaredPayments(pays || [])
+
+      // Money handed back (migration 027). Selected separately from the invoice
+      // so a missing table degrades to "no refunds" rather than 400-ing the
+      // whole page the way an unknown embedded relation would.
+      const { data: refs } = await supabase
+        .from('invoice_refunds')
+        .select('*')
+        .eq('invoice_id', data.id)
+        .order('created_at', { ascending: false })
+      setRefunds(refs || [])
     } catch (err) {
       toast.error(t('invoices.loadError'))
       navigate('/admin/invoices')
@@ -408,6 +422,50 @@ export default function InvoiceDetail() {
     }
   }
 
+  const openRefund = () => {
+    // Prefilled with the over-collection when there is one, because that is the
+    // case this exists for — staff re-priced a paid job downwards and are now
+    // holding money that isn't theirs.
+    setRefundForm({ amount: overpaid > 0 ? String(overpaid) : '', method: 'cash', reference: '', reason: '' })
+    setShowRefund(true)
+  }
+
+  // Hand money back: write the ledger row, then decrement what the invoice
+  // records as held and re-derive its status from the new figure.
+  const recordRefund = async () => {
+    const amount = Number(refundForm.amount)
+    if (!amount || amount <= 0) { toast.error(t('invoices.enterAmount')); return }
+    if (amount > refundLimitFor(invoice) + 0.005) {
+      toast.error(t('invoices.refundExceedsPaid').replace('{paid}', formatTZS(amountPaid)))
+      return
+    }
+    setSavingRefund(true)
+    try {
+      const { error: ledgerErr } = await supabase.from('invoice_refunds').insert({
+        invoice_id: invoice.id,
+        customer_id: invoice.customer_id,
+        amount,
+        method: refundForm.method,
+        reference: refundForm.reference || null,
+        reason: refundForm.reason || null,
+        refunded_by: user?.id || null,
+      })
+      if (ledgerErr) throw ledgerErr
+
+      const { error: invErr } = await supabase.from('invoices')
+        .update(invoiceAfterRefund(invoice, amount)).eq('id', id)
+      if (invErr) throw invErr
+
+      toast.success(t('invoices.refundRecorded'))
+      setShowRefund(false)
+      fetchInvoice()
+    } catch (err) {
+      toast.error(err.message)
+    } finally {
+      setSavingRefund(false)
+    }
+  }
+
   // Confirm a customer-declared payment: mark the ledger row confirmed AND apply
   // the amount to the invoice (the only place money moves — same math as recordPayment).
   const confirmDeclaredPayment = async (payment) => {
@@ -571,6 +629,17 @@ export default function InvoiceDetail() {
                 <CreditCard className="w-4 h-4" /> {invoice.status === 'partial' ? t('invoices.recordPayment') : t('invoices.markPaid')}
               </button>
             </>
+          )}
+          {/* Refund (migration 027). Offered whenever the garage is holding the
+              customer's money, not only when over-collected — a cancelled job
+              needs the deposit back too. */}
+          {amountPaid > 0 && (
+            <button onClick={openRefund}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium ${
+                overpaid > 0 ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}>
+              <Undo2 className="w-4 h-4" /> {t('invoices.recordRefund')}
+            </button>
           )}
           {/* A1: proforma -> final invoice */}
           {invoice.invoice_type === 'proforma' && invoice.status !== 'cancelled' && (
@@ -947,6 +1016,30 @@ export default function InvoiceDetail() {
           </div>
         )}
 
+        {/* Refunds actually handed back — part of the document, so it prints. */}
+        {refunds.length > 0 && (
+          <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg text-sm">
+            <p className="font-semibold text-gray-800 mb-1.5">{t('invoices.refundsMade')}</p>
+            <div className="space-y-1">
+              {refunds.map(r => (
+                <div key={r.id} className="flex justify-between text-gray-600">
+                  <span>
+                    {formatDate(r.created_at)}
+                    {r.method && <span className="capitalize"> · {r.method.replace('_', ' ')}</span>}
+                    {r.reference && <span> · {r.reference}</span>}
+                    {r.reason && <span className="text-gray-400"> — {r.reason}</span>}
+                  </span>
+                  <span className="font-medium text-gray-900 whitespace-nowrap ml-3">−{formatTZS(r.amount)}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-between border-t border-gray-200 mt-1.5 pt-1.5 font-semibold text-gray-900">
+              <span>{t('invoices.totalRefunded')}</span>
+              <span>{formatTZS(refunds.reduce((s, r) => s + Number(r.amount || 0), 0))}</span>
+            </div>
+          </div>
+        )}
+
         {/* Footer */}
         <div className="mt-8 pt-4 border-t border-gray-200 text-center text-xs text-gray-400">
           <p>Thank you for choosing Malibora Truck Clinic</p>
@@ -1092,6 +1185,75 @@ export default function InvoiceDetail() {
                   {t('common.confirm')}
                 </button>
                 <button onClick={() => setShowPayment(false)} className="px-6 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50">
+                  {t('common.cancel')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Refund Modal */}
+      {showRefund && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+            <h2 className="text-lg font-bold mb-4">{t('invoices.recordRefund')}</h2>
+            <div className="space-y-4">
+              <div className="bg-gray-50 rounded-lg p-3 text-sm space-y-1">
+                <div className="flex justify-between text-gray-600">
+                  <span>{t('invoices.total')}</span>
+                  <span className="font-medium text-gray-900">{formatTZS(invoiceTotal)}</span>
+                </div>
+                <div className="flex justify-between text-gray-600">
+                  <span>{t('invoices.amountPaid')}</span>
+                  <span className="font-medium text-emerald-700">{formatTZS(amountPaid)}</span>
+                </div>
+                {overpaid > 0 && (
+                  <div className="flex justify-between border-t border-gray-200 pt-1 mt-1">
+                    <span className="text-red-700 font-medium">{t('invoices.refundDue')}</span>
+                    <span className="font-bold text-red-800">{formatTZS(overpaid)}</span>
+                  </div>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('invoices.refundAmount')}</label>
+                <input type="number" min="0" step="any" value={refundForm.amount}
+                  onChange={e => setRefundForm({ ...refundForm, amount: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  placeholder="0" />
+                <p className="text-xs text-gray-500 mt-1">
+                  {t('invoices.refundMax').replace('{max}', formatTZS(refundLimitFor(invoice)))}
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('invoices.refundMethod')}</label>
+                <select value={refundForm.method} onChange={e => setRefundForm({ ...refundForm, method: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                  <option value="cash">{t('paymentMethods.cash')}</option>
+                  <option value="bank_transfer">{t('paymentMethods.bank_transfer')}</option>
+                  <option value="mobile_money">{t('paymentMethods.mobile_money')}</option>
+                  <option value="lipa_namba">{t('paymentMethods.lipa_namba')}</option>
+                  <option value="other">{t('paymentMethods.other')}</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('invoices.paymentRef')}</label>
+                <input type="text" value={refundForm.reference} onChange={e => setRefundForm({ ...refundForm, reference: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  placeholder={t('invoices.refPlaceholder')} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('invoices.refundReason')}</label>
+                <input type="text" value={refundForm.reason} onChange={e => setRefundForm({ ...refundForm, reason: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  placeholder={t('invoices.refundReasonPlaceholder')} />
+              </div>
+              <div className="flex gap-3">
+                <button onClick={recordRefund} disabled={savingRefund}
+                  className="flex-1 py-2.5 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 disabled:opacity-40">
+                  {t('common.confirm')}
+                </button>
+                <button onClick={() => setShowRefund(false)} className="px-6 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50">
                   {t('common.cancel')}
                 </button>
               </div>
