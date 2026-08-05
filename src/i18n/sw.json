@@ -33,7 +33,9 @@
     "registerSuccess": "Usajili umefanikiwa! Angalia barua pepe yako.",
     "googleLogin": "Ingia na Google",
     "googleRegister": "Jisajili na Google",
-    "orEmail": "au tumia barua pepe"
+    "orEmail": "au tumia barua pepe",
+    "emailOrUsername": "Barua pepe au jina la mtumiaji",
+    "emailOrUsernamePlaceholder": "jina@example.com au jina lako la mtumiaji"
   },
   "dashboard": {
     "welcome": "Karibu tena",
@@ -285,7 +287,9 @@
       "normal": "Kawaida",
       "high": "Juu",
       "urgent": "Dharura"
-    }
+    },
+    "evidence": "Ushahidi wa kazi",
+    "evidenceHint": "Picha alizopiga fundi kuonyesha kazi imefanyika."
   },
   "invoices": {
     "title": "Ankara",
@@ -560,8 +564,15 @@
     "confirmPaymentBtn": "Thibitisha",
     "rejectPaymentBtn": "Kataa",
     "rejectPaymentConfirm": "Kataa malipo haya yaliyotangazwa? Mteja ataona hayakukubaliwa.",
-    "declaredBy": { "customer": "yametangazwa na mteja", "staff": "yamerekodiwa na wafanyakazi" },
-    "payStatus": { "pending": "Yanasubiri uthibitisho", "confirmed": "Yamethibitishwa", "rejected": "Yamekataliwa" },
+    "declaredBy": {
+      "customer": "yametangazwa na mteja",
+      "staff": "yamerekodiwa na wafanyakazi"
+    },
+    "payStatus": {
+      "pending": "Yanasubiri uthibitisho",
+      "confirmed": "Yamethibitishwa",
+      "rejected": "Yamekataliwa"
+    },
     "inspectionStarted": "Ukaguzi umeanza",
     "problemRecorded": "Tatizo limerekodiwa",
     "problemRemoved": "Tatizo limeondolewa",
@@ -814,7 +825,10 @@
     "jobs": {
       "title": "Kazi Zangu",
       "subtitle": "Magari uliyopewa",
-      "filter": { "active": "Zinaendelea", "completed": "Zimekamilika" },
+      "filter": {
+        "active": "Zinaendelea",
+        "completed": "Zimekamilika"
+      },
       "empty": "Hakuna kazi hapa bado."
     },
     "job": {
@@ -826,7 +840,23 @@
       "situationHint": "Andika hali ya sasa ya gari kwa ajili ya mteja.",
       "postSituation": "Tuma taarifa",
       "situationPosted": "Taarifa imetumwa kwa mteja",
-      "notYours": "Kazi hii haujapewa wewe."
+      "notYours": "Kazi hii haujapewa wewe.",
+      "evidence": "Picha za ushahidi",
+      "evidenceHint": "Piga picha ya kazi iliyokamilika — kipuri kipya kilichofungwa, na kadhalika.",
+      "addPhoto": "Ongeza picha",
+      "uploading": "Inapakia…",
+      "uploadFailed": "Imeshindwa kupakia picha. Angalia mtandao wako.",
+      "photosAdded": "Picha {count} zimeongezwa",
+      "deleteFailed": "Imeshindwa kuondoa picha hiyo.",
+      "finishTitle": "Umemaliza kazi hii?",
+      "finishHint": "Tiki ukimaliza kazi. Ofisi itajulishwa mara moja.",
+      "markDone": "Tiki kazi imekamilika",
+      "markedDone": "Imetiwa alama ya kumalizika — ofisi imejulishwa",
+      "doneTitle": "Kazi imekamilika",
+      "doneOn": "Ilimalizika",
+      "undoDone": "Bado haijamalizika",
+      "reopened": "Imefunguliwa tena",
+      "finishFailed": "Imeshindwa kusasisha kazi. Tafadhali jaribu tena."
     }
   },
   "mechanicsAdmin": {
@@ -848,7 +878,10 @@
     "saved": "Fundi amehifadhiwa",
     "forbidden": "Ni mmiliki au meneja pekee anayeweza kusimamia mafundi.",
     "nameRequired": "Jina linahitajika",
-    "pinTooShort": "PIN lazima iwe angalau tarakimu 4"
+    "pinTooShort": "PIN lazima iwe angalau tarakimu 4",
+    "branch": "Tawi",
+    "noBranch": "Hakuna tawi",
+    "saveFailed": "Imeshindwa kumhifadhi fundi. Tafadhali jaribu tena."
   },
   "install": {
     "title": "Sakinisha Programu ya Malibora",
@@ -941,7 +974,11 @@
     },
     "inspections": {
       "title": "Ukaguzi Wangu",
-      "filter": { "all": "Zote", "awaiting": "Zinakusubiri", "completed": "Zilizokamilika" },
+      "filter": {
+        "all": "Zote",
+        "awaiting": "Zinakusubiri",
+        "completed": "Zilizokamilika"
+      },
       "empty": "Hakuna ripoti za ukaguzi bado.",
       "requestNew": "Omba Ukaguzi",
       "awaitingQuote": "Inasubiri karakana kuweka ada",
@@ -1247,6 +1284,76 @@
       "save": "Hifadhi Mabadiliko",
       "updated": "Wasifu umebadilishwa!",
       "updateError": "Imeshindikana kubadilisha wasifu"
+    }
+  },
+  "branches": {
+    "title": "Matawi",
+    "add": "Ongeza",
+    "hint": "Sehemu mnazofanyia kazi. Kila mfanyakazi na fundi anawekwa kwenye tawi, ili ujue mtu anafanyia kazi wapi.",
+    "empty": "Hakuna tawi lililoongezwa bado.",
+    "inactive": "Limefungwa",
+    "deactivate": "Funga tawi",
+    "activate": "Fungua tawi",
+    "addTitle": "Ongeza Tawi",
+    "editTitle": "Hariri Tawi",
+    "name": "Jina la tawi",
+    "namePlaceholder": "mfano Iringa",
+    "location": "Mahali",
+    "phone": "Simu",
+    "saved": "Tawi limehifadhiwa",
+    "saveFailed": "Imeshindwa kuhifadhi tawi. Tafadhali jaribu tena.",
+    "nameRequired": "Jina la tawi linahitajika",
+    "duplicate": "Tawi lenye jina hilo lipo tayari.",
+    "loadFailed": "Imeshindwa kupakia matawi."
+  },
+  "staffAdmin": {
+    "title": "Akaunti za wafanyakazi",
+    "add": "Ongeza",
+    "hint": "Fungua akaunti ya mfanyakazi mpya — jina la mtumiaji, nenosiri, cheo na tawi. Ataweza kuingia mara moja.",
+    "empty": "Hakuna akaunti za wafanyakazi bado.",
+    "you": "wewe",
+    "name": "Jina kamili",
+    "phone": "Simu",
+    "username": "Jina la mtumiaji",
+    "usernamePlaceholder": "mfano asha au asha@example.com",
+    "usernameHint": "Hili ndilo atakaloandika kuingia. Jina la kawaida linatosha — barua pepe haihitajiki.",
+    "usernameLocked": "Jina la mtumiaji haliwezi kubadilishwa baada ya akaunti kufunguliwa.",
+    "password": "Nenosiri",
+    "passwordHint": "Angalau herufi 6. Mpe kwa siri — anaweza kulibadilisha kwenye Mipangilio.",
+    "role": "Cheo",
+    "roleHint": "Ni mmiliki na meneja pekee wanaoona gharama na faida.",
+    "branch": "Tawi",
+    "noBranch": "Hakuna tawi",
+    "addTitle": "Fungua Akaunti ya Mfanyakazi",
+    "editTitle": "Hariri Mfanyakazi",
+    "createAccount": "Fungua akaunti",
+    "saved": "Mfanyakazi amehifadhiwa",
+    "created": "Akaunti imefunguliwa — anaweza kuingia sasa",
+    "loadFailed": "Imeshindwa kupakia orodha ya wafanyakazi.",
+    "nameRequired": "Jina kamili linahitajika",
+    "usernameRequired": "Jina la mtumiaji linahitajika",
+    "passwordTooShort": "Nenosiri liwe na angalau herufi 6",
+    "deactivate": "Zima",
+    "activate": "Rudisha",
+    "roles": {
+      "owner": "Mmiliki",
+      "manager": "Meneja",
+      "supervisor": "Msimamizi",
+      "accountant": "Mhasibu",
+      "secretary": "Katibu",
+      "receptionist": "Mapokezi",
+      "storekeeper": "Mhifadhi wa stoo",
+      "mechanic": "Fundi",
+      "technician": "Fundi mtaalamu"
+    },
+    "errors": {
+      "forbidden": "Ni mmiliki au meneja pekee anayeweza kusimamia akaunti za wafanyakazi.",
+      "ownerOnly": "Ni mmiliki pekee anayeweza kufungua au kuhariri mmiliki mwingine.",
+      "cannotEditSelf": "Huwezi kubadilisha cheo chako mwenyewe wala kujizima.",
+      "badRole": "Cheo hicho hakiruhusiwi.",
+      "usernameTaken": "Jina hilo la mtumiaji limeshatumika.",
+      "signupsDisabled": "Akaunti haikuweza kufunguliwa. Kwenye Supabase, hakikisha usajili umeruhusiwa na \"Confirm email\" imezimwa.",
+      "generic": "Imeshindwa kuhifadhi. Tafadhali jaribu tena."
     }
   }
 }

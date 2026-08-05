@@ -4,7 +4,8 @@ import { useLanguage } from '../contexts/LanguageContext'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase, formatTZS, formatDate } from '../lib/supabase'
 import { findLiveProforma, syncProformaTotals, totalsFromJobItems, proformaUpdateFor, overpaymentOn, DEFAULT_VAT_RATE } from '../lib/proforma'
-import { Plus, Trash2, FileText, Printer, ArrowLeft, Package, Wrench, DollarSign, X, CheckCircle2, XCircle, UserPlus, AlertCircle, Share2, Pencil } from 'lucide-react'
+import { fetchEvidence, evidenceUrl } from '../lib/evidence'
+import { Plus, Trash2, FileText, Printer, ArrowLeft, Package, Wrench, DollarSign, X, CheckCircle2, XCircle, UserPlus, AlertCircle, Share2, Pencil, Camera } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function JobCardDetail() {
@@ -18,6 +19,7 @@ export default function JobCardDetail() {
   const [labourRates, setLabourRates] = useState([])
   const [inspectionItems, setInspectionItems] = useState([])
   const [liveProforma, setLiveProforma] = useState(null)
+  const [evidence, setEvidence] = useState([])
   const [loading, setLoading] = useState(true)
   const [showAddItem, setShowAddItem] = useState(false)
   const [showAssignTech, setShowAssignTech] = useState(false)
@@ -38,6 +40,7 @@ export default function JobCardDetail() {
     fetchParts()
     fetchLabourRates()
     fetchMechanics()
+    fetchEvidence(id).then(setEvidence).catch(() => setEvidence([]))
   }, [id])
 
   const fetchMechanics = async () => {
@@ -702,6 +705,25 @@ export default function JobCardDetail() {
           </table>
         </div>
       </div>
+
+      {/* Evidence the mechanic uploaded from the workshop (migration 030) */}
+      {evidence.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <h2 className="font-semibold text-gray-900 flex items-center gap-2 mb-1">
+            <Camera className="w-5 h-5 text-blue-600" /> {t('jobs.evidence')}
+          </h2>
+          <p className="text-xs text-gray-500 mb-4">{t('jobs.evidenceHint')}</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {evidence.map((ev) => (
+              <a key={ev.id} href={evidenceUrl(ev.storage_path)} target="_blank" rel="noreferrer" className="block">
+                <img src={evidenceUrl(ev.storage_path)} alt={ev.caption || ''} loading="lazy"
+                  className="w-full h-28 object-cover rounded-lg border border-gray-200 hover:opacity-90 transition" />
+                <p className="text-[11px] text-gray-400 mt-1">{formatDate(ev.created_at)}</p>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Assign Technician Modal */}
       {showAssignTech && (

@@ -33,7 +33,9 @@
     "registerSuccess": "Registration successful! Please check your email.",
     "googleLogin": "Sign in with Google",
     "googleRegister": "Sign up with Google",
-    "orEmail": "or use email"
+    "orEmail": "or use email",
+    "emailOrUsername": "Email or username",
+    "emailOrUsernamePlaceholder": "jina@example.com or your username"
   },
   "dashboard": {
     "welcome": "Welcome back",
@@ -285,7 +287,9 @@
       "normal": "Normal",
       "high": "High",
       "urgent": "Urgent"
-    }
+    },
+    "evidence": "Work evidence",
+    "evidenceHint": "Photos the mechanic took to show the work was done."
   },
   "invoices": {
     "title": "Invoices",
@@ -560,8 +564,15 @@
     "confirmPaymentBtn": "Confirm",
     "rejectPaymentBtn": "Reject",
     "rejectPaymentConfirm": "Reject this declared payment? The customer will see it was not accepted.",
-    "declaredBy": { "customer": "declared by customer", "staff": "recorded by staff" },
-    "payStatus": { "pending": "Awaiting confirmation", "confirmed": "Confirmed", "rejected": "Rejected" },
+    "declaredBy": {
+      "customer": "declared by customer",
+      "staff": "recorded by staff"
+    },
+    "payStatus": {
+      "pending": "Awaiting confirmation",
+      "confirmed": "Confirmed",
+      "rejected": "Rejected"
+    },
     "inspectionStarted": "Inspection started",
     "problemRecorded": "Problem recorded",
     "problemRemoved": "Problem removed",
@@ -814,7 +825,10 @@
     "jobs": {
       "title": "My Jobs",
       "subtitle": "Vehicles assigned to you",
-      "filter": { "active": "Active", "completed": "Completed" },
+      "filter": {
+        "active": "Active",
+        "completed": "Completed"
+      },
       "empty": "No jobs here yet."
     },
     "job": {
@@ -826,7 +840,23 @@
       "situationHint": "Write the current situation of the vehicle for the customer.",
       "postSituation": "Post update",
       "situationPosted": "Update sent to the customer",
-      "notYours": "This job isn't assigned to you."
+      "notYours": "This job isn't assigned to you.",
+      "evidence": "Evidence photos",
+      "evidenceHint": "Take a photo of the finished work — the new part fitted, and so on.",
+      "addPhoto": "Add photo",
+      "uploading": "Uploading…",
+      "uploadFailed": "Couldn't upload that photo. Check your connection.",
+      "photosAdded": "{count} photo(s) added",
+      "deleteFailed": "Couldn't remove that photo.",
+      "finishTitle": "Finished this job?",
+      "finishHint": "Tick when the work is complete. The office is told straight away.",
+      "markDone": "Mark work finished",
+      "markedDone": "Marked finished — the office has been told",
+      "doneTitle": "Work finished",
+      "doneOn": "Finished on",
+      "undoDone": "Not finished after all",
+      "reopened": "Reopened",
+      "finishFailed": "Couldn't update the job. Please try again."
     }
   },
   "mechanicsAdmin": {
@@ -848,7 +878,10 @@
     "saved": "Mechanic saved",
     "forbidden": "Only an owner or manager can manage mechanics.",
     "nameRequired": "Name is required",
-    "pinTooShort": "PIN must be at least 4 digits"
+    "pinTooShort": "PIN must be at least 4 digits",
+    "branch": "Branch",
+    "noBranch": "No branch",
+    "saveFailed": "Couldn't save the mechanic. Please try again."
   },
   "install": {
     "title": "Install Malibora App",
@@ -941,7 +974,11 @@
     },
     "inspections": {
       "title": "My Inspections",
-      "filter": { "all": "All", "awaiting": "Needs you", "completed": "Completed" },
+      "filter": {
+        "all": "All",
+        "awaiting": "Needs you",
+        "completed": "Completed"
+      },
       "empty": "No inspection reports yet.",
       "requestNew": "Request Inspection",
       "awaitingQuote": "Waiting for the garage to set the fee",
@@ -1247,6 +1284,76 @@
       "save": "Save Changes",
       "updated": "Profile updated!",
       "updateError": "Failed to update profile"
+    }
+  },
+  "branches": {
+    "title": "Branches",
+    "add": "Add",
+    "hint": "The places you work from. Staff and mechanics are each attached to one, so you can see where a person works.",
+    "empty": "No branches added yet.",
+    "inactive": "Closed",
+    "deactivate": "Close branch",
+    "activate": "Reopen branch",
+    "addTitle": "Add Branch",
+    "editTitle": "Edit Branch",
+    "name": "Branch name",
+    "namePlaceholder": "e.g. Iringa",
+    "location": "Location",
+    "phone": "Phone",
+    "saved": "Branch saved",
+    "saveFailed": "Couldn't save the branch. Please try again.",
+    "nameRequired": "Branch name is required",
+    "duplicate": "A branch with that name already exists.",
+    "loadFailed": "Couldn't load the branches."
+  },
+  "staffAdmin": {
+    "title": "Staff accounts",
+    "add": "Add",
+    "hint": "Open an account for a new member of staff — their username, password, role and branch. They can sign in straight away.",
+    "empty": "No staff accounts yet.",
+    "you": "you",
+    "name": "Full name",
+    "phone": "Phone",
+    "username": "Username",
+    "usernamePlaceholder": "e.g. asha or asha@example.com",
+    "usernameHint": "This is what they type to sign in. A plain username is fine — no email needed.",
+    "usernameLocked": "The username cannot be changed after the account is opened.",
+    "password": "Password",
+    "passwordHint": "At least 6 characters. Give it to them privately — they can change it in Settings.",
+    "role": "Role",
+    "roleHint": "Only owners and managers see costs and profit.",
+    "branch": "Branch",
+    "noBranch": "No branch",
+    "addTitle": "Open Staff Account",
+    "editTitle": "Edit Staff Member",
+    "createAccount": "Create account",
+    "saved": "Staff member saved",
+    "created": "Account created — they can sign in now",
+    "loadFailed": "Couldn't load the staff list.",
+    "nameRequired": "Full name is required",
+    "usernameRequired": "Username is required",
+    "passwordTooShort": "Password must be at least 6 characters",
+    "deactivate": "Deactivate",
+    "activate": "Reactivate",
+    "roles": {
+      "owner": "Owner",
+      "manager": "Manager",
+      "supervisor": "Supervisor",
+      "accountant": "Accountant",
+      "secretary": "Secretary",
+      "receptionist": "Receptionist",
+      "storekeeper": "Storekeeper",
+      "mechanic": "Mechanic",
+      "technician": "Technician"
+    },
+    "errors": {
+      "forbidden": "Only an owner or manager can manage staff accounts.",
+      "ownerOnly": "Only the owner can create or edit another owner.",
+      "cannotEditSelf": "You cannot change your own role or deactivate yourself.",
+      "badRole": "That role is not allowed.",
+      "usernameTaken": "That username is already taken.",
+      "signupsDisabled": "The account could not be created. In Supabase, check that sign-ups are enabled and \"Confirm email\" is off.",
+      "generic": "Couldn't save. Please try again."
     }
   }
 }

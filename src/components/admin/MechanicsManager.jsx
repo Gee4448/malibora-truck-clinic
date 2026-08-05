@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useLanguage } from '../../contexts/LanguageContext'
-import { supabase } from '../../lib/supabase'
+import { supabase, errorMessage } from '../../lib/supabase'
 import { Wrench, Plus, X, Power, KeyRound, Pencil } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -14,14 +14,19 @@ export default function MechanicsManager() {
   const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
   const [editing, setEditing] = useState(null)
-  const [form, setForm] = useState({ name: '', phone: '', pin: '' })
+  const [branches, setBranches] = useState([])
+  const [form, setForm] = useState({ name: '', phone: '', pin: '', branch_id: '' })
 
   useEffect(() => { fetchMechanics() }, [])
 
   const fetchMechanics = async () => {
     try {
-      const { data } = await supabase.from('mechanics').select('id, name, phone, active').order('name')
-      setMechanics(data || [])
+      const [mechRes, branchRes] = await Promise.all([
+        supabase.from('mechanics').select('id, name, phone, active, branch_id, branches(name)').order('name'),
+        supabase.from('branches').select('id, name').eq('active', true).order('name'),
+      ])
+      setMechanics(mechRes.data || [])
+      setBranches(branchRes.data || [])
     } catch (err) {
       console.error('Mechanics load error:', err)
     } finally {
@@ -29,8 +34,12 @@ export default function MechanicsManager() {
     }
   }
 
-  const openAdd = () => { setEditing(null); setForm({ name: '', phone: '', pin: '' }); setShowForm(true) }
-  const openEdit = (m) => { setEditing(m); setForm({ name: m.name, phone: m.phone || '', pin: '' }); setShowForm(true) }
+  const openAdd = () => { setEditing(null); setForm({ name: '', phone: '', pin: '', branch_id: '' }); setShowForm(true) }
+  const openEdit = (m) => {
+    setEditing(m)
+    setForm({ name: m.name, phone: m.phone || '', pin: '', branch_id: m.branch_id || '' })
+    setShowForm(true)
+  }
 
   const save = async (e) => {
     e.preventDefault()
@@ -44,13 +53,16 @@ export default function MechanicsManager() {
         p_phone: form.phone.trim(),
         p_code: form.pin.trim(),
         p_active: editing ? editing.active : true,
+        p_branch_id: form.branch_id || null,
       })
       if (error) throw error
       toast.success(t('mechanicsAdmin.saved'))
       setShowForm(false)
       fetchMechanics()
     } catch (err) {
-      toast.error(err.message?.includes('forbidden') ? t('mechanicsAdmin.forbidden') : err.message)
+      toast.error(err.message?.includes('forbidden')
+        ? t('mechanicsAdmin.forbidden')
+        : errorMessage(err, t('mechanicsAdmin.saveFailed')))
     } finally {
       setSaving(false)
     }
@@ -60,11 +72,12 @@ export default function MechanicsManager() {
     try {
       const { error } = await supabase.rpc('admin_save_mechanic', {
         p_id: m.id, p_name: m.name, p_phone: m.phone || '', p_code: '', p_active: !m.active,
+        p_branch_id: m.branch_id || null,
       })
       if (error) throw error
       fetchMechanics()
     } catch (err) {
-      toast.error(err.message)
+      toast.error(errorMessage(err, t('mechanicsAdmin.saveFailed')))
     }
   }
 
@@ -94,7 +107,11 @@ export default function MechanicsManager() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className={`text-sm font-medium ${m.active ? 'text-gray-900' : 'text-gray-400 line-through'}`}>{m.name}</p>
-                {m.phone && <p className="text-xs text-gray-500">{m.phone}</p>}
+                {(m.phone || m.branches?.name) && (
+                  <p className="text-xs text-gray-500 truncate">
+                    {[m.phone, m.branches?.name].filter(Boolean).join(' · ')}
+                  </p>
+                )}
               </div>
               {!m.active && <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">{t('mechanicsAdmin.inactive')}</span>}
               <button onClick={() => openEdit(m)} className="p-1.5 rounded hover:bg-gray-100 text-gray-500" title={t('common.edit')}>
@@ -127,6 +144,14 @@ export default function MechanicsManager() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">{t('mechanicsAdmin.phone')}</label>
                 <input type="tel" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('mechanicsAdmin.branch')}</label>
+                <select value={form.branch_id} onChange={e => setForm({ ...form, branch_id: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                  <option value="">{t('mechanicsAdmin.noBranch')}</option>
+                  {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                </select>
               </div>
               <div>
                 <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-1">

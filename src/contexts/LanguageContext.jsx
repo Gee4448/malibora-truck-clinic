@@ -11,13 +11,18 @@ export function LanguageProvider({ children }) {
     return localStorage.getItem('malibora_lang') || 'en'
   })
 
-  const t = useCallback((key) => {
+  // t('a.b.c') as before; t('a.b.c', { count: 3 }) fills {count} in the string.
+  const t = useCallback((key, vars) => {
     const keys = key.split('.')
     let value = languages[locale]
     for (const k of keys) {
       value = value?.[k]
     }
-    return value || key
+    if (typeof value !== 'string') return value || key
+    if (!vars) return value
+    return value.replace(/\{(\w+)\}/g, (match, name) =>
+      Object.prototype.hasOwnProperty.call(vars, name) ? String(vars[name]) : match
+    )
   }, [locale])
 
   const switchLanguage = (lang) => {

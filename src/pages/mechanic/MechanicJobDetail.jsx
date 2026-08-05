@@ -2,8 +2,12 @@ import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { useMechanic } from '../../contexts/MechanicAuthContext'
-import { supabase, formatDate } from '../../lib/supabase'
-import { ArrowLeft, Truck, Wrench, XCircle, Send, AlertTriangle } from 'lucide-react'
+import { supabase, formatDate, errorMessage } from '../../lib/supabase'
+import { uploadEvidence, fetchEvidence, evidenceUrl } from '../../lib/evidence'
+import {
+  ArrowLeft, Truck, Wrench, XCircle, Send, AlertTriangle,
+  Camera, CheckCircle2, Trash2, RotateCcw, Loader2,
+} from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function MechanicJobDetail() {
@@ -18,6 +22,9 @@ export default function MechanicJobDetail() {
   const [savingSituation, setSavingSituation] = useState(false)
   const [loading, setLoading] = useState(true)
   const [denied, setDenied] = useState(false)
+  const [evidence, setEvidence] = useState([])
+  const [uploading, setUploading] = useState(false)
+  const [finishing, setFinishing] = useState(false)
 
   useEffect(() => {
     fetchData()
@@ -28,7 +35,7 @@ export default function MechanicJobDetail() {
     try {
       const { data: jc } = await supabase
         .from('job_cards')
-        .select('id, job_number, status, description, inspection_id, assigned_mechanic_id, vehicles(registration_number, make, model, year)')
+        .select('id, job_number, status, description, inspection_id, assigned_mechanic_id, mechanic_completed_at, vehicles(registration_number, make, model, year)')
         .eq('id', id)
         .single()
 
@@ -39,6 +46,7 @@ export default function MechanicJobDetail() {
         return
       }
       setJob(jc)
+      setEvidence(await fetchEvidence(jc.id).catch(() => []))
 
       if (jc.inspection_id) {
         const [inspRes, itemsRes] = await Promise.all([
@@ -67,6 +75,73 @@ export default function MechanicJobDetail() {
     } catch (err) {
       toast.error(err.message)
       fetchData()
+    }
+  }
+
+  // Photos of the finished work. Several can be picked at once — the phone
+  // camera roll is how these arrive.
+  const addPhotos = async (fileList) => {
+    const files = Array.from(fileList || []).filter(f => f.type.startsWith('image/'))
+    if (!files.length) return
+    setUploading(true)
+    let added = 0
+    for (const file of files) {
+      try {
+        await uploadEvidence({ file, jobCardId: job.id, mechanicId: mechanic.id })
+        added += 1
+      } catch (err) {
+        toast.error(errorMessage(err, t('mechanic.job.uploadFailed')))
+      }
+    }
+    if (added) toast.success(t('mechanic.job.photosAdded', { count: added }))
+    setEvidence(await fetchEvidence(job.id).catch(() => evidence))
+    setUploading(false)
+  }
+
+  const removePhoto = async (ev) => {
+    setEvidence(prev => prev.filter(e => e.id !== ev.id))
+    try {
+      const { error } = await supabase.rpc('mechanic_delete_evidence', {
+        p_mechanic_id: mechanic.id, p_evidence_id: ev.id,
+      })
+      if (error) throw error
+    } catch (err) {
+      toast.error(errorMessage(err, t('mechanic.job.deleteFailed')))
+      fetchData()
+    }
+  }
+
+  // The tick: the work is done. Also closes the job card itself, server-side,
+  // but only from a status that means "being worked on" (migration 030).
+  const finishJob = async () => {
+    setFinishing(true)
+    try {
+      const { error } = await supabase.rpc('mechanic_complete_job', {
+        p_mechanic_id: mechanic.id, p_job_card_id: job.id, p_note: situation || null,
+      })
+      if (error) throw error
+      toast.success(t('mechanic.job.markedDone'))
+      fetchData()
+    } catch (err) {
+      toast.error(errorMessage(err, t('mechanic.job.finishFailed')))
+    } finally {
+      setFinishing(false)
+    }
+  }
+
+  const undoFinish = async () => {
+    setFinishing(true)
+    try {
+      const { error } = await supabase.rpc('mechanic_reopen_job', {
+        p_mechanic_id: mechanic.id, p_job_card_id: job.id,
+      })
+      if (error) throw error
+      toast.success(t('mechanic.job.reopened'))
+      fetchData()
+    } catch (err) {
+      toast.error(errorMessage(err, t('mechanic.job.finishFailed')))
+    } finally {
+      setFinishing(false)
     }
   }
 
@@ -247,6 +322,78 @@ export default function MechanicJobDetail() {
           </div>
         </div>
       )}
+
+      {/* Evidence photos */}
+      <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="flex items-center gap-2 mb-1">
+          <Camera className="w-4 h-4 text-amber-600" />
+          <h3 className="font-semibold text-gray-900 text-sm">{t('mechanic.job.evidence')}</h3>
+        </div>
+        <p className="text-xs text-gray-500 mb-3">{t('mechanic.job.evidenceHint')}</p>
+
+        {evidence.length > 0 && (
+          <div className="grid grid-cols-3 gap-2 mb-3">
+            {evidence.map((ev) => (
+              <div key={ev.id} className="relative group">
+                <a href={evidenceUrl(ev.storage_path)} target="_blank" rel="noreferrer">
+                  <img src={evidenceUrl(ev.storage_path)} alt={ev.caption || ''}
+                    loading="lazy"
+                    className="w-full h-24 object-cover rounded-lg border border-gray-200" />
+                </a>
+                {ev.mechanic_id === mechanic?.id && (
+                  <button onClick={() => removePhoto(ev)}
+                    title={t('common.delete')}
+                    className="absolute top-1 right-1 p-1 rounded-full bg-black/60 text-white hover:bg-red-600">
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        <label className={`flex items-center justify-center gap-2 w-full py-3 border-2 border-dashed rounded-lg text-sm font-medium transition ${
+          uploading ? 'border-gray-200 text-gray-400' : 'border-amber-300 text-amber-700 hover:bg-amber-50 cursor-pointer'
+        }`}>
+          {uploading
+            ? <><Loader2 className="w-4 h-4 animate-spin" /> {t('mechanic.job.uploading')}</>
+            : <><Camera className="w-4 h-4" /> {t('mechanic.job.addPhoto')}</>}
+          <input type="file" accept="image/*" capture="environment" multiple disabled={uploading}
+            onChange={(e) => { addPhotos(e.target.files); e.target.value = '' }}
+            className="hidden" />
+        </label>
+      </div>
+
+      {/* The tick: work finished */}
+      <div className="bg-white rounded-xl border border-gray-200 p-4">
+        {job.mechanic_completed_at ? (
+          <>
+            <div className="flex items-center gap-2 text-green-700 mb-1">
+              <CheckCircle2 className="w-5 h-5" />
+              <span className="font-semibold text-sm">{t('mechanic.job.doneTitle')}</span>
+            </div>
+            <p className="text-xs text-gray-500 mb-3">
+              {t('mechanic.job.doneOn')}: {formatDate(job.mechanic_completed_at)}
+            </p>
+            <button onClick={undoFinish} disabled={finishing}
+              className="flex items-center gap-1.5 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium disabled:opacity-40">
+              <RotateCcw className="w-4 h-4" /> {t('mechanic.job.undoDone')}
+            </button>
+          </>
+        ) : (
+          <>
+            <h3 className="font-semibold text-gray-900 text-sm mb-1">{t('mechanic.job.finishTitle')}</h3>
+            <p className="text-xs text-gray-500 mb-3">{t('mechanic.job.finishHint')}</p>
+            <button onClick={finishJob} disabled={finishing}
+              className="flex items-center justify-center gap-2 w-full py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium disabled:opacity-40">
+              {finishing
+                ? <Loader2 className="w-5 h-5 animate-spin" />
+                : <CheckCircle2 className="w-5 h-5" />}
+              {t('mechanic.job.markDone')}
+            </button>
+          </>
+        )}
+      </div>
     </div>
   )
 }
