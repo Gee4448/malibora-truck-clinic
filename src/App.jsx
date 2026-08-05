@@ -25,6 +25,7 @@ import LabourRates from './pages/LabourRates'
 import Handover from './pages/Handover'
 import Reports from './pages/Reports'
 import Settings from './pages/Settings'
+import Team from './pages/Team'
 import RoleUnlock from './pages/RoleUnlock'
 import ClientLogin from './pages/client/ClientLogin'
 import ClientDashboard from './pages/client/ClientDashboard'
@@ -305,6 +306,7 @@ function App() {
               <Route path="labour" element={<LabourRates />} />
               <Route path="handover" element={<Handover />} />
               <Route path="reports" element={<Reports />} />
+              <Route path="team" element={<Team />} />
               <Route path="settings" element={<Settings />} />
               <Route path="unlock" element={<RoleUnlock />} />
             </Route>

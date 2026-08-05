@@ -4,8 +4,8 @@ import { useLanguage } from '../contexts/LanguageContext'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase, formatTZS, formatDate } from '../lib/supabase'
 import { findLiveProforma, syncProformaTotals, totalsFromJobItems, proformaUpdateFor, overpaymentOn, DEFAULT_VAT_RATE } from '../lib/proforma'
-import { fetchEvidence, evidenceUrl } from '../lib/evidence'
-import { Plus, Trash2, FileText, Printer, ArrowLeft, Package, Wrench, DollarSign, X, CheckCircle2, XCircle, UserPlus, AlertCircle, Share2, Pencil, Camera } from 'lucide-react'
+import { fetchEvidence, evidenceUrl, fetchFindings } from '../lib/evidence'
+import { Plus, Trash2, FileText, Printer, ArrowLeft, Package, Wrench, DollarSign, X, CheckCircle2, XCircle, UserPlus, AlertCircle, Share2, Pencil, Camera, Flag } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function JobCardDetail() {
@@ -20,6 +20,8 @@ export default function JobCardDetail() {
   const [inspectionItems, setInspectionItems] = useState([])
   const [liveProforma, setLiveProforma] = useState(null)
   const [evidence, setEvidence] = useState([])
+  const [findings, setFindings] = useState([])
+  const [pricingFinding, setPricingFinding] = useState(null)
   const [loading, setLoading] = useState(true)
   const [showAddItem, setShowAddItem] = useState(false)
   const [showAssignTech, setShowAssignTech] = useState(false)
@@ -41,7 +43,32 @@ export default function JobCardDetail() {
     fetchLabourRates()
     fetchMechanics()
     fetchEvidence(id).then(setEvidence).catch(() => setEvidence([]))
+    fetchFindings(id).then(setFindings).catch(() => setFindings([]))
   }, [id])
+
+  // Turn a reported fault into a priced line: opens the normal Add Item form
+  // with the mechanic's words already in it.
+  const priceFinding = (f) => {
+    setPricingFinding(f)
+    setItemType('additional')
+    setItemForm({ part_id: '', labour_id: '', description: f.description, quantity: 1, cost_price: 0, selling_price: 0 })
+    setShowAddItem(true)
+  }
+
+  const declineFinding = async (f) => {
+    try {
+      const { data, error } = await supabase.from('job_findings').update({
+        status: 'declined',
+        reviewed_by: profile?.id || null,
+        reviewed_at: new Date().toISOString(),
+      }).eq('id', f.id).select('id')
+      if (error) throw error
+      if (!data?.length) throw new Error(t('jobs.assignBlocked'))
+      setFindings(await fetchFindings(id).catch(() => findings))
+    } catch (err) {
+      toast.error(err.message)
+    }
+  }
 
   const fetchMechanics = async () => {
     const { data } = await supabase.from('mechanics').select('id, name, active').eq('active', true).order('name')
@@ -239,11 +266,25 @@ export default function JobCardDetail() {
         requires_approval: isAdditional,
         approval_status: isAdditional ? 'pending' : 'approved',
       }
-      const { error } = await supabase.from('job_card_items').insert(payload)
+      const { data: inserted, error } = await supabase
+        .from('job_card_items').insert(payload).select('id').single()
       if (error) throw error
 
       // Note: the garage does not manage spare-part inventory in the system
       // (per client), so adding a part no longer decrements catalog stock.
+
+      // Pricing a fault the mechanic reported closes that report out and links
+      // the two, so the workshop can see what became of what it sent in.
+      if (pricingFinding) {
+        await supabase.from('job_findings').update({
+          status: 'accepted',
+          job_card_item_id: inserted?.id || null,
+          reviewed_by: profile?.id || null,
+          reviewed_at: new Date().toISOString(),
+        }).eq('id', pricingFinding.id)
+        setPricingFinding(null)
+        fetchFindings(id).then(setFindings).catch(() => {})
+      }
 
       toast.success(t('jobs.itemAdded'))
       setShowAddItem(false)
@@ -716,6 +757,59 @@ export default function JobCardDetail() {
           </table>
         </div>
       </div>
+
+      {/* Faults the workshop found that nobody asked for (migration 032).
+          The mechanic files words and a photo; pricing is the office's job, and
+          the priced line then goes through the normal additional-item approval. */}
+      {findings.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <h2 className="font-semibold text-gray-900 flex items-center gap-2 mb-1">
+            <Flag className="w-5 h-5 text-red-500" /> {t('jobs.reportedFaults')}
+          </h2>
+          <p className="text-xs text-gray-500 mb-4">{t('jobs.reportedFaultsHint')}</p>
+          <div className="space-y-3">
+            {findings.map((f) => (
+              <div key={f.id} className={`flex items-start gap-3 p-3 rounded-lg border ${
+                f.status === 'pending' ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 border-gray-200'
+              }`}>
+                {f.evidence_path && (
+                  <a href={evidenceUrl(f.evidence_path)} target="_blank" rel="noreferrer" className="flex-shrink-0">
+                    <img src={evidenceUrl(f.evidence_path)} alt="" loading="lazy"
+                      className="w-16 h-16 object-cover rounded border border-gray-200" />
+                  </a>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-gray-900">{f.description}</p>
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                    <span className="text-xs text-gray-500">
+                      {t(`inspection.severities.${f.severity}`)} · {formatDate(f.created_at)}
+                    </span>
+                    {f.status !== 'pending' && (
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                        f.status === 'accepted' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                      }`}>
+                        {t(`mechanic.job.faultStatuses.${f.status}`)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {f.status === 'pending' && (
+                  <div className="flex gap-2 flex-shrink-0">
+                    <button onClick={() => priceFinding(f)}
+                      className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-xs font-medium">
+                      {t('jobs.priceFault')}
+                    </button>
+                    <button onClick={() => declineFinding(f)}
+                      className="px-3 py-1.5 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 text-xs font-medium">
+                      {t('jobs.dismissFault')}
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Evidence the mechanic uploaded from the workshop (migration 030) */}
       {evidence.length > 0 && (

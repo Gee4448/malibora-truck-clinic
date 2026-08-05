@@ -3,10 +3,10 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { useMechanic } from '../../contexts/MechanicAuthContext'
 import { supabase, formatDate, errorMessage } from '../../lib/supabase'
-import { uploadEvidence, fetchEvidence, evidenceUrl } from '../../lib/evidence'
+import { uploadEvidence, fetchEvidence, evidenceUrl, reportFinding, fetchFindings } from '../../lib/evidence'
 import {
   ArrowLeft, Truck, Wrench, XCircle, Send, AlertTriangle,
-  Camera, CheckCircle2, Trash2, RotateCcw, Loader2,
+  Camera, CheckCircle2, Trash2, RotateCcw, Loader2, Flag, Paperclip,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -25,6 +25,9 @@ export default function MechanicJobDetail() {
   const [evidence, setEvidence] = useState([])
   const [uploading, setUploading] = useState(false)
   const [finishing, setFinishing] = useState(false)
+  const [findings, setFindings] = useState([])
+  const [faultForm, setFaultForm] = useState({ description: '', severity: 'medium', file: null })
+  const [reporting, setReporting] = useState(false)
 
   useEffect(() => {
     fetchData()
@@ -47,6 +50,7 @@ export default function MechanicJobDetail() {
       }
       setJob(jc)
       setEvidence(await fetchEvidence(jc.id).catch(() => []))
+      setFindings(await fetchFindings(jc.id).catch(() => []))
 
       if (jc.inspection_id) {
         const [inspRes, itemsRes] = await Promise.all([
@@ -107,6 +111,43 @@ export default function MechanicJobDetail() {
       if (error) throw error
     } catch (err) {
       toast.error(errorMessage(err, t('mechanic.job.deleteFailed')))
+      fetchData()
+    }
+  }
+
+  // A fault nobody asked him to look at. He describes it and the office prices
+  // it — he never sees or sets a price.
+  const submitFault = async (e) => {
+    e.preventDefault()
+    if (!faultForm.description.trim()) return toast.error(t('mechanic.job.faultRequired'))
+    setReporting(true)
+    try {
+      await reportFinding({
+        file: faultForm.file,
+        jobCardId: job.id,
+        mechanicId: mechanic.id,
+        description: faultForm.description.trim(),
+        severity: faultForm.severity,
+      })
+      toast.success(t('mechanic.job.faultSent'))
+      setFaultForm({ description: '', severity: 'medium', file: null })
+      setFindings(await fetchFindings(job.id).catch(() => findings))
+    } catch (err) {
+      toast.error(errorMessage(err, t('mechanic.job.faultFailed')))
+    } finally {
+      setReporting(false)
+    }
+  }
+
+  const withdrawFault = async (f) => {
+    setFindings(prev => prev.filter(x => x.id !== f.id))
+    try {
+      const { error } = await supabase.rpc('mechanic_delete_finding', {
+        p_mechanic_id: mechanic.id, p_finding_id: f.id,
+      })
+      if (error) throw error
+    } catch (err) {
+      toast.error(errorMessage(err, t('mechanic.job.faultFailed')))
       fetchData()
     }
   }
@@ -322,6 +363,84 @@ export default function MechanicJobDetail() {
           </div>
         </div>
       )}
+
+      {/* Report a fault the customer never mentioned */}
+      <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="flex items-center gap-2 mb-1">
+          <Flag className="w-4 h-4 text-red-500" />
+          <h3 className="font-semibold text-gray-900 text-sm">{t('mechanic.job.reportFault')}</h3>
+        </div>
+        <p className="text-xs text-gray-500 mb-3">{t('mechanic.job.reportFaultHint')}</p>
+
+        {findings.length > 0 && (
+          <div className="space-y-2 mb-4">
+            {findings.map((f) => {
+              const sev = severityColors[f.severity] || severityColors.medium
+              return (
+                <div key={f.id} className="flex items-start gap-2 p-3 bg-gray-50 rounded-lg">
+                  {f.evidence_path && (
+                    <a href={evidenceUrl(f.evidence_path)} target="_blank" rel="noreferrer" className="flex-shrink-0">
+                      <img src={evidenceUrl(f.evidence_path)} alt="" loading="lazy"
+                        className="w-12 h-12 object-cover rounded border border-gray-200" />
+                    </a>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-gray-900">{f.description}</p>
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${sev.bg} ${sev.text}`}>
+                        {t(`inspection.severities.${f.severity}`)}
+                      </span>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                        f.status === 'accepted' ? 'bg-green-100 text-green-700'
+                          : f.status === 'declined' ? 'bg-red-100 text-red-700'
+                          : 'bg-amber-100 text-amber-700'
+                      }`}>
+                        {t(`mechanic.job.faultStatuses.${f.status}`)}
+                      </span>
+                    </div>
+                  </div>
+                  {f.status === 'pending' && f.mechanic_id === mechanic?.id && (
+                    <button onClick={() => withdrawFault(f)} title={t('common.delete')}
+                      className="p-1 rounded text-gray-400 hover:text-red-600 flex-shrink-0">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        <form onSubmit={submitFault} className="space-y-3">
+          <textarea
+            value={faultForm.description}
+            onChange={(e) => setFaultForm({ ...faultForm, description: e.target.value })}
+            rows={2}
+            placeholder={t('mechanic.job.faultPlaceholder')}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none resize-none text-gray-900 text-sm"
+          />
+          <div className="flex items-center gap-2">
+            <select value={faultForm.severity}
+              onChange={(e) => setFaultForm({ ...faultForm, severity: e.target.value })}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-amber-500">
+              {['low', 'medium', 'high', 'critical'].map(s => (
+                <option key={s} value={s}>{t(`inspection.severities.${s}`)}</option>
+              ))}
+            </select>
+            <label className="flex items-center gap-1.5 px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 cursor-pointer hover:bg-gray-50 flex-1 min-w-0">
+              <Paperclip className="w-4 h-4 flex-shrink-0" />
+              <span className="truncate">{faultForm.file ? faultForm.file.name : t('mechanic.job.faultPhoto')}</span>
+              <input type="file" accept="image/*" capture="environment" className="hidden"
+                onChange={(e) => setFaultForm({ ...faultForm, file: e.target.files?.[0] || null })} />
+            </label>
+          </div>
+          <button type="submit" disabled={reporting}
+            className="flex items-center justify-center gap-2 w-full py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium disabled:opacity-40">
+            {reporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+            {t('mechanic.job.sendFault')}
+          </button>
+        </form>
+      </div>
 
       {/* Evidence photos */}
       <div className="bg-white rounded-xl border border-gray-200 p-4">

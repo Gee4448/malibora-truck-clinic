@@ -15,11 +15,15 @@ import {
   Settings,
   LogOut,
   X,
+  MessageSquare,
 } from 'lucide-react'
+import { useTeamBadge } from '../../lib/team'
 
 export default function Sidebar({ isOpen, onClose }) {
   const { t } = useLanguage()
-  const { signOut, canViewInternal } = useAuth()
+  const { signOut, canViewInternal, profile } = useAuth()
+  // Unread messages plus open tasks on you — a chat nobody notices is no use.
+  const { unread, tasks } = useTeamBadge(profile?.id)
 
   const navItems = [
     { to: '/admin', icon: LayoutDashboard, label: t('nav.dashboard'), end: true },
@@ -33,6 +37,7 @@ export default function Sidebar({ isOpen, onClose }) {
     ...(canViewInternal ? [{ to: '/admin/inventory', icon: Package, label: t('nav.inventory') }] : []),
     ...(canViewInternal ? [{ to: '/admin/labour', icon: Wrench, label: t('nav.labour') }] : []),
     { to: '/admin/handover', icon: HandMetal, label: t('nav.handover') },
+    { to: '/admin/team', icon: MessageSquare, label: t('nav.team'), badge: unread + tasks },
     ...(canViewInternal ? [{ to: '/admin/reports', icon: BarChart3, label: t('nav.reports') }] : []),
     { to: '/admin/settings', icon: Settings, label: t('nav.settings') },
   ]
@@ -79,7 +84,12 @@ export default function Sidebar({ isOpen, onClose }) {
                   }
                 >
                   <item.icon className="w-5 h-5 flex-shrink-0" />
-                  {item.label}
+                  <span className="flex-1">{item.label}</span>
+                  {item.badge > 0 && (
+                    <span className="text-[10px] min-w-5 h-5 px-1.5 rounded-full bg-red-500 text-white flex items-center justify-center font-bold">
+                      {item.badge > 9 ? '9+' : item.badge}
+                    </span>
+                  )}
                 </NavLink>
               </li>
             ))}

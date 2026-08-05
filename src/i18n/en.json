@@ -15,7 +15,8 @@
     "reports": "Reports",
     "settings": "Settings",
     "logout": "Logout",
-    "inspections": "Inspections"
+    "inspections": "Inspections",
+    "team": "Team"
   },
   "auth": {
     "login": "Login",
@@ -291,7 +292,11 @@
     "evidence": "Work evidence",
     "evidenceHint": "Photos the mechanic took to show the work was done.",
     "changeMechanic": "Change mechanic",
-    "assignBlocked": "The job card didn't accept the change. You may not have permission."
+    "assignBlocked": "The job card didn't accept the change. You may not have permission.",
+    "reportedFaults": "Faults reported by the workshop",
+    "reportedFaultsHint": "The mechanic found these while working. Price one to add it to the job — the customer still has to approve it.",
+    "priceFault": "Price it",
+    "dismissFault": "Dismiss"
   },
   "invoices": {
     "title": "Invoices",
@@ -858,7 +863,20 @@
       "doneOn": "Finished on",
       "undoDone": "Not finished after all",
       "reopened": "Reopened",
-      "finishFailed": "Couldn't update the job. Please try again."
+      "finishFailed": "Couldn't update the job. Please try again.",
+      "reportFault": "Found another fault?",
+      "reportFaultHint": "Tell the office about anything faulty you find that the customer didn't report. They price it — you don't.",
+      "faultPlaceholder": "e.g. Rear wheel bearing is faulty",
+      "faultPhoto": "Add photo (optional)",
+      "sendFault": "Send to the office",
+      "faultSent": "Sent to the office",
+      "faultFailed": "Couldn't send that. Check your connection.",
+      "faultRequired": "Describe what you found",
+      "faultStatuses": {
+        "pending": "With the office",
+        "accepted": "Added to the job",
+        "declined": "Not taken up"
+      }
     }
   },
   "mechanicsAdmin": {
@@ -1356,6 +1374,39 @@
       "usernameTaken": "That username is already taken.",
       "signupsDisabled": "The account could not be created. In Supabase, check that sign-ups are enabled and \"Confirm email\" is off.",
       "generic": "Couldn't save. Please try again."
+    }
+  },
+  "team": {
+    "title": "Team",
+    "messages": "Messages",
+    "tasks": "Tasks",
+    "everyone": "Everyone",
+    "everyoneHint": "Seen by all staff",
+    "someone": "Someone",
+    "noColleagues": "No other staff accounts yet.",
+    "noMessages": "No messages yet. Say something.",
+    "messagePlaceholder": "Write a message…",
+    "sendFailed": "Couldn't send that message.",
+    "loadFailed": "Couldn't load the team.",
+    "newTask": "New task",
+    "taskTitle": "What needs doing",
+    "taskTitlePlaceholder": "e.g. Call Anthony about the Scania",
+    "taskDetails": "Details",
+    "assignTo": "Give it to",
+    "choosePerson": "Choose a person",
+    "dueDate": "Due date",
+    "assign": "Assign task",
+    "taskCreated": "Task assigned",
+    "taskFailed": "Couldn't save the task.",
+    "titleRequired": "Give the task a title",
+    "assigneeRequired": "Choose who it is for",
+    "notYourTask": "Only the person it was given to, or who gave it, can change this task.",
+    "noTasks": "Nothing outstanding.",
+    "for": "For",
+    "by": "From",
+    "filter": {
+      "mine": "Mine",
+      "all": "Everyone"
     }
   }
 }

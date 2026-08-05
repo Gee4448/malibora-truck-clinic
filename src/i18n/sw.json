@@ -15,7 +15,8 @@
     "reports": "Ripoti",
     "settings": "Mipangilio",
     "logout": "Toka",
-    "inspections": "Ukaguzi"
+    "inspections": "Ukaguzi",
+    "team": "Timu"
   },
   "auth": {
     "login": "Ingia",
@@ -291,7 +292,11 @@
     "evidence": "Ushahidi wa kazi",
     "evidenceHint": "Picha alizopiga fundi kuonyesha kazi imefanyika.",
     "changeMechanic": "Badilisha fundi",
-    "assignBlocked": "Kadi ya kazi haikukubali mabadiliko. Huenda huna ruhusa."
+    "assignBlocked": "Kadi ya kazi haikukubali mabadiliko. Huenda huna ruhusa.",
+    "reportedFaults": "Hitilafu zilizoripotiwa na karakana",
+    "reportedFaultsHint": "Fundi ameziona wakati wa kazi. Weka bei ili kuiongeza kwenye kazi — mteja bado anatakiwa kuidhinisha.",
+    "priceFault": "Weka bei",
+    "dismissFault": "Kataa"
   },
   "invoices": {
     "title": "Ankara",
@@ -858,7 +863,20 @@
       "doneOn": "Ilimalizika",
       "undoDone": "Bado haijamalizika",
       "reopened": "Imefunguliwa tena",
-      "finishFailed": "Imeshindwa kusasisha kazi. Tafadhali jaribu tena."
+      "finishFailed": "Imeshindwa kusasisha kazi. Tafadhali jaribu tena.",
+      "reportFault": "Umeona hitilafu nyingine?",
+      "reportFaultHint": "Iambie ofisi chochote kibovu unachokiona ambacho mteja hakukisema. Wao ndio wanaweka bei — si wewe.",
+      "faultPlaceholder": "mfano Beringi ya gurudumu la nyuma ni mbovu",
+      "faultPhoto": "Ongeza picha (si lazima)",
+      "sendFault": "Tuma ofisini",
+      "faultSent": "Imetumwa ofisini",
+      "faultFailed": "Imeshindwa kutuma. Angalia mtandao wako.",
+      "faultRequired": "Eleza ulichokiona",
+      "faultStatuses": {
+        "pending": "Ipo ofisini",
+        "accepted": "Imeongezwa kwenye kazi",
+        "declined": "Haikuchukuliwa"
+      }
     }
   },
   "mechanicsAdmin": {
@@ -1356,6 +1374,39 @@
       "usernameTaken": "Jina hilo la mtumiaji limeshatumika.",
       "signupsDisabled": "Akaunti haikuweza kufunguliwa. Kwenye Supabase, hakikisha usajili umeruhusiwa na \"Confirm email\" imezimwa.",
       "generic": "Imeshindwa kuhifadhi. Tafadhali jaribu tena."
+    }
+  },
+  "team": {
+    "title": "Timu",
+    "messages": "Ujumbe",
+    "tasks": "Majukumu",
+    "everyone": "Wote",
+    "everyoneHint": "Huonwa na wafanyakazi wote",
+    "someone": "Mtu",
+    "noColleagues": "Hakuna akaunti nyingine za wafanyakazi bado.",
+    "noMessages": "Hakuna ujumbe bado. Sema kitu.",
+    "messagePlaceholder": "Andika ujumbe…",
+    "sendFailed": "Imeshindwa kutuma ujumbe.",
+    "loadFailed": "Imeshindwa kupakia timu.",
+    "newTask": "Jukumu jipya",
+    "taskTitle": "Kinachotakiwa kufanyika",
+    "taskTitlePlaceholder": "mfano Mpigie Anthony kuhusu Scania",
+    "taskDetails": "Maelezo",
+    "assignTo": "Mpe",
+    "choosePerson": "Chagua mtu",
+    "dueDate": "Tarehe ya mwisho",
+    "assign": "Kabidhi jukumu",
+    "taskCreated": "Jukumu limekabidhiwa",
+    "taskFailed": "Imeshindwa kuhifadhi jukumu.",
+    "titleRequired": "Weka kichwa cha jukumu",
+    "assigneeRequired": "Chagua ni la nani",
+    "notYourTask": "Ni yule aliyepewa au aliyekabidhi pekee anayeweza kubadilisha jukumu hili.",
+    "noTasks": "Hakuna lililobaki.",
+    "for": "Kwa",
+    "by": "Kutoka",
+    "filter": {
+      "mine": "Yangu",
+      "all": "Wote"
     }
   }
 }

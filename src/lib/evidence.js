@@ -45,14 +45,20 @@ export function compressImage(file, maxDim = 1400, quality = 0.72) {
   })
 }
 
-export async function uploadEvidence({ file, jobCardId, mechanicId, caption, itemId }) {
+// Puts the file in the bucket and hands back its key. Used both for evidence
+// of finished work and for the photo attached to a reported fault.
+export async function uploadImage(file, jobCardId) {
   const blob = await compressImage(file)
   const path = `${jobCardId}/${newId()}.jpg`
-
-  const { error: uploadError } = await supabase.storage
+  const { error } = await supabase.storage
     .from(EVIDENCE_BUCKET)
     .upload(path, blob, { contentType: 'image/jpeg', upsert: false })
-  if (uploadError) throw uploadError
+  if (error) throw error
+  return path
+}
+
+export async function uploadEvidence({ file, jobCardId, mechanicId, caption, itemId }) {
+  const path = await uploadImage(file, jobCardId)
 
   const { data, error } = await supabase.rpc('mechanic_add_evidence', {
     p_mechanic_id: mechanicId,
@@ -68,6 +74,36 @@ export async function uploadEvidence({ file, jobCardId, mechanicId, caption, ite
     throw error
   }
   return data
+}
+
+// A fault the mechanic found that nobody asked him to look at. He files it as
+// a finding — never a priced line — and the office turns it into an additional
+// item the customer has to approve (migration 032).
+export async function reportFinding({ file, jobCardId, mechanicId, description, severity }) {
+  const path = file ? await uploadImage(file, jobCardId) : null
+
+  const { data, error } = await supabase.rpc('mechanic_report_finding', {
+    p_mechanic_id: mechanicId,
+    p_job_card_id: jobCardId,
+    p_description: description,
+    p_severity: severity || 'medium',
+    p_evidence_path: path,
+  })
+  if (error) {
+    if (path) await supabase.storage.from(EVIDENCE_BUCKET).remove([path]).catch(() => {})
+    throw error
+  }
+  return data
+}
+
+export async function fetchFindings(jobCardId) {
+  const { data, error } = await supabase
+    .from('job_findings')
+    .select('id, description, severity, status, evidence_path, mechanic_id, created_at')
+    .eq('job_card_id', jobCardId)
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return data || []
 }
 
 export async function fetchEvidence(jobCardId) {
