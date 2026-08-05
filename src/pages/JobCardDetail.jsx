@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useLanguage } from '../contexts/LanguageContext'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase, formatTZS, formatDate } from '../lib/supabase'
-import { findLiveProforma, syncProformaTotals, totalsFromJobItems, statusAfterRetotal, depositAfterRetotal, DEFAULT_VAT_RATE } from '../lib/proforma'
+import { findLiveProforma, syncProformaTotals, totalsFromJobItems, proformaUpdateFor, overpaymentOn, DEFAULT_VAT_RATE } from '../lib/proforma'
 import { Plus, Trash2, FileText, Printer, ArrowLeft, Package, Wrench, DollarSign, X, CheckCircle2, XCircle, UserPlus, AlertCircle, Share2, Pencil } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -293,23 +293,19 @@ export default function JobCardDetail() {
       // number someone has already handed over money for, so say so first.
       const alreadyPaid = Number(existing?.amount_paid) || 0
       if (alreadyPaid > 0) {
-        const owed = Math.max(0, totals.total_amount - alreadyPaid)
-        const warning = t('invoices.retotalPaidConfirm')
+        const refund = overpaymentOn(alreadyPaid, totals.total_amount)
+        const warning = (refund > 0 ? t('invoices.retotalRefundConfirm') : t('invoices.retotalPaidConfirm'))
           .replace('{paid}', formatTZS(alreadyPaid))
           .replace('{total}', formatTZS(totals.total_amount))
-          .replace('{balance}', formatTZS(owed))
+          .replace('{balance}', formatTZS(Math.max(0, totals.total_amount - alreadyPaid)))
+          .replace('{refund}', formatTZS(refund))
         if (!confirm(warning)) return
       }
 
       let invoiceId
       if (existing) {
-        const update = {
-          ...totals,
-          ...statusAfterRetotal(existing.status, existing.amount_paid, totals.total_amount, existing.paid_at),
-          ...depositAfterRetotal(existing.deposit_percentage, totals.total_amount),
-        }
         const { data, error } = await supabase.from('invoices')
-          .update(update).eq('id', existing.id).select('id')
+          .update(proformaUpdateFor(existing, items)).eq('id', existing.id).select('id')
         if (error) throw error
         if (!data || data.length === 0) throw new Error(t('invoices.loadError'))
         invoiceId = existing.id
@@ -362,6 +358,7 @@ export default function JobCardDetail() {
     ? totalsFromJobItems(items, liveProforma.vat_rate).total_amount
     : 0
   const retotalledBalance = Math.max(0, retotalled - proformaPaid)
+  const retotalledRefund = overpaymentOn(proformaPaid, retotalled)
 
   if (loading) return <div className="flex justify-center p-8"><div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full"></div></div>
   if (!job) return null
@@ -435,15 +432,20 @@ export default function JobCardDetail() {
           rather than a prompt per line, so staff can see what he owes while
           they work instead of dismissing the same dialog five times. */}
       {proformaPaid > 0 && (
-        <div className="flex items-start gap-2.5 p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm">
-          <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-          <div className="text-amber-800">
-            <p className="font-semibold">{t('jobs.proformaPaidWarning')}</p>
+        <div className={`flex items-start gap-2.5 p-4 border rounded-xl text-sm ${
+          retotalledRefund > 0 ? 'bg-red-50 border-red-200' : 'bg-amber-50 border-amber-200'
+        }`}>
+          <AlertCircle className={`w-5 h-5 shrink-0 mt-0.5 ${retotalledRefund > 0 ? 'text-red-600' : 'text-amber-600'}`} />
+          <div className={retotalledRefund > 0 ? 'text-red-800' : 'text-amber-800'}>
+            <p className="font-semibold">
+              {retotalledRefund > 0 ? t('jobs.proformaOverpaidWarning') : t('jobs.proformaPaidWarning')}
+            </p>
             <p className="mt-0.5">
-              {t('jobs.proformaPaidBalance')
+              {(retotalledRefund > 0 ? t('jobs.proformaOverpaidBalance') : t('jobs.proformaPaidBalance'))
                 .replace('{paid}', formatTZS(proformaPaid))
                 .replace('{total}', formatTZS(retotalled))
-                .replace('{balance}', formatTZS(retotalledBalance))}
+                .replace('{balance}', formatTZS(retotalledBalance))
+                .replace('{refund}', formatTZS(retotalledRefund))}
             </p>
           </div>
         </div>

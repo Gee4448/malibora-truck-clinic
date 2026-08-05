@@ -6,7 +6,7 @@ import { supabase, formatTZS, formatDate } from '../lib/supabase'
 import { ArrowLeft, Printer, Download, MessageCircle, CheckCircle, CreditCard, Send, MessageSquare, Save, Pencil, Trash2, Plus, FileText } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { generateInvoicePDF } from '../lib/pdf'
-import { syncProformaTotals, statusAfterRetotal, depositAfterRetotal } from '../lib/proforma'
+import { syncProformaTotals, statusAfterRetotal, depositAfterRetotal, overpaymentOn } from '../lib/proforma'
 import { sendSMS, smsTemplates } from '../lib/sms'
 
 export default function InvoiceDetail() {
@@ -480,20 +480,19 @@ export default function InvoiceDetail() {
   const invoiceTotal = Number(invoice.total_amount) || 0
   const amountPaid = Number(invoice.amount_paid) || 0
   const balanceOwed = Math.max(0, invoiceTotal - amountPaid)
+  const overpaid = overpaymentOn(amountPaid, invoiceTotal)
   const vatRate = invoice.vat_rate != null ? Number(invoice.vat_rate) : 18
-  // A PROFORMA stays editable for its whole life, including after the customer
-  // has paid — Antony, 4 Aug 2026: "tuwe na uwezo wa ku-edit proforma ambayo
-  // tayari mteja ameshalipia … tusimwandikie tena proforma nyingine". He adds
-  // parts while the customer is still in the workshop and takes the difference
-  // on the same document. Re-totalling re-derives the balance owed, so the money
-  // already received is never lost. This supersedes his 26 Jul rule ("add cost to
-  // the same invoice only while not yet approved/paid") for proformas only.
+  // #3 (Antony): "add cost to the same invoice only while not yet approved/paid."
+  // This gates the VAT-rate editor (a proforma's LINES are edited on the job
+  // card, not here), and the rule still stands for it: the tax rate on a quote
+  // the customer agreed to isn't something to change behind him.
   //
-  // A FINAL invoice keeps that rule: it's the issued tax document, so it locks
-  // once money moves against it.
+  // His 4 Aug 2026 request — re-price a proforma the customer has already paid —
+  // is about the WORK, and runs through the job card and syncProformaTotals,
+  // which no longer refuse once money has moved.
   const isProforma = invoice.invoice_type === 'proforma'
   const docEditable = isProforma
-    ? invoice.status !== 'cancelled'
+    ? !['approved', 'partial', 'paid', 'cancelled'].includes(invoice.status)
     : !['partial', 'paid', 'cancelled'].includes(invoice.status)
 
   const typeLabels = { proforma: t('invoices.proforma'), final: t('invoices.final'), internal: t('invoices.internal') }
@@ -909,7 +908,25 @@ export default function InvoiceDetail() {
         )}
 
         {/* Payment info */}
-        {invoice.status === 'paid' && (
+        {/* More was collected than the job now costs — only reachable since
+            paid proformas became re-priceable (Antony, 4 Aug 2026). There is no
+            refund ledger, so the document says it plainly rather than showing
+            "paid, balance 0" and letting the customer's money vanish. */}
+        {overpaid > 0 && (
+          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm">
+            <p className="font-semibold text-red-800">{t('invoices.overpaid')}</p>
+            <div className="flex justify-between mt-1 text-red-700">
+              <span>{t('invoices.amountPaid')}</span><span className="font-medium">{formatTZS(amountPaid)}</span>
+            </div>
+            <div className="flex justify-between text-red-700">
+              <span>{t('invoices.total')}</span><span className="font-medium">{formatTZS(invoiceTotal)}</span>
+            </div>
+            <div className="flex justify-between text-red-900 font-semibold">
+              <span>{t('invoices.refundDue')}</span><span>{formatTZS(overpaid)}</span>
+            </div>
+          </div>
+        )}
+        {invoice.status === 'paid' && overpaid === 0 && (
           <div className="mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-sm">
             <p className="font-semibold text-emerald-800">{t('invoices.paidOn')} {formatDate(invoice.paid_at)}</p>
             {invoice.payment_method && <p className="text-emerald-700 capitalize">{t('invoices.method')}: {invoice.payment_method.replace('_', ' ')}</p>}

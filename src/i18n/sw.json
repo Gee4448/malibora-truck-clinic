@@ -239,6 +239,8 @@
     "updateProforma": "Sasisha Proforma",
     "proformaPaidWarning": "Mteja tayari amelipa kwenye proforma ya kazi hii.",
     "proformaPaidBalance": "Amelipa {paid} kati ya {total} — mabadiliko hapa yatabadili bei ya proforma, na kubaki deni la {balance}.",
+    "proformaOverpaidWarning": "Mteja amelipa zaidi ya gharama ya kazi hii sasa.",
+    "proformaOverpaidBalance": "Amelipa {paid} dhidi ya jumla ya {total} — {refund} inatakiwa kumrudishia. Mfumo hauwezi kurudisha fedha.",
     "generateInvoice": "Tengeneza Ankara",
     "loadError": "Hitilafu kupakia kadi za kazi",
     "updated": "Kadi ya kazi imebadilishwa",
@@ -365,6 +367,9 @@
     "proformaGenerated": "Proforma imetengenezwa!",
     "proformaUpdated": "Proforma imesasishwa!",
     "retotalPaidConfirm": "Mteja huyu tayari amelipa {paid}. Kubadili bei ya kazi hii kutafanya jumla iwe {total}, na kubaki deni la {balance}. Uendelee?",
+    "retotalRefundConfirm": "Mteja huyu tayari amelipa {paid}, ambayo ni ZAIDI ya jumla mpya ya {total}. Kubadili bei kutaacha {refund} ya kumrudishia. Mfumo hauwezi kurudisha fedha — itabidi umalize mwenyewe. Uendelee?",
+    "overpaid": "Amelipa zaidi — kuna cha kurudisha",
+    "refundDue": "Fedha ya kumrudishia mteja",
     "invoiceGenerated": "Ankara imetengenezwa!",
     "statuses": {
       "draft": "Rasimu",

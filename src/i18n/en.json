@@ -239,6 +239,8 @@
     "updateProforma": "Update Proforma",
     "proformaPaidWarning": "The customer has already paid against this job's proforma.",
     "proformaPaidBalance": "Paid {paid} of {total} — changes here re-price the proforma, leaving {balance} owed.",
+    "proformaOverpaidWarning": "The customer has paid more than this job now costs.",
+    "proformaOverpaidBalance": "Paid {paid} against a total of {total} — {refund} is owed back to him. The app cannot process refunds.",
     "generateInvoice": "Generate Invoice",
     "loadError": "Error loading job cards",
     "updated": "Job card updated",
@@ -365,6 +367,9 @@
     "proformaGenerated": "Proforma generated!",
     "proformaUpdated": "Proforma updated!",
     "retotalPaidConfirm": "This customer has already paid {paid}. Re-pricing this job will make the total {total}, leaving {balance} owed. Continue?",
+    "retotalRefundConfirm": "This customer has already paid {paid}, which is MORE than the new total of {total}. Re-pricing will leave {refund} to be refunded to him. The app cannot process refunds — you will have to settle this yourself. Continue?",
+    "overpaid": "Overpaid — refund due",
+    "refundDue": "Refund due to customer",
     "invoiceGenerated": "Invoice generated!",
     "statuses": {
       "draft": "Draft",

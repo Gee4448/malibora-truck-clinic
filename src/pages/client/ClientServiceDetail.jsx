@@ -169,9 +169,12 @@ export default function ClientServiceDetail() {
   // customer is stranded on a job card with nothing to press and no way to ask.
   const quoted = !!proforma || proformaReq?.status === 'pending'
   const canRequestProforma = jobItems.length > 0 && !quoted
-  // Once the work is quoted, approving or declining individual inspection lines
-  // changes nothing — the price is already agreed and on its way to being paid.
-  const canApprove = !quoted && (isPreJobCard || (inspection && inspection.status === 'completed'))
+  // Approve/decline is deliberately NOT withdrawn once a proforma exists. The
+  // 22:31:34 note ("hii job card itakuwa imeclose, isionekane chochote") could be
+  // read that way, but it's about the request button he'd just pressed twice, and
+  // the transcript is too rough to take a customer's ability to object away on.
+  // Ask him before changing this.
+  const canApprove = isPreJobCard || (inspection && inspection.status === 'completed')
 
   if (loading) {
     return (
