@@ -145,10 +145,14 @@ export default function JobCardDetail() {
     }
     const picked = mechanics.find(m => m.id === techId)
     try {
-      await supabase.from('job_cards').update({
+      // .update() resolves with an error rather than throwing, and a row blocked
+      // by RLS comes back as a silent no-op — so check both, or the toast lies.
+      const { data, error } = await supabase.from('job_cards').update({
         assigned_mechanic_id: techId,
         assigned_technician: picked?.name || techName,
-      }).eq('id', id)
+      }).eq('id', id).select('id')
+      if (error) throw error
+      if (!data?.length) throw new Error(t('jobs.assignBlocked'))
       toast.success(t('jobs.technicianAssigned'))
       setShowAssignTech(false)
       fetchJob()
@@ -404,12 +408,19 @@ export default function JobCardDetail() {
             className="flex items-center gap-1.5 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium">
             <Share2 className="w-4 h-4" /> {t('common.share')}
           </button>
+          {/* Assigning a mechanic used to be possible only while the card was
+              still a pre-job card, so a job that went official unassigned could
+              never reach anyone's phone. Available now for the whole life of the
+              job, until it is closed. */}
+          {job.status !== 'completed' && job.status !== 'cancelled' && (
+            <button onClick={() => { setTechName(job.assigned_technician || ''); setTechId(job.assigned_mechanic_id || ''); setShowAssignTech(true) }}
+              className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
+              <UserPlus className="w-4 h-4" />
+              {job.assigned_mechanic_id ? t('jobs.changeMechanic') : t('preJobCard.assignTechnician')}
+            </button>
+          )}
           {isPreJobCard ? (
             <>
-              <button onClick={() => setShowAssignTech(true)}
-                className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
-                <UserPlus className="w-4 h-4" /> {t('preJobCard.assignTechnician')}
-              </button>
               <button onClick={generateOfficialJobCard}
                 className="flex items-center gap-1.5 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium">
                 <CheckCircle2 className="w-4 h-4" /> {t('preJobCard.generateJobCard')}

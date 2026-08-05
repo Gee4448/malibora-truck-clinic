@@ -289,7 +289,9 @@
       "urgent": "Dharura"
     },
     "evidence": "Ushahidi wa kazi",
-    "evidenceHint": "Picha alizopiga fundi kuonyesha kazi imefanyika."
+    "evidenceHint": "Picha alizopiga fundi kuonyesha kazi imefanyika.",
+    "changeMechanic": "Badilisha fundi",
+    "assignBlocked": "Kadi ya kazi haikukubali mabadiliko. Huenda huna ruhusa."
   },
   "invoices": {
     "title": "Ankara",

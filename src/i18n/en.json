@@ -289,7 +289,9 @@
       "urgent": "Urgent"
     },
     "evidence": "Work evidence",
-    "evidenceHint": "Photos the mechanic took to show the work was done."
+    "evidenceHint": "Photos the mechanic took to show the work was done.",
+    "changeMechanic": "Change mechanic",
+    "assignBlocked": "The job card didn't accept the change. You may not have permission."
   },
   "invoices": {
     "title": "Invoices",
