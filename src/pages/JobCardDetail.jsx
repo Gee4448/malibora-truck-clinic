@@ -838,7 +838,7 @@ export default function JobCardDetail() {
       {/* Assign Technician Modal */}
       {showAssignTech && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm modal-card">
             <div className="flex items-center justify-between p-5 border-b">
               <h2 className="text-lg font-bold">{t('preJobCard.assignTechnician')}</h2>
               <button onClick={() => setShowAssignTech(false)} className="p-1 rounded hover:bg-gray-100">
@@ -878,7 +878,7 @@ export default function JobCardDetail() {
       {/* Add Item Modal */}
       {showAddItem && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md modal-card">
             <div className="flex items-center justify-between p-5 border-b">
               <h2 className="text-lg font-bold capitalize">
                 {itemType === 'part' ? t('jobs.addPart') : itemType === 'labour' ? t('jobs.addLabour') : t('jobs.addAdditional')}

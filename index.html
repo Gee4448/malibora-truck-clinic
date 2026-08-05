@@ -2,7 +2,13 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <!-- Pinch-zoom is left enabled on purpose: this runs on phones in a
+         workshop, and blocking zoom stops anyone enlarging a plate number or a
+         figure on an invoice. The focus-zoom that user-scalable=no used to
+         suppress is handled properly in styles/index.css by giving mobile
+         inputs a 16px font size, which is what actually triggers it.
+         viewport-fit=cover pairs with the safe-area padding further down. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Malibora Truck Clinic</title>
     <meta name="description" content="Professional Vehicle Service & Repair Management System - Malibora Truck Clinic, Arusha, Tanzania" />
     <meta name="theme-color" content="#c95c0c" />

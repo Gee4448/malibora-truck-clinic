@@ -38,7 +38,7 @@ export default function NotifyCustomerModal({ customer, kind, onClose, t }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto modal-card">
         <div className="flex items-start justify-between p-5 border-b">
           <div>
             <h2 className="text-lg font-bold text-gray-900">

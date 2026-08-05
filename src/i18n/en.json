@@ -1408,6 +1408,8 @@
     "filter": {
       "mine": "Mine",
       "all": "Everyone"
-    }
+    },
+    "pickPerson": "Choose who to message",
+    "allChats": "Chats"
   }
 }

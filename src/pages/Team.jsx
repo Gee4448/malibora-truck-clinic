@@ -8,7 +8,7 @@ import {
 } from '../lib/team'
 import {
   MessageSquare, CheckSquare, Send, Users, Plus, X, Check,
-  Clock, ArrowLeft, Loader2,
+  Clock, ArrowLeft, ChevronRight, Loader2,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -80,8 +80,20 @@ function Messages({ me }) {
     }
   }
 
+  // On a phone, land on the LIST of people — not inside a conversation. The
+  // first build opened the Everyone channel straight away and collapsed the
+  // list behind it, so the only thing you could do was text the whole company
+  // and there was no visible way to pick one person (Antony, 5 Aug 2026).
+  // A wide screen shows both panes at once, so there it is still helpful to
+  // have a thread already open.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { if (me?.id) { load(); openThread(TEAM_CHANNEL) } }, [me?.id])
+  useEffect(() => {
+    if (!me?.id) return
+    load()
+    const wideScreen = typeof window !== 'undefined'
+      && window.matchMedia('(min-width: 768px)').matches
+    if (wideScreen) openThread(TEAM_CHANNEL)
+  }, [me?.id])
 
   // A message that only turns up on the next page load isn't a chat.
   useEffect(() => {
@@ -132,29 +144,33 @@ function Messages({ me }) {
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden grid md:grid-cols-[260px_1fr] min-h-[28rem]">
-      {/* People. On a phone this collapses away once a thread is open. */}
+      {/* People. On a phone this IS the screen until you tap someone. */}
       <div className={`border-r border-gray-200 md:block ${active ? 'hidden' : ''}`}>
+        <p className="px-3 pt-3 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-400 md:hidden">
+          {t('team.pickPerson')}
+        </p>
         <button onClick={() => openThread(TEAM_CHANNEL)}
-          className={`w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 border-b border-gray-100 ${
+          className={`w-full flex items-center gap-3 p-3.5 text-left hover:bg-gray-50 active:bg-gray-100 border-b border-gray-100 ${
             active === TEAM_CHANNEL ? 'bg-blue-50' : ''
           }`}>
-          <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
-            <Users className="w-4 h-4 text-blue-600" />
+          <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+            <Users className="w-5 h-5 text-blue-600" />
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <p className="text-sm font-medium text-gray-900">{t('team.everyone')}</p>
             <p className="text-xs text-gray-500 truncate">{t('team.everyoneHint')}</p>
           </div>
+          <ChevronRight className="w-4 h-4 text-gray-300 flex-shrink-0 md:hidden" />
         </button>
 
         {people.length === 0 ? (
           <p className="text-sm text-gray-400 text-center py-6 px-3">{t('team.noColleagues')}</p>
         ) : people.map((p) => (
           <button key={p.id} onClick={() => openThread(p.id)}
-            className={`w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 border-b border-gray-100 ${
+            className={`w-full flex items-center gap-3 p-3.5 text-left hover:bg-gray-50 active:bg-gray-100 border-b border-gray-100 ${
               active === p.id ? 'bg-blue-50' : ''
             }`}>
-            <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0 text-sm font-semibold text-gray-600">
+            <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0 text-sm font-semibold text-gray-600">
               {(p.full_name || '?').charAt(0).toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
@@ -168,20 +184,22 @@ function Messages({ me }) {
                 {unread[p.id]}
               </span>
             )}
+            <ChevronRight className="w-4 h-4 text-gray-300 flex-shrink-0 md:hidden" />
           </button>
         ))}
       </div>
 
-      {/* Thread */}
-      <div className="flex flex-col">
+      {/* Thread. Hidden on a phone until a person is chosen. */}
+      <div className={`flex-col ${active ? 'flex' : 'hidden md:flex'}`}>
         <div className="flex items-center gap-2 p-3 border-b border-gray-200">
-          <button onClick={() => setActive(null)} className="md:hidden p-1 rounded hover:bg-gray-100">
-            <ArrowLeft className="w-4 h-4" />
+          <button onClick={() => setActive(null)}
+            className="md:hidden flex items-center gap-1 -ml-1 px-2 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-gray-100 active:bg-gray-200">
+            <ArrowLeft className="w-4 h-4" /> {t('team.allChats')}
           </button>
-          <p className="font-semibold text-gray-900 text-sm">{activeName}</p>
+          <p className="font-semibold text-gray-900 text-sm truncate">{activeName}</p>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[26rem] bg-gray-50">
+        <div className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[60vh] md:max-h-[26rem] bg-gray-50">
           {messages.length === 0 ? (
             <p className="text-sm text-gray-400 text-center py-8">{t('team.noMessages')}</p>
           ) : messages.map((m) => {
@@ -347,7 +365,7 @@ function Tasks({ me }) {
 
       {showForm && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm modal-card">
             <div className="flex items-center justify-between p-5 border-b">
               <h2 className="text-lg font-bold">{t('team.newTask')}</h2>
               <button onClick={() => setShowForm(false)} className="p-1 rounded hover:bg-gray-100"><X className="w-5 h-5" /></button>

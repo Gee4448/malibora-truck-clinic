@@ -353,3 +353,52 @@ button:not(:disabled):not(.absolute):not(.fixed):active {
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
+
+/* ==========================================================================
+   Phone-first adjustments (Antony, 5 Aug 2026: "the main use will be on the
+   phone, not on computers").
+   ========================================================================== */
+
+@media (max-width: 767px) {
+  /* Mobile Safari zooms the whole page in when you focus a field whose text is
+     under 16px, and never zooms back out. Most inputs here are text-sm (14px),
+     which is exactly the trigger. Setting 16px on the controls themselves is
+     the fix — the alternative, user-scalable=no in the viewport tag, also
+     takes away pinch-zoom and is ignored by modern iOS anyway. */
+  input:not([type='checkbox']):not([type='radio']),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  /* Thumbs are not mouse pointers. Anything clickable gets a real target,
+     without disturbing icons that sit inside a larger button. */
+  button:not(.btn-compact),
+  a.btn,
+  [role='button']:not(.btn-compact) {
+    min-height: 40px;
+  }
+
+  /* Stop a scrollable panel from dragging the page behind it once it hits
+     the end — the chat thread and long modals both suffer from this. */
+  .overflow-y-auto {
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* A dialog taller than the phone screen must scroll rather than run off the
+   bottom with its buttons out of reach. */
+.modal-card {
+  max-height: calc(100vh - 2rem);
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Grey flash on tap looks like a bug on Android; the active: states already
+   give the feedback. */
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
