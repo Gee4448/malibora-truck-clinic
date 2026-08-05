@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import toast from 'react-hot-toast'
 
 const AuthContext = createContext()
 
@@ -56,6 +57,12 @@ export function AuthProvider({ children }) {
         } else {
           setProfile(null)
         }
+      } else if (data && data.is_active === false) {
+        // Deactivated in Settings -> Staff. Without this they would keep the
+        // session they already had and the switch would do nothing.
+        setProfile(null)
+        await supabase.auth.signOut()
+        toast.error('This account has been deactivated. Talk to the owner.')
       } else {
         setProfile(data)
       }

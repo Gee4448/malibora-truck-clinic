@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useLanguage } from '../contexts/LanguageContext'
 import { Eye, EyeOff, Globe } from 'lucide-react'
+import { toLoginEmail } from '../lib/staffAccounts'
 import Logo from '../components/common/Logo'
 import toast from 'react-hot-toast'
 
@@ -20,7 +21,10 @@ export default function Login() {
     e.preventDefault()
     setLoading(true)
     try {
-      await signIn(email, password)
+      // Staff opened by the owner sign in with a username, which stands for an
+      // address in the staff-only domain (src/lib/staffAccounts.js). Anyone who
+      // typed a real email is passed through untouched.
+      await signIn(toLoginEmail(email), password)
       toast.success(t('auth.loginSuccess'))
       navigate('/admin')
     } catch (err) {
@@ -82,15 +86,17 @@ export default function Login() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t('auth.email')}
+                {t('auth.emailOrUsername')}
               </label>
               <input
-                type="email"
+                type="text"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                autoCapitalize="none"
+                autoCorrect="off"
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-                placeholder="jina@example.com"
+                placeholder={t('auth.emailOrUsernamePlaceholder')}
               />
             </div>
 

@@ -7,6 +7,8 @@ import { Globe, User, Lock, Building, Save, KeyRound } from 'lucide-react'
 import toast from 'react-hot-toast'
 import MechanicsManager from '../components/admin/MechanicsManager'
 import PaymentChannelsManager from '../components/admin/PaymentChannelsManager'
+import BranchesManager from '../components/admin/BranchesManager'
+import StaffManager from '../components/admin/StaffManager'
 
 export default function Settings() {
   const { t, locale, switchLanguage } = useLanguage()
@@ -138,6 +140,13 @@ export default function Settings() {
           </button>
         </form>
       </div>
+
+      {/* Branches first — staff and mechanics are both assigned to one, so the
+          list has to exist before those two panels are useful. */}
+      {isManager && <BranchesManager />}
+
+      {/* Staff accounts (owner/manager only) */}
+      {isManager && <StaffManager />}
 
       {/* Mechanics (owner/manager only) */}
       {isManager && <MechanicsManager />}

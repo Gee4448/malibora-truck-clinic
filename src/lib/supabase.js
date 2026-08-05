@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://your-project.supabase.co'
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-anon-key'
+export const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://your-project.supabase.co'
+export const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-anon-key'
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
@@ -19,6 +19,18 @@ export const isNetworkError = (err) => {
   return /failed to fetch|fetch failed|networkerror|network request failed|load failed|err_name_not_resolved|err_connection|err_network/.test(
     msg
   )
+}
+
+// Helper: Turn a Supabase/PostgREST error into something worth showing a user.
+// Some Postgres errors (a missing function, a failed schema lookup) come back
+// with an empty `message`, which used to render as a blank toast — the failure
+// looked like nothing happening at all. Fall back through the other fields.
+export const errorMessage = (err, fallback = 'Something went wrong. Please try again.') => {
+  if (!err) return fallback
+  const parts = [err.message, err.details, err.hint].map(s => (s || '').trim()).filter(Boolean)
+  if (parts.length) return err.code ? `${parts[0]} (${err.code})` : parts[0]
+  if (err.code) return `${fallback} (${err.code})`
+  return fallback
 }
 
 // Helper: Format currency (TZS)
