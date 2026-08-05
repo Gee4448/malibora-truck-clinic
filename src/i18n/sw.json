@@ -296,7 +296,8 @@
     "reportedFaults": "Hitilafu zilizoripotiwa na karakana",
     "reportedFaultsHint": "Fundi ameziona wakati wa kazi. Weka bei ili kuiongeza kwenye kazi — mteja bado anatakiwa kuidhinisha.",
     "priceFault": "Weka bei",
-    "dismissFault": "Kataa"
+    "dismissFault": "Kataa",
+    "faultUpdateBlocked": "Ripoti hiyo ya hitilafu haikukubali mabadiliko. Huenda huna ruhusa."
   },
   "invoices": {
     "title": "Ankara",

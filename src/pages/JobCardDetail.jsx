@@ -63,7 +63,7 @@ export default function JobCardDetail() {
         reviewed_at: new Date().toISOString(),
       }).eq('id', f.id).select('id')
       if (error) throw error
-      if (!data?.length) throw new Error(t('jobs.assignBlocked'))
+      if (!data?.length) throw new Error(t('jobs.faultUpdateBlocked'))
       setFindings(await fetchFindings(id).catch(() => findings))
     } catch (err) {
       toast.error(err.message)
@@ -252,7 +252,12 @@ export default function JobCardDetail() {
     e.preventDefault()
     try {
       // If job is in_progress, new items are additional and need approval
-      const isAdditional = job.status === 'in_progress'
+      // A fault the mechanic found is extra work by definition — nobody quoted
+      // it and the customer has never seen it — so it always needs approval,
+      // whatever state the card happens to be in. Without this an 'open' card
+      // would price the finding straight through as pre-approved, which is the
+      // opposite of what the workshop panel promises.
+      const isAdditional = job.status === 'in_progress' || !!pricingFinding
       const payload = {
         job_card_id: id,
         item_type: itemType,

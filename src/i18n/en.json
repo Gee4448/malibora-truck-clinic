@@ -296,7 +296,8 @@
     "reportedFaults": "Faults reported by the workshop",
     "reportedFaultsHint": "The mechanic found these while working. Price one to add it to the job — the customer still has to approve it.",
     "priceFault": "Price it",
-    "dismissFault": "Dismiss"
+    "dismissFault": "Dismiss",
+    "faultUpdateBlocked": "That fault report didn't accept the change. You may not have permission."
   },
   "invoices": {
     "title": "Invoices",

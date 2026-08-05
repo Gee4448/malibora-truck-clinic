@@ -133,7 +133,7 @@ function Messages({ me }) {
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden grid md:grid-cols-[260px_1fr] min-h-[28rem]">
       {/* People. On a phone this collapses away once a thread is open. */}
-      <div className={`border-r border-gray-200 ${active && 'hidden md:block'} md:block`}>
+      <div className={`border-r border-gray-200 md:block ${active ? 'hidden' : ''}`}>
         <button onClick={() => openThread(TEAM_CHANNEL)}
           className={`w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 border-b border-gray-100 ${
             active === TEAM_CHANNEL ? 'bg-blue-50' : ''
@@ -284,7 +284,10 @@ function Tasks({ me }) {
   }
 
   const nameOf = (id) => people.find(p => p.id === id)?.full_name || '—'
-  const shown = filter === 'mine' ? tasks.filter(x => x.assigned_to === me.id) : tasks
+  // ProtectedRoute waits on the session, not the profile, so `me` can still be
+  // null here if the profile fetch is slow or failed. Reading me.id directly
+  // would take the whole page down.
+  const shown = filter === 'mine' ? tasks.filter(x => x.assigned_to === me?.id) : tasks
   const overdue = (x) => x.status === 'open' && x.due_date && new Date(x.due_date) < new Date(new Date().toDateString())
 
   if (loading) {
