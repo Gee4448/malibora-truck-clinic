@@ -6,7 +6,7 @@ import { supabase, formatTZS, formatDate } from '../lib/supabase'
 import { ArrowLeft, Printer, Download, MessageCircle, CheckCircle, CreditCard, Send, MessageSquare, Save, Pencil, Trash2, Plus, FileText } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { generateInvoicePDF } from '../lib/pdf'
-import { syncProformaTotals } from '../lib/proforma'
+import { syncProformaTotals, statusAfterRetotal, depositAfterRetotal } from '../lib/proforma'
 import { sendSMS, smsTemplates } from '../lib/sms'
 
 export default function InvoiceDetail() {
@@ -164,6 +164,9 @@ export default function InvoiceDetail() {
         total_amount: totalAmount,
         profit_total: profitTotal,
         profit_margin: subtotal > 0 ? (profitTotal / subtotal * 100) : 0,
+        // The total just moved, so what's still owed moved with it.
+        ...statusAfterRetotal(invoice.status, invoice.amount_paid, totalAmount, invoice.paid_at),
+        ...depositAfterRetotal(invoice.deposit_percentage, totalAmount),
       }).eq('id', id)
       if (error) throw error
       notifyClientInvoiceChanged(totalAmount)
@@ -351,6 +354,9 @@ export default function InvoiceDetail() {
         profit_labour: subtotalLabour - costLabour,
         profit_total: profitTotal,
         profit_margin: subtotal > 0 ? (profitTotal / subtotal * 100) : 0,
+        // The total just moved, so what's still owed moved with it.
+        ...statusAfterRetotal(invoice.status, invoice.amount_paid, totalAmount, invoice.paid_at),
+        ...depositAfterRetotal(invoice.deposit_percentage, totalAmount),
       }).eq('id', id)
       if (invErr) throw invErr
       // A final invoice with no frozen snapshot edits the JOB CARD's items, so
@@ -475,14 +481,19 @@ export default function InvoiceDetail() {
   const amountPaid = Number(invoice.amount_paid) || 0
   const balanceOwed = Math.max(0, invoiceTotal - amountPaid)
   const vatRate = invoice.vat_rate != null ? Number(invoice.vat_rate) : 18
-  // #3 (Antony): "add cost to the same invoice only while not yet approved/paid."
-  // A PROFORMA is the quote the client approves, so it locks once approved — you don't
-  // silently change a quote they agreed to. A FINAL invoice is generated AFTER approval
-  // and is where costs discovered during the repair get added, so it stays editable
-  // until money actually moves (partial/paid) or it's cancelled.
+  // A PROFORMA stays editable for its whole life, including after the customer
+  // has paid — Antony, 4 Aug 2026: "tuwe na uwezo wa ku-edit proforma ambayo
+  // tayari mteja ameshalipia … tusimwandikie tena proforma nyingine". He adds
+  // parts while the customer is still in the workshop and takes the difference
+  // on the same document. Re-totalling re-derives the balance owed, so the money
+  // already received is never lost. This supersedes his 26 Jul rule ("add cost to
+  // the same invoice only while not yet approved/paid") for proformas only.
+  //
+  // A FINAL invoice keeps that rule: it's the issued tax document, so it locks
+  // once money moves against it.
   const isProforma = invoice.invoice_type === 'proforma'
   const docEditable = isProforma
-    ? !['approved', 'partial', 'paid', 'cancelled'].includes(invoice.status)
+    ? invoice.status !== 'cancelled'
     : !['partial', 'paid', 'cancelled'].includes(invoice.status)
 
   const typeLabels = { proforma: t('invoices.proforma'), final: t('invoices.final'), internal: t('invoices.internal') }

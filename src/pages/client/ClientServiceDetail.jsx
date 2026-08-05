@@ -6,7 +6,7 @@ import { supabase, formatTZS, formatDate } from '../../lib/supabase'
 import { notifyStaff } from '../../lib/notifications'
 import {
   ArrowLeft, CheckCircle2, XCircle, AlertTriangle, Clock,
-  Wrench, ClipboardCheck, Phone, Receipt, Send
+  Wrench, ClipboardCheck, Phone, Receipt, Send, FileText
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -19,6 +19,7 @@ export default function ClientServiceDetail() {
   const [items, setItems] = useState([])
   const [jobItems, setJobItems] = useState([])
   const [proformaReq, setProformaReq] = useState(null)
+  const [proforma, setProforma] = useState(null)
   const [requesting, setRequesting] = useState(false)
   const [loading, setLoading] = useState(true)
 
@@ -56,7 +57,7 @@ export default function ClientServiceDetail() {
       // Costed line items staff added (customer-safe columns only — never cost/profit)
       // and any existing proforma request, so the client sees the real bill and
       // whether they've already asked for a proforma.
-      const [jobItemsRes, reqRes] = await Promise.all([
+      const [jobItemsRes, reqRes, proformaRes] = await Promise.all([
         supabase.from('job_card_items')
           .select('id, item_type, description, quantity, selling_price, total_selling')
           .eq('job_card_id', id)
@@ -66,9 +67,20 @@ export default function ClientServiceDetail() {
           .eq('job_card_id', id)
           .order('created_at', { ascending: false })
           .limit(1),
+        // The proforma staff prepared in answer to the request, if any — it's
+        // where the customer goes to pay, so we link straight to it instead of
+        // leaving him to hunt through the invoice list.
+        supabase.from('invoices')
+          .select('id, status')
+          .eq('job_card_id', id)
+          .eq('invoice_type', 'proforma')
+          .neq('status', 'cancelled')
+          .order('created_at', { ascending: false })
+          .limit(1),
       ])
       setJobItems(jobItemsRes.data || [])
       setProformaReq(reqRes.data?.[0] || null)
+      setProforma(proformaRes.data?.[0] || null)
 
       if (jc.inspection_id) {
         const [inspRes, itemsRes] = await Promise.all([
@@ -140,7 +152,6 @@ export default function ClientServiceDetail() {
   }
 
   const isPreJobCard = jobCard?.status === 'pre_job_card' || jobCard?.status === 'pending_approval'
-  const canApprove = isPreJobCard || (inspection && inspection.status === 'completed')
   const totalEstimated = items.reduce((s, i) => s + Number(i.estimated_cost || 0), 0)
   const approvedCount = items.filter(i => i.customer_approved === true).length
   const approvedTotal = items.filter(i => i.customer_approved === true).reduce((s, i) => s + Number(i.estimated_cost || 0), 0)
@@ -148,9 +159,19 @@ export default function ClientServiceDetail() {
   const repairPct = items.length ? Math.round((repairDone / items.length) * 100) : 0
   const repairStarted = items.some(i => i.repair_status && i.repair_status !== 'pending') || !!inspection?.repair_summary
   const jobItemsTotal = jobItems.reduce((s, i) => s + Number(i.total_selling || (i.selling_price || 0) * (i.quantity || 1)), 0)
-  // The client can ask for a proforma once staff have priced the work, but not
-  // while a request is already pending. (Staff mark it fulfilled when they send one.)
-  const canRequestProforma = jobItems.length > 0 && (!proformaReq || proformaReq.status === 'fulfilled')
+  // Antony, 4 Aug 2026: "usiweke tena hii batani … request tena mara ya pili.
+  // Hapana." The button used to come back the moment staff fulfilled the request,
+  // letting the customer ask for a second quote on the same job.
+  //
+  // Gated on whether something is LIVE rather than on whether he ever asked: a
+  // pending request or an uncancelled proforma closes it. A request that was
+  // fulfilled by a proforma staff later CANCELLED opens it again — otherwise the
+  // customer is stranded on a job card with nothing to press and no way to ask.
+  const quoted = !!proforma || proformaReq?.status === 'pending'
+  const canRequestProforma = jobItems.length > 0 && !quoted
+  // Once the work is quoted, approving or declining individual inspection lines
+  // changes nothing — the price is already agreed and on its way to being paid.
+  const canApprove = !quoted && (isPreJobCard || (inspection && inspection.status === 'completed'))
 
   if (loading) {
     return (
@@ -402,10 +423,25 @@ export default function ClientServiceDetail() {
         </div>
       )}
 
-      {/* Request Proforma — client asks staff to prepare a proforma to pay against */}
+      {/* Request Proforma — client asks staff to prepare a proforma to pay
+          against. One press only: after that this becomes a way through to the
+          proforma, never the same button again. */}
       {jobItems.length > 0 && (
         <div className="bg-white rounded-xl border border-gray-200 p-4">
-          {proformaReq && proformaReq.status === 'pending' ? (
+          {proforma ? (
+            // Staff have prepared it — this is the "press pay, go to mobile
+            // money" step Antony describes. Shown for a DRAFT proforma too:
+            // that's the state he narrates ("hiko ni draft … anabonyeza simu ya
+            // kulipa"), and the customer's copy offers payment on any proforma
+            // with a balance owed, draft included.
+            <Link
+              to={`/client/invoices/${proforma.id}`}
+              className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-blue-700 text-white font-medium rounded-xl hover:bg-blue-800 transition active:scale-[0.98]"
+            >
+              <FileText className="w-4 h-4" />
+              {t('client.services.proformaReady')}
+            </Link>
+          ) : quoted ? (
             <div className="flex items-center gap-2 justify-center text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg py-3">
               <Clock className="w-4 h-4" />
               {t('client.services.proformaRequested')}

@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useLanguage } from '../contexts/LanguageContext'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase, formatTZS, formatDate } from '../lib/supabase'
-import { findLiveProforma, syncProformaTotals, totalsFromJobItems, DEFAULT_VAT_RATE } from '../lib/proforma'
+import { findLiveProforma, syncProformaTotals, totalsFromJobItems, statusAfterRetotal, depositAfterRetotal, DEFAULT_VAT_RATE } from '../lib/proforma'
 import { Plus, Trash2, FileText, Printer, ArrowLeft, Package, Wrench, DollarSign, X, CheckCircle2, XCircle, UserPlus, AlertCircle, Share2, Pencil } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -284,18 +284,32 @@ export default function JobCardDetail() {
       // twice used to mint a second quote for the same work; it now refreshes
       // the one that already exists so the customer keeps seeing one document.
       const existing = type === 'proforma' ? await findLiveProforma(id) : null
-      if (existing && ['approved', 'partial', 'paid'].includes(existing.status)) {
-        toast.error(t('invoices.proformaLocked'))
-        navigate(`/admin/invoices/${existing.id}`)
-        return
-      }
 
       const totals = totalsFromJobItems(items, existing?.vat_rate ?? DEFAULT_VAT_RATE)
 
+      // Re-pricing a quote the customer has already paid against is allowed
+      // (Antony, 4 Aug 2026 — he adds parts while the customer is still in the
+      // workshop and takes the difference on the same proforma), but it moves a
+      // number someone has already handed over money for, so say so first.
+      const alreadyPaid = Number(existing?.amount_paid) || 0
+      if (alreadyPaid > 0) {
+        const owed = Math.max(0, totals.total_amount - alreadyPaid)
+        const warning = t('invoices.retotalPaidConfirm')
+          .replace('{paid}', formatTZS(alreadyPaid))
+          .replace('{total}', formatTZS(totals.total_amount))
+          .replace('{balance}', formatTZS(owed))
+        if (!confirm(warning)) return
+      }
+
       let invoiceId
       if (existing) {
+        const update = {
+          ...totals,
+          ...statusAfterRetotal(existing.status, existing.amount_paid, totals.total_amount, existing.paid_at),
+          ...depositAfterRetotal(existing.deposit_percentage, totals.total_amount),
+        }
         const { data, error } = await supabase.from('invoices')
-          .update(totals).eq('id', existing.id).select('id')
+          .update(update).eq('id', existing.id).select('id')
         if (error) throw error
         if (!data || data.length === 0) throw new Error(t('invoices.loadError'))
         invoiceId = existing.id
@@ -339,6 +353,15 @@ export default function JobCardDetail() {
   const totalCost = items.reduce((sum, i) => sum + Number(i.total_cost || 0), 0)
   const totalSelling = items.reduce((sum, i) => sum + Number(i.total_selling || 0), 0)
   const profit = totalSelling - totalCost
+
+  // What the live proforma would say if it were re-totalled right now — from the
+  // shared helper, so the warning banner can't drift from the figure the quote
+  // actually lands on.
+  const proformaPaid = Number(liveProforma?.amount_paid) || 0
+  const retotalled = liveProforma
+    ? totalsFromJobItems(items, liveProforma.vat_rate).total_amount
+    : 0
+  const retotalledBalance = Math.max(0, retotalled - proformaPaid)
 
   if (loading) return <div className="flex justify-center p-8"><div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full"></div></div>
   if (!job) return null
@@ -405,6 +428,26 @@ export default function JobCardDetail() {
           )}
         </div>
       </div>
+
+      {/* Money has already changed hands against this job's quote, and every
+          edit below re-prices it (Antony, 4 Aug 2026 — add the part while the
+          customer is still here and take the difference). Standing warning
+          rather than a prompt per line, so staff can see what he owes while
+          they work instead of dismissing the same dialog five times. */}
+      {proformaPaid > 0 && (
+        <div className="flex items-start gap-2.5 p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm">
+          <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <div className="text-amber-800">
+            <p className="font-semibold">{t('jobs.proformaPaidWarning')}</p>
+            <p className="mt-0.5">
+              {t('jobs.proformaPaidBalance')
+                .replace('{paid}', formatTZS(proformaPaid))
+                .replace('{total}', formatTZS(retotalled))
+                .replace('{balance}', formatTZS(retotalledBalance))}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Job Info Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
