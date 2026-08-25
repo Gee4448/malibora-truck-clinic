@@ -4,9 +4,10 @@ import { useLanguage } from '../../contexts/LanguageContext'
 import { useMechanic } from '../../contexts/MechanicAuthContext'
 import { supabase, formatDate, errorMessage } from '../../lib/supabase'
 import { uploadEvidence, fetchEvidence, evidenceUrl, reportFinding, fetchFindings } from '../../lib/evidence'
+import { logLabour, fetchMyLabour, deleteLabour } from '../../lib/labour'
 import {
   ArrowLeft, Truck, Wrench, XCircle, Send, AlertTriangle,
-  Camera, CheckCircle2, Trash2, RotateCcw, Loader2, Flag, Paperclip,
+  Camera, CheckCircle2, Trash2, RotateCcw, Loader2, Flag, Paperclip, Clock,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -28,6 +29,9 @@ export default function MechanicJobDetail() {
   const [findings, setFindings] = useState([])
   const [faultForm, setFaultForm] = useState({ description: '', severity: 'medium', file: null })
   const [reporting, setReporting] = useState(false)
+  const [labourEntries, setLabourEntries] = useState([])
+  const [labourForm, setLabourForm] = useState({ hours: '', note: '' })
+  const [loggingLabour, setLoggingLabour] = useState(false)
 
   useEffect(() => {
     fetchData()
@@ -51,6 +55,7 @@ export default function MechanicJobDetail() {
       setJob(jc)
       setEvidence(await fetchEvidence(jc.id).catch(() => []))
       setFindings(await fetchFindings(jc.id).catch(() => []))
+      setLabourEntries(await fetchMyLabour({ mechanicId: mechanic.id, jobCardId: jc.id }).catch(() => []))
 
       if (jc.inspection_id) {
         const [inspRes, itemsRes] = await Promise.all([
@@ -148,6 +153,35 @@ export default function MechanicJobDetail() {
       if (error) throw error
     } catch (err) {
       toast.error(errorMessage(err, t('mechanic.job.faultFailed')))
+      fetchData()
+    }
+  }
+
+  // Log the hours spent on this job. Hours only — the office sets the rate and
+  // turns these into a billable line; the mechanic never sees a price.
+  const submitLabour = async (e) => {
+    e.preventDefault()
+    const hours = Number(labourForm.hours)
+    if (!hours || hours <= 0 || hours > 24) return toast.error(t('mechanic.job.labourBadHours'))
+    setLoggingLabour(true)
+    try {
+      await logLabour({ mechanicId: mechanic.id, jobCardId: job.id, hours, note: labourForm.note.trim() })
+      toast.success(t('mechanic.job.labourLogged'))
+      setLabourForm({ hours: '', note: '' })
+      setLabourEntries(await fetchMyLabour({ mechanicId: mechanic.id, jobCardId: job.id }).catch(() => labourEntries))
+    } catch (err) {
+      toast.error(errorMessage(err, t('mechanic.job.labourFailed')))
+    } finally {
+      setLoggingLabour(false)
+    }
+  }
+
+  const removeLabour = async (entry) => {
+    setLabourEntries(prev => prev.filter(x => x.id !== entry.id))
+    try {
+      await deleteLabour({ mechanicId: mechanic.id, entryId: entry.id })
+    } catch (err) {
+      toast.error(errorMessage(err, t('mechanic.job.labourFailed')))
       fetchData()
     }
   }
@@ -363,6 +397,66 @@ export default function MechanicJobDetail() {
           </div>
         </div>
       )}
+
+      {/* Log my time — hours only, never a price */}
+      <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="flex items-center gap-2 mb-1">
+          <Clock className="w-4 h-4 text-amber-600" />
+          <h3 className="font-semibold text-gray-900 text-sm">{t('mechanic.job.logTime')}</h3>
+        </div>
+        <p className="text-xs text-gray-500 mb-3">{t('mechanic.job.logTimeHint')}</p>
+
+        {labourEntries.length > 0 && (
+          <div className="space-y-2 mb-4">
+            {labourEntries.map((le) => (
+              <div key={le.id} className="flex items-start gap-2 p-3 bg-gray-50 rounded-lg">
+                <span className="text-sm font-bold text-amber-700 flex-shrink-0">
+                  {le.hours} {t('mechanic.job.hoursShort')}
+                </span>
+                <div className="flex-1 min-w-0">
+                  {le.note && <p className="text-sm text-gray-700">{le.note}</p>}
+                  <p className="text-[11px] text-gray-400">{formatDate(le.work_date || le.created_at)}</p>
+                </div>
+                {le.billed ? (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-green-100 text-green-700 flex-shrink-0">
+                    {t('mechanic.job.labourBilled')}
+                  </span>
+                ) : (
+                  <button onClick={() => removeLabour(le)} title={t('common.delete')}
+                    className="p-1 rounded text-gray-400 hover:text-red-600 flex-shrink-0">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            ))}
+            <p className="text-xs text-gray-500 pt-1">
+              {t('mechanic.job.labourTotal')}: <span className="font-semibold text-gray-700">
+                {labourEntries.reduce((s, e) => s + Number(e.hours || 0), 0)} {t('mechanic.job.hoursShort')}
+              </span>
+            </p>
+          </div>
+        )}
+
+        <form onSubmit={submitLabour} className="space-y-3">
+          <div className="flex items-center gap-2">
+            <input type="number" min="0.25" max="24" step="0.25"
+              value={labourForm.hours}
+              onChange={(e) => setLabourForm({ ...labourForm, hours: e.target.value })}
+              placeholder={t('mechanic.job.hoursPlaceholder')}
+              className="w-28 px-3 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-amber-500 text-gray-900 text-sm" />
+            <input type="text"
+              value={labourForm.note}
+              onChange={(e) => setLabourForm({ ...labourForm, note: e.target.value })}
+              placeholder={t('mechanic.job.labourNotePlaceholder')}
+              className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-amber-500 text-gray-900 text-sm" />
+          </div>
+          <button type="submit" disabled={loggingLabour}
+            className="flex items-center justify-center gap-2 w-full py-2.5 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm font-medium disabled:opacity-40">
+            {loggingLabour ? <Loader2 className="w-4 h-4 animate-spin" /> : <Clock className="w-4 h-4" />}
+            {t('mechanic.job.logTimeButton')}
+          </button>
+        </form>
+      </div>
 
       {/* Report a fault the customer never mentioned */}
       <div className="bg-white rounded-xl border border-gray-200 p-4">

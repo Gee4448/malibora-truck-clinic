@@ -5,7 +5,8 @@ import { useAuth } from '../contexts/AuthContext'
 import { supabase, formatTZS, formatDate } from '../lib/supabase'
 import { findLiveProforma, syncProformaTotals, totalsFromJobItems, proformaUpdateFor, overpaymentOn, DEFAULT_VAT_RATE } from '../lib/proforma'
 import { fetchEvidence, evidenceUrl, fetchFindings } from '../lib/evidence'
-import { Plus, Trash2, FileText, Printer, ArrowLeft, Package, Wrench, DollarSign, X, CheckCircle2, XCircle, UserPlus, AlertCircle, Share2, Pencil, Camera, Flag } from 'lucide-react'
+import { fetchJobLabour, billLoggedLabour } from '../lib/labour'
+import { Plus, Trash2, FileText, Printer, ArrowLeft, Package, Wrench, DollarSign, X, CheckCircle2, XCircle, UserPlus, AlertCircle, Share2, Pencil, Camera, Flag, Clock } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function JobCardDetail() {
@@ -22,6 +23,10 @@ export default function JobCardDetail() {
   const [evidence, setEvidence] = useState([])
   const [findings, setFindings] = useState([])
   const [pricingFinding, setPricingFinding] = useState(null)
+  const [labourEntries, setLabourEntries] = useState([])
+  const [labourRate, setLabourRate] = useState('')
+  const [labourCost, setLabourCost] = useState('')
+  const [billingLabour, setBillingLabour] = useState(false)
   const [loading, setLoading] = useState(true)
   const [showAddItem, setShowAddItem] = useState(false)
   const [showAssignTech, setShowAssignTech] = useState(false)
@@ -44,6 +49,7 @@ export default function JobCardDetail() {
     fetchMechanics()
     fetchEvidence(id).then(setEvidence).catch(() => setEvidence([]))
     fetchFindings(id).then(setFindings).catch(() => setFindings([]))
+    fetchJobLabour(id).then(setLabourEntries).catch(() => setLabourEntries([]))
   }, [id])
 
   // Turn a reported fault into a priced line: opens the normal Add Item form
@@ -211,6 +217,34 @@ export default function JobCardDetail() {
   const fetchLabourRates = async () => {
     const { data } = await supabase.from('labour_rates').select('*').eq('is_active', true).order('service_name')
     setLabourRates(data || [])
+    // Sensible default for the "bill logged time" panel: the catalog's first
+    // active rate. Staff can override before billing.
+    if (data?.length) {
+      setLabourRate(prev => prev === '' ? String(data[0].selling_rate ?? '') : prev)
+      setLabourCost(prev => prev === '' ? String(data[0].cost_rate ?? '') : prev)
+    }
+  }
+
+  // Roll the mechanic's unbilled logged hours into one labour line, then re-total
+  // the live proforma so the quote reflects the labour.
+  const billLabour = async () => {
+    setBillingLabour(true)
+    try {
+      const res = await billLoggedLabour({
+        jobCardId: id,
+        entries: labourEntries,
+        rate: labourRate,
+        cost: canViewInternal ? labourCost : 0,
+      })
+      toast.success(t('jobs.labourBilled').replace('{hours}', res.hours))
+      await syncProformaTotals(id)
+      setLabourEntries(await fetchJobLabour(id).catch(() => labourEntries))
+      fetchJob()
+    } catch (err) {
+      toast.error(err.message === 'no_unbilled_hours' ? t('jobs.labourNoneToBill') : err.message)
+    } finally {
+      setBillingLabour(false)
+    }
   }
 
   // Searchable combobox (input + datalist): the staff member types to filter the
@@ -762,6 +796,80 @@ export default function JobCardDetail() {
           </table>
         </div>
       </div>
+
+      {/* Labour logged by the mechanic (migration 034). The mechanic records
+          HOURS from the workshop; the office sets the rate and bills it as one
+          labour line. Hidden until any time has been logged. */}
+      {labourEntries.length > 0 && (() => {
+        const unbilled = labourEntries.filter(e => !e.billed)
+        const unbilledHours = unbilled.reduce((s, e) => s + Number(e.hours || 0), 0)
+        const loggedHours = labourEntries.reduce((s, e) => s + Number(e.hours || 0), 0)
+        const canBill = unbilledHours > 0 && job.status !== 'completed' && job.status !== 'cancelled'
+        return (
+          <div className="bg-white rounded-xl border border-gray-200 p-5">
+            <h2 className="font-semibold text-gray-900 flex items-center gap-2 mb-1">
+              <Clock className="w-5 h-5 text-amber-600" /> {t('jobs.labourLogged')}
+            </h2>
+            <p className="text-xs text-gray-500 mb-4">{t('jobs.labourLoggedHint')}</p>
+
+            <div className="space-y-2 mb-4">
+              {labourEntries.map((le) => (
+                <div key={le.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg text-sm">
+                  <span className="font-bold text-amber-700 w-16 flex-shrink-0">{le.hours} {t('jobs.hoursShort')}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-gray-700">
+                      {le.mechanics?.name || t('jobs.aMechanic')}{le.note ? ` — ${le.note}` : ''}
+                    </p>
+                    <p className="text-[11px] text-gray-400">{formatDate(le.work_date || le.created_at)}</p>
+                  </div>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium flex-shrink-0 ${
+                    le.billed ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                  }`}>
+                    {le.billed ? t('jobs.labourBilledBadge') : t('jobs.labourUnbilledBadge')}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex items-center justify-between text-sm border-t border-gray-100 pt-3">
+              <span className="text-gray-500">{t('jobs.labourTotalLogged')}</span>
+              <span className="font-semibold text-gray-700">{loggedHours} {t('jobs.hoursShort')}</span>
+            </div>
+
+            {canBill ? (
+              <div className="mt-4 bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <p className="text-sm text-amber-800 font-medium mb-3">
+                  {t('jobs.labourToBill').replace('{hours}', unbilledHours)}
+                </p>
+                <div className="flex flex-wrap items-end gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">{t('jobs.labourRate')} (TZS)</label>
+                    <input type="number" min="0" value={labourRate} onChange={e => setLabourRate(e.target.value)}
+                      className="w-32 px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
+                  {canViewInternal && (
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">{t('jobs.labourCostRate')} (TZS)</label>
+                      <input type="number" min="0" value={labourCost} onChange={e => setLabourCost(e.target.value)}
+                        className="w-32 px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-[8rem] text-right">
+                    <p className="text-xs text-gray-500">{t('jobs.labourLineTotal')}</p>
+                    <p className="font-bold text-gray-900">{formatTZS(unbilledHours * (Number(labourRate) || 0))}</p>
+                  </div>
+                  <button onClick={billLabour} disabled={billingLabour || !(Number(labourRate) > 0)}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm font-medium disabled:opacity-40">
+                    <DollarSign className="w-4 h-4" /> {t('jobs.billLabour')}
+                  </button>
+                </div>
+              </div>
+            ) : unbilledHours === 0 && (
+              <p className="mt-3 text-xs text-green-700">{t('jobs.labourAllBilled')}</p>
+            )}
+          </div>
+        )
+      })()}
 
       {/* Faults the workshop found that nobody asked for (migration 032).
           The mechanic files words and a photo; pricing is the office's job, and

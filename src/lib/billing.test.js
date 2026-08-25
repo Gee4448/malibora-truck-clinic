@@ -41,6 +41,21 @@ test('totals: VAT is added on top, and profit excludes it', () => {
   assert.equal(t.profit_total, 635000 - 445000)
 })
 
+test('totals: logged labour (hours x rate) flows into labour subtotal and profit', () => {
+  // A labour line billed from the workshop clock: 6.5 h @ 20,000, cost 8,000/h
+  // (migration 034). It must land in subtotal_labour and its margin in profit.
+  const withLabour = [
+    ...ANTONY_ITEMS.filter(i => i.item_type === 'part'), // 565,000 sell / 445,000 cost
+    { item_type: 'labour', total_selling: 6.5 * 20000, total_cost: 6.5 * 8000 },
+  ]
+  const t = totalsFromJobItems(withLabour, 0)
+  assert.equal(t.subtotal_labour, 130000)
+  assert.equal(t.internal_cost_labour, 52000)
+  assert.equal(t.profit_labour, 78000)
+  // 565,000 - 445,000 parts profit + 78,000 labour profit
+  assert.equal(t.profit_total, 120000 + 78000)
+})
+
 test('totals: a bad vat rate falls back to the default rather than NaN', () => {
   const t = totalsFromJobItems(ANTONY_ITEMS, undefined)
   assert.equal(t.vat_rate, DEFAULT_VAT_RATE)
