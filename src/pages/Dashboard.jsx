@@ -4,6 +4,9 @@ import { useLanguage } from '../contexts/LanguageContext'
 import { useAuth } from '../contexts/AuthContext'
 import { useNotifications } from '../hooks/useNotifications'
 import { supabase, formatDate, formatDateTime } from '../lib/supabase'
+import Reveal from '../components/common/Reveal'
+import CountUp from '../components/common/CountUp'
+import { useSpotlight } from '../hooks/useSpotlight'
 import {
   ClipboardCheck,
   ClipboardList,
@@ -61,6 +64,7 @@ export default function Dashboard() {
   // it unread while the job waited.
   const { items: notifications, unreadCount, markAllRead, markRead } = useNotifications()
   const navigate = useNavigate()
+  const onSpot = useSpotlight()
 
   useEffect(() => {
     fetchDashboardData()
@@ -131,7 +135,7 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       {/* Greeting hero */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-500 to-blue-700 animate-gradient rounded-3xl p-6 text-white">
+      <div className="sheen relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-500 to-blue-700 animate-gradient rounded-3xl p-6 text-white">
         <div className="absolute -top-10 -right-6 w-40 h-40 rounded-full bg-white/10 animate-float pointer-events-none" />
         <div className="absolute -bottom-12 right-24 w-28 h-28 rounded-full bg-white/5 animate-float-delayed pointer-events-none" />
         <div className="relative">
@@ -145,7 +149,7 @@ export default function Dashboard() {
       </div>
 
       {/* KPI bento — dark tiles with big orange numbers */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <Reveal group className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {kpis.map((k, i) => {
           const inner = (
             <>
@@ -159,21 +163,23 @@ export default function Dashboard() {
                   </span>
                 )}
               </div>
-              <p className="text-3xl font-bold mt-3 text-blue-400 tabular-nums">{k.count}</p>
+              <p className="text-3xl font-bold mt-3 text-blue-400 tabular-nums">
+                <CountUp value={k.count} />
+              </p>
               <p className="text-xs text-zinc-400 mt-0.5">{k.label}</p>
             </>
           )
-          const cls = 'card-lift text-left relative bg-zinc-900 rounded-3xl p-4 text-white overflow-hidden'
+          const cls = 'card-lift sheen spotlight text-left relative bg-zinc-900 rounded-3xl p-4 text-white overflow-hidden'
           return k.to
-            ? <Link key={i} to={k.to} className={cls}>{inner}</Link>
-            : <button key={i} onClick={k.onClick} className={cls}>{inner}</button>
+            ? <Link key={i} to={k.to} className={cls} onMouseMove={onSpot}>{inner}</Link>
+            : <button key={i} onClick={k.onClick} className={cls} onMouseMove={onSpot}>{inner}</button>
         })}
-      </div>
+      </Reveal>
 
       {/* Customer messages — negotiations, requests and declared payments.
           Sits above the counters because it is the only thing here that is
           waiting on a human reply. */}
-      <div id="dash-messages" className="bg-white rounded-3xl border border-gray-200 overflow-hidden scroll-mt-20">
+      <Reveal id="dash-messages" className="bg-white rounded-3xl border border-gray-200 overflow-hidden scroll-mt-20">
         <div className="flex items-center justify-between p-5 border-b border-gray-100">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-11 h-11 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0 relative">
@@ -232,10 +238,10 @@ export default function Dashboard() {
             })
           )}
         </div>
-      </div>
+      </Reveal>
 
       {/* Inspections Widget */}
-      <WidgetCard
+      <Reveal><WidgetCard
         icon={ClipboardCheck}
         iconColor="text-purple-600"
         iconBg="bg-purple-100"
@@ -269,10 +275,10 @@ export default function Dashboard() {
             bg: 'bg-green-50 hover:bg-green-100 border-green-200',
           },
         ]}
-      />
+      /></Reveal>
 
       {/* Jobs Widget */}
-      <WidgetCard
+      <Reveal><WidgetCard
         icon={ClipboardList}
         iconColor="text-blue-600"
         iconBg="bg-blue-100"
@@ -298,10 +304,10 @@ export default function Dashboard() {
             bg: 'bg-yellow-50 hover:bg-yellow-100 border-yellow-200',
           },
         ]}
-      />
+      /></Reveal>
 
       {/* Handover Widget — customer reports for completed jobs */}
-      <div className="bg-white rounded-3xl border border-gray-200 overflow-hidden">
+      <Reveal className="bg-white rounded-3xl border border-gray-200 overflow-hidden">
         <div className="flex items-center justify-between p-5 border-b border-gray-100">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-xl bg-green-100 flex items-center justify-center">
@@ -345,7 +351,7 @@ export default function Dashboard() {
             ))
           )}
         </div>
-      </div>
+      </Reveal>
     </div>
   )
 }

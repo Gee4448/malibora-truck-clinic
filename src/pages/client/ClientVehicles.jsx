@@ -7,6 +7,7 @@ import toast from 'react-hot-toast'
 import { ListSkeleton } from '../../components/common/Skeleton'
 import { emptyVehicle } from '../../lib/vehicleOptions'
 import VehicleFormBlock from '../../components/vehicles/VehicleFormBlock'
+import Reveal from '../../components/common/Reveal'
 
 export default function ClientVehicles() {
   const { t } = useLanguage()
@@ -91,8 +92,8 @@ export default function ClientVehicles() {
         </div>
       ) : (
         <div className="space-y-3">
-          {vehicles.map((v) => (
-            <div key={v.id} className="bg-white rounded-2xl border border-gray-200 p-4">
+          {vehicles.map((v, i) => (
+            <Reveal key={v.id} delay={Math.min(i, 8) * 45} className="bg-white rounded-2xl border border-gray-200 p-4">
               <div className="flex items-start gap-3">
                 <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center flex-shrink-0">
                   <Truck className="w-6 h-6 text-blue-600" />
@@ -125,7 +126,7 @@ export default function ClientVehicles() {
                   )}
                 </div>
               </div>
-            </div>
+            </Reveal>
           ))}
         </div>
       )}

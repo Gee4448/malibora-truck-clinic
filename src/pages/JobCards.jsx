@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { supabase, formatDate, formatTZS } from '../lib/supabase'
 import { Plus, Search, Filter, Edit2, Eye, FileText, X, Truck, Clock } from 'lucide-react'
 import toast from 'react-hot-toast'
+import Reveal from '../components/common/Reveal'
 
 export default function JobCards() {
   const { t } = useLanguage()
@@ -204,8 +205,8 @@ export default function JobCards() {
             <p className="text-gray-500">{t('common.noData')}</p>
           </div>
         ) : (
-          filtered.map((job) => (
-            <div key={job.id} className="bg-white rounded-2xl border border-gray-200 p-4 hover:shadow-md transition-shadow">
+          filtered.map((job, i) => (
+            <Reveal key={job.id} delay={Math.min(i, 8) * 40} className="bg-white rounded-2xl border border-gray-200 p-4 hover:shadow-md transition-shadow">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 flex-wrap">
@@ -258,7 +259,7 @@ export default function JobCards() {
                   )}
                 </div>
               </div>
-            </div>
+            </Reveal>
           ))
         )}
       </div>

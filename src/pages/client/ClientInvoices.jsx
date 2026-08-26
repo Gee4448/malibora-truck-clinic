@@ -5,6 +5,7 @@ import { useClient } from '../../contexts/ClientAuthContext'
 import { supabase, formatTZS, formatDate } from '../../lib/supabase'
 import { FileText, ArrowRight } from 'lucide-react'
 import { ListSkeleton } from '../../components/common/Skeleton'
+import Reveal from '../../components/common/Reveal'
 
 export default function ClientInvoices() {
   const { t } = useLanguage()
@@ -85,9 +86,11 @@ export default function ClientInvoices() {
         </div>
       ) : (
         <div className="space-y-3">
-          {filtered.map((inv) => (
-            <Link
+          {filtered.map((inv, i) => (
+            <Reveal
+              as={Link}
               key={inv.id}
+              delay={Math.min(i, 8) * 45}
               to={`/client/invoices/${inv.id}`}
               className="block bg-white rounded-2xl border border-gray-200 p-4 hover:shadow-md active:scale-[0.99] transition"
             >
@@ -112,7 +115,7 @@ export default function ClientInvoices() {
                   <ArrowRight className="w-4 h-4 text-gray-300" />
                 </div>
               </div>
-            </Link>
+            </Reveal>
           ))}
         </div>
       )}

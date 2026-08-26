@@ -8,6 +8,7 @@ import {
   AlertTriangle, XCircle, ArrowRight, Send
 } from 'lucide-react'
 import { ListSkeleton } from '../../components/common/Skeleton'
+import Reveal from '../../components/common/Reveal'
 
 export default function ClientServices() {
   const { t } = useLanguage()
@@ -86,11 +87,13 @@ export default function ClientServices() {
         </div>
       ) : (
         <div className="space-y-3">
-          {filtered.map((job) => {
+          {filtered.map((job, i) => {
             const cfg = statusConfig[job.status] || statusConfig.open
             return (
-              <Link
+              <Reveal
+                as={Link}
                 key={job.id}
+                delay={Math.min(i, 8) * 45}
                 to={`/client/services/${job.id}`}
                 className={`block bg-white rounded-2xl border ${cfg.border} p-4 hover:shadow-md active:scale-[0.99] transition`}
               >
@@ -115,7 +118,7 @@ export default function ClientServices() {
                   </div>
                   <ArrowRight className="w-4 h-4 text-gray-300 flex-shrink-0 mt-1" />
                 </div>
-              </Link>
+              </Reveal>
             )
           })}
         </div>

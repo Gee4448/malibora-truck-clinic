@@ -6,6 +6,7 @@ import { supabase, formatTZS, formatDate } from '../lib/supabase'
 import { sendSMS, smsTemplates } from '../lib/sms'
 import { Search, Filter, Eye, FileText } from 'lucide-react'
 import toast from 'react-hot-toast'
+import Reveal from '../components/common/Reveal'
 
 export default function Invoices() {
   const { t } = useLanguage()
@@ -155,7 +156,7 @@ export default function Invoices() {
       </div>
 
       {/* Invoices Table */}
-      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+      <Reveal className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
         {loading ? (
           <div className="flex justify-center p-8">
             <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full"></div>
@@ -228,7 +229,7 @@ export default function Invoices() {
             </table>
           </div>
         )}
-      </div>
+      </Reveal>
     </div>
   )
 }

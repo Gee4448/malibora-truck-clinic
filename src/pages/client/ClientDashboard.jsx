@@ -8,6 +8,8 @@ import {
   Clock, CheckCircle2, Wrench, AlertTriangle, Send
 } from 'lucide-react'
 import CountUp from '../../components/common/CountUp'
+import Reveal from '../../components/common/Reveal'
+import { useSpotlight } from '../../hooks/useSpotlight'
 import { DashboardSkeleton } from '../../components/common/Skeleton'
 
 export default function ClientDashboard() {
@@ -18,6 +20,7 @@ export default function ClientDashboard() {
   const [recentInspections, setRecentInspections] = useState([])
   const [latestInvoice, setLatestInvoice] = useState(null)
   const [loading, setLoading] = useState(true)
+  const onSpot = useSpotlight()
 
   useEffect(() => {
     if (customer?.id) fetchData()
@@ -92,7 +95,7 @@ export default function ClientDashboard() {
   return (
     <div className="space-y-4 stagger-children">
       {/* Greeting hero — brand orange, big rounded */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-500 to-blue-700 animate-gradient rounded-3xl p-6 text-white">
+      <div className="sheen relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-500 to-blue-700 animate-gradient rounded-3xl p-6 text-white">
         <div className="absolute -top-10 -right-6 w-36 h-36 rounded-full bg-white/10 animate-float pointer-events-none" />
         <div className="absolute -bottom-12 right-20 w-24 h-24 rounded-full bg-white/5 animate-float-delayed pointer-events-none" />
         <div className="relative">
@@ -121,7 +124,8 @@ export default function ClientDashboard() {
       {/* Primary CTA — dark tile, Report a problem */}
       <Link
         to="/client/new-request"
-        className="card-lift flex items-center gap-4 bg-zinc-900 rounded-3xl p-5 text-white"
+        onMouseMove={onSpot}
+        className="card-lift sheen spotlight flex items-center gap-4 bg-zinc-900 rounded-3xl p-5 text-white"
       >
         <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center flex-shrink-0">
           <Send className="w-6 h-6 text-white" />
@@ -138,8 +142,8 @@ export default function ClientDashboard() {
       {/* Bento stats — dark tiles with big orange numbers */}
       <div className="grid grid-cols-2 gap-3 stagger-children">
         {statCards.map((card, i) => (
-          <Link key={i} to={card.to}
-            className="card-lift relative bg-zinc-900 rounded-3xl p-4 text-white overflow-hidden">
+          <Link key={i} to={card.to} onMouseMove={onSpot}
+            className="card-lift sheen spotlight relative bg-zinc-900 rounded-3xl p-4 text-white overflow-hidden">
             <div className="flex items-start justify-between">
               <div className="w-10 h-10 bg-white/10 rounded-2xl flex items-center justify-center">
                 <card.icon className="w-5 h-5 text-blue-400" />
@@ -156,8 +160,8 @@ export default function ClientDashboard() {
 
       {/* Latest Invoice (if any) — dark feature tile with orange accent */}
       {latestInvoice && (
-        <Link to={`/client/invoices/${latestInvoice.id}`}
-          className="card-lift block bg-zinc-900 rounded-3xl p-5 text-white">
+        <Link to={`/client/invoices/${latestInvoice.id}`} onMouseMove={onSpot}
+          className="card-lift sheen spotlight block bg-zinc-900 rounded-3xl p-5 text-white overflow-hidden">
           <div className="flex items-center justify-between">
             <div className="min-w-0">
               <p className="text-[10px] uppercase tracking-wider text-zinc-500">{t('client.dashboard.latestInvoice')}</p>

@@ -364,7 +364,125 @@ button:not(:disabled):not(.absolute):not(.fixed):active {
   animation: gradientShift 8s ease infinite;
 }
 
-/* Reduced motion: keep everything visible, drop the movement */
+/* ============================================================
+   Scroll-reveal
+   Content rises + fades in the first time it scrolls into view (driven by
+   useReveal / <Reveal>). Gated behind `.reveal-ready` on <html> — set in
+   main.jsx before first paint — so a blocked or failed bundle never leaves
+   anything stuck invisible. JS adds `.is-visible` when the element enters view.
+   ============================================================ */
+
+.reveal-ready .reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity var(--dur-slow) var(--ease-out-expo),
+    transform var(--dur-slow) var(--ease-out-expo);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+.reveal-ready .reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* Group: the container is observed once, then its direct children cascade in. */
+.reveal-ready .reveal-group > * {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity var(--dur-base) var(--ease-out-expo),
+    transform var(--dur-base) var(--ease-out-expo);
+}
+.reveal-ready .reveal-group.is-visible > * {
+  opacity: 1;
+  transform: none;
+}
+.reveal-ready .reveal-group.is-visible > *:nth-child(1) { transition-delay: 0ms; }
+.reveal-ready .reveal-group.is-visible > *:nth-child(2) { transition-delay: 55ms; }
+.reveal-ready .reveal-group.is-visible > *:nth-child(3) { transition-delay: 110ms; }
+.reveal-ready .reveal-group.is-visible > *:nth-child(4) { transition-delay: 165ms; }
+.reveal-ready .reveal-group.is-visible > *:nth-child(5) { transition-delay: 220ms; }
+.reveal-ready .reveal-group.is-visible > *:nth-child(6) { transition-delay: 275ms; }
+.reveal-ready .reveal-group.is-visible > *:nth-child(7) { transition-delay: 330ms; }
+.reveal-ready .reveal-group.is-visible > *:nth-child(8) { transition-delay: 385ms; }
+.reveal-ready .reveal-group.is-visible > *:nth-child(n + 9) { transition-delay: 420ms; }
+
+/* ============================================================
+   Modern micro-interactions
+   ============================================================ */
+
+/* Sheen — a soft diagonal light sweep across a surface on hover. Best on the
+   dark feature tiles / primary CTAs; needs a positioned, clipping parent. */
+.sheen { position: relative; overflow: hidden; }
+.sheen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.22) 48%,
+    rgba(255, 255, 255, 0.05) 56%,
+    transparent 72%
+  );
+  transform: translateX(-130%);
+  transition: transform 0.85s var(--ease-out-expo);
+  pointer-events: none;
+}
+@media (hover: hover) {
+  .sheen:hover::after { transform: translateX(130%); }
+}
+
+/* Brand glow — a warm halo blooms under a card on hover. Pairs with card-lift. */
+.glow-hover {
+  transition:
+    box-shadow var(--dur-base) ease,
+    transform var(--dur-fast) var(--ease-out-expo),
+    border-color var(--dur-fast) ease;
+}
+@media (hover: hover) {
+  .glow-hover:hover {
+    box-shadow: 0 16px 44px -14px rgb(245 130 32 / 0.45);
+  }
+}
+
+/* Spotlight — a pointer-following radial highlight on dark tiles. The tile sets
+   --mx/--my from JS (useSpotlight); with no pointer (touch) it simply stays put,
+   so mobile loses nothing. */
+.spotlight { position: relative; }
+.spotlight::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    260px circle at var(--mx, 50%) var(--my, 0%),
+    rgb(245 130 32 / 0.16),
+    transparent 60%
+  );
+  opacity: 0;
+  transition: opacity var(--dur-base) ease;
+  pointer-events: none;
+}
+@media (hover: hover) {
+  .spotlight:hover::before { opacity: 1; }
+}
+
+/* Animated underline — grows from the start on hover; for text links/tabs. */
+.link-underline {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: 0% 2px;
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  transition: background-size var(--dur-base) var(--ease-out-expo);
+}
+@media (hover: hover) {
+  .link-underline:hover { background-size: 100% 2px; }
+}
+
+/* Reduced motion: keep everything visible, drop the movement. Reveal elements
+   start at opacity:0, so they need an explicit reset here — a killed transition
+   alone would leave them invisible. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -373,6 +491,11 @@ button:not(:disabled):not(.absolute):not(.fixed):active {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+  .reveal-ready .reveal,
+  .reveal-ready .reveal-group > * {
+    opacity: 1 !important;
+    transform: none !important;
   }
 }
 

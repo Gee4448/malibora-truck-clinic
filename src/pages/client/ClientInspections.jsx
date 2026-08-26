@@ -5,6 +5,7 @@ import { useClient } from '../../contexts/ClientAuthContext'
 import { supabase, formatTZS, formatDate } from '../../lib/supabase'
 import { ClipboardCheck, ArrowRight, AlertTriangle, Plus, Clock } from 'lucide-react'
 import { ListSkeleton } from '../../components/common/Skeleton'
+import Reveal from '../../components/common/Reveal'
 
 // The customer's own inspection reports. Until now these were visible on the
 // dashboard as a dead-end list — no link, and the "Inspections" stat card
@@ -116,12 +117,14 @@ export default function ClientInspections() {
         </div>
       ) : (
         <div className="space-y-3">
-          {filtered.map((insp) => {
+          {filtered.map((insp, i) => {
             const cfg = statusConfig[insp.status] || statusConfig.in_progress
             const needsYou = pendingIds.has(insp.id)
             return (
-              <Link
+              <Reveal
+                as={Link}
                 key={insp.id}
+                delay={Math.min(i, 8) * 45}
                 to={`/client/inspections/${insp.id}`}
                 className={`block bg-white rounded-2xl border ${cfg.border} p-4 hover:shadow-md active:scale-[0.99] transition`}
               >
@@ -157,7 +160,7 @@ export default function ClientInspections() {
                   </div>
                   <ArrowRight className="w-4 h-4 text-gray-300 flex-shrink-0 mt-1" />
                 </div>
-              </Link>
+              </Reveal>
             )
           })}
         </div>
