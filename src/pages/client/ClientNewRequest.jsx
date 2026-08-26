@@ -185,7 +185,7 @@ export default function ClientNewRequest() {
         <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700">
           <ArrowLeft className="w-4 h-4" /> {t('common.back')}
         </button>
-        <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+        <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center">
           <Truck className="w-12 h-12 text-gray-300 mx-auto mb-3" />
           <p className="text-gray-500 text-sm">{t('client.newRequest.noVehicles')}</p>
           <button onClick={() => navigate('/client/vehicles')}
@@ -211,7 +211,7 @@ export default function ClientNewRequest() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Select Vehicle */}
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="bg-white rounded-2xl border border-gray-200 p-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             {t('client.newRequest.selectVehicle')} *
           </label>
@@ -231,7 +231,7 @@ export default function ClientNewRequest() {
         </div>
 
         {/* Request Type */}
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="bg-white rounded-2xl border border-gray-200 p-4">
           <label className="block text-sm font-medium text-gray-700 mb-3">
             {t('client.newRequest.requestType')}
           </label>
@@ -270,7 +270,7 @@ export default function ClientNewRequest() {
         {form.request_type === 'known_problem' && (
           <>
             {/* Step 1: Vehicle category */}
-            <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <div className="bg-white rounded-2xl border border-gray-200 p-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 {t('client.newRequest.selectCategory')} *
               </label>
@@ -297,7 +297,7 @@ export default function ClientNewRequest() {
 
             {/* Steps 2 & 3: systems → parts */}
             {category && (
-              <div className="bg-white rounded-xl border border-gray-200 p-4">
+              <div className="bg-white rounded-2xl border border-gray-200 p-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   {t('client.newRequest.selectParts')}
                 </label>
@@ -397,7 +397,7 @@ export default function ClientNewRequest() {
             )}
 
             {/* Optional extra notes */}
-            <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <div className="bg-white rounded-2xl border border-gray-200 p-4">
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
                 {t('client.newRequest.otherNotes')}
               </label>
@@ -417,7 +417,7 @@ export default function ClientNewRequest() {
             <p className="text-xs text-gray-500 px-1">{t('client.newRequest.inspectionHint')}</p>
 
             {/* Description */}
-            <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <div className="bg-white rounded-2xl border border-gray-200 p-4">
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
                 {t('client.newRequest.describeIssue')}
               </label>
@@ -431,7 +431,7 @@ export default function ClientNewRequest() {
             </div>
 
             {/* Location (for inspection) */}
-            <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <div className="bg-white rounded-2xl border border-gray-200 p-4">
               <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-1.5">
                 <MapPin className="w-3.5 h-3.5 text-gray-400" />
                 {t('client.newRequest.location')}

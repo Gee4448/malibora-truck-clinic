@@ -69,7 +69,7 @@ export default function ClientInvoices() {
             onClick={() => setFilter(f)}
             className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
               filter === f
-                ? 'bg-blue-700 text-white'
+                ? 'bg-zinc-900 text-white'
                 : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
             }`}
           >
@@ -79,7 +79,7 @@ export default function ClientInvoices() {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+        <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center">
           <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
           <p className="text-gray-500 text-sm">{t('client.invoices.noInvoices')}</p>
         </div>
@@ -89,7 +89,7 @@ export default function ClientInvoices() {
             <Link
               key={inv.id}
               to={`/client/invoices/${inv.id}`}
-              className="block bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md active:scale-[0.99] transition"
+              className="block bg-white rounded-2xl border border-gray-200 p-4 hover:shadow-md active:scale-[0.99] transition"
             >
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">

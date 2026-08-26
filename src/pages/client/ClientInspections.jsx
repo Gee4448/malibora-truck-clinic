@@ -93,7 +93,7 @@ export default function ClientInspections() {
             onClick={() => setFilter(f)}
             className={`px-4 py-2 rounded-full text-sm font-medium transition-colors cursor-pointer ${
               filter === f
-                ? 'bg-blue-700 text-white'
+                ? 'bg-zinc-900 text-white'
                 : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
             }`}
           >
@@ -103,7 +103,7 @@ export default function ClientInspections() {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+        <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center">
           <ClipboardCheck className="w-12 h-12 text-gray-300 mx-auto mb-3" />
           <p className="text-gray-500 text-sm">{t('client.inspections.empty')}</p>
           <Link
@@ -123,7 +123,7 @@ export default function ClientInspections() {
               <Link
                 key={insp.id}
                 to={`/client/inspections/${insp.id}`}
-                className={`block bg-white rounded-xl border ${cfg.border} p-4 hover:shadow-md active:scale-[0.99] transition`}
+                className={`block bg-white rounded-2xl border ${cfg.border} p-4 hover:shadow-md active:scale-[0.99] transition`}
               >
                 <div className="flex items-start gap-3">
                   <div className={`w-10 h-10 rounded-xl ${cfg.bg} flex items-center justify-center flex-shrink-0`}>

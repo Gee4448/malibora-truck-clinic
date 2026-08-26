@@ -203,7 +203,7 @@ export default function ClientInvoiceView() {
       </Link>
 
       {/* Invoice Header */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5">
+      <div className="bg-white rounded-2xl border border-gray-200 p-5">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
@@ -250,7 +250,7 @@ export default function ClientInvoiceView() {
 
       {/* Items Breakdown (customer-facing: only selling prices) */}
       {parts.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
           <div className="p-3 bg-gray-50 border-b border-gray-100">
             <h3 className="text-sm font-semibold text-gray-700">{t('invoices.partsMaterials')}</h3>
           </div>
@@ -271,7 +271,7 @@ export default function ClientInvoiceView() {
       )}
 
       {labour.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
           <div className="p-3 bg-gray-50 border-b border-gray-100">
             <h3 className="text-sm font-semibold text-gray-700">{t('invoices.labourServices')}</h3>
           </div>
@@ -292,7 +292,7 @@ export default function ClientInvoiceView() {
       )}
 
       {additional.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
           <div className="p-3 bg-gray-50 border-b border-gray-100">
             <h3 className="text-sm font-semibold text-gray-700">{t('invoices.additionalCosts')}</h3>
           </div>
@@ -312,7 +312,7 @@ export default function ClientInvoiceView() {
       )}
 
       {/* Totals */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
+      <div className="bg-white rounded-2xl border border-gray-200 p-4">
         {invoice.subtotal_parts > 0 && (
           <div className="flex justify-between text-sm py-1">
             <span className="text-gray-500">{t('invoices.subtotalParts')}</span>
@@ -360,7 +360,7 @@ export default function ClientInvoiceView() {
 
       {/* Payment status — amount paid / balance owed */}
       {(amountPaid > 0 && invoice.status !== 'paid') && (
-        <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-1.5">
+        <div className="bg-white rounded-2xl border border-gray-200 p-4 space-y-1.5">
           <div className="flex justify-between text-sm">
             <span className="text-gray-500">{t('client.invoices.amountPaid')}</span>
             <span className="font-medium text-green-700">{formatTZS(amountPaid)}</span>
@@ -389,7 +389,7 @@ export default function ClientInvoiceView() {
           because a refund they can't see is indistinguishable from money that
           went missing. */}
       {refunds.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="bg-white rounded-2xl border border-gray-200 p-4">
           <p className="font-semibold text-gray-900 text-sm mb-2">{t('invoices.refundsMade')}</p>
           <div className="space-y-1.5 text-sm">
             {refunds.map(r => (
@@ -568,7 +568,7 @@ export default function ClientInvoiceView() {
 
       {/* Negotiation Chat */}
       {invoice.invoice_type === 'proforma' && !['draft', 'paid'].includes(invoice.status) && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
           <div className="p-4 border-b border-gray-100 flex items-center gap-2">
             <MessageSquare className="w-4 h-4 text-gray-500" />
             <h3 className="text-sm font-semibold text-gray-700">{t('client.invoices.negotiation')}</h3>
@@ -614,7 +614,7 @@ export default function ClientInvoiceView() {
       )}
 
       {/* Contact */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
+      <div className="bg-white rounded-2xl border border-gray-200 p-4 text-center">
         <p className="text-xs text-gray-500 mb-2">{t('client.invoices.paymentQuestion')}</p>
         <a href="tel:+255123456789" className="inline-flex items-center gap-2 px-4 py-2 bg-blue-700 text-white rounded-lg text-sm font-medium hover:bg-blue-800 active:scale-95 transition">
           <Phone className="w-4 h-4" /> {t('customerView.callUs')}

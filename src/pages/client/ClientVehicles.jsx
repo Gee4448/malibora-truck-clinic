@@ -85,16 +85,16 @@ export default function ClientVehicles() {
       </div>
 
       {vehicles.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+        <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center">
           <Truck className="w-12 h-12 text-gray-300 mx-auto mb-3" />
           <p className="text-gray-500 text-sm">{t('client.vehicles.noVehicles')}</p>
         </div>
       ) : (
         <div className="space-y-3">
           {vehicles.map((v) => (
-            <div key={v.id} className="bg-white rounded-xl border border-gray-200 p-4">
+            <div key={v.id} className="bg-white rounded-2xl border border-gray-200 p-4">
               <div className="flex items-start gap-3">
-                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center flex-shrink-0">
                   <Truck className="w-6 h-6 text-blue-600" />
                 </div>
                 <div className="flex-1">

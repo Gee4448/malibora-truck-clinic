@@ -280,7 +280,7 @@ export default function ClientInspectionDetail() {
 
   if (notFound) {
     return (
-      <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+      <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center">
         <XCircle className="w-12 h-12 text-gray-300 mx-auto mb-3" />
         <p className="text-gray-500 text-sm mb-4">{t('client.inspections.notFound')}</p>
         <Link to="/client/inspections" className="text-blue-600 text-sm font-medium">
@@ -310,7 +310,7 @@ export default function ClientInspectionDetail() {
       </Link>
 
       {/* Report header */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
+      <div className="bg-white rounded-2xl border border-gray-200 p-4">
         <div className="flex items-start gap-3">
           <div className="w-11 h-11 rounded-xl bg-purple-100 flex items-center justify-center flex-shrink-0">
             <ClipboardCheck className="w-6 h-6 text-purple-600" />
@@ -337,7 +337,7 @@ export default function ClientInspectionDetail() {
 
       {/* Inspection fee — the customer pays the garage for the diagnosis */}
       {fee > 0 && (
-        <div className={`rounded-xl border overflow-hidden ${
+        <div className={`rounded-2xl border overflow-hidden ${
           feePaid ? 'bg-white border-gray-200'
             : awaitingConfirmation ? 'bg-amber-50 border-amber-200'
             : 'bg-white border-blue-300'
@@ -495,12 +495,12 @@ export default function ClientInspectionDetail() {
 
       {/* Findings */}
       {items.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+        <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center">
           <ClipboardCheck className="w-12 h-12 text-gray-300 mx-auto mb-3" />
           <p className="text-gray-500 text-sm">{t('client.inspections.noFindings')}</p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
           <div className="p-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between gap-2">
             <div>
               <h2 className="font-semibold text-gray-900 text-sm">{t('client.inspections.findings')}</h2>
@@ -619,7 +619,7 @@ export default function ClientInspectionDetail() {
       )}
 
       {/* Bargaining */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
         <div className="p-4 border-b border-gray-100 flex items-center gap-2">
           <MessageCircle className="w-4 h-4 text-gray-500" />
           <h2 className="font-semibold text-gray-900 text-sm">{t('client.inspections.bargainTitle')}</h2>

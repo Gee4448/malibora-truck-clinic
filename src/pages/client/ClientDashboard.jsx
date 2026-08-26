@@ -83,80 +83,90 @@ export default function ClientDashboard() {
   }
 
   const statCards = [
-    { to: '/client/vehicles', icon: Truck, iconBg: 'bg-blue-100', iconColor: 'text-blue-600', value: stats.vehicles, label: t('client.dashboard.vehicles') },
-    { to: '/client/services', icon: ClipboardList, iconBg: 'bg-yellow-100', iconColor: 'text-yellow-600', value: stats.activeJobs, label: t('client.dashboard.activeServices') },
-    { to: '/client/inspections', icon: ClipboardCheck, iconBg: 'bg-purple-100', iconColor: 'text-purple-600', value: stats.inspections, label: t('client.dashboard.inspections') },
-    { to: '/client/invoices', icon: FileText, iconBg: 'bg-green-100', iconColor: 'text-green-600', value: stats.pendingInvoices, label: t('client.dashboard.pendingInvoices') },
+    { to: '/client/vehicles', icon: Truck, value: stats.vehicles, label: t('client.dashboard.vehicles') },
+    { to: '/client/services', icon: ClipboardList, value: stats.activeJobs, label: t('client.dashboard.activeServices') },
+    { to: '/client/inspections', icon: ClipboardCheck, value: stats.inspections, label: t('client.dashboard.inspections') },
+    { to: '/client/invoices', icon: FileText, value: stats.pendingInvoices, label: t('client.dashboard.pendingInvoices') },
   ]
 
   return (
-    <div className="space-y-5 stagger-children">
-      {/* Welcome */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-blue-800 via-blue-600 to-blue-700 animate-gradient rounded-2xl p-5 text-white">
-        {/* decorative floating shapes */}
-        <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/10 animate-float pointer-events-none" />
-        <div className="absolute -bottom-10 right-16 w-24 h-24 rounded-full bg-white/5 animate-float-delayed pointer-events-none" />
+    <div className="space-y-4 stagger-children">
+      {/* Greeting hero — brand orange, big rounded */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-500 to-blue-700 animate-gradient rounded-3xl p-6 text-white">
+        <div className="absolute -top-10 -right-6 w-36 h-36 rounded-full bg-white/10 animate-float pointer-events-none" />
+        <div className="absolute -bottom-12 right-20 w-24 h-24 rounded-full bg-white/5 animate-float-delayed pointer-events-none" />
         <div className="relative">
-          <h1 className="text-lg font-bold">
-            {t('client.dashboard.welcome')}, {customer?.full_name?.split(' ')[0]}!
-          </h1>
-          <p className="text-blue-100 text-sm mt-1">
+          <p className="text-blue-100 text-xs font-medium">
             {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
           </p>
+          <h1 className="text-2xl font-bold mt-1 leading-tight">
+            {t('client.dashboard.welcome')}, {customer?.full_name?.split(' ')[0]} <span className="inline-block">👋</span>
+          </h1>
         </div>
       </div>
 
-      {/* Report Problem Button */}
+      {/* Primary CTA — dark tile, Report a problem */}
       <Link
         to="/client/new-request"
-        className="card-lift flex items-center gap-3 bg-white rounded-xl border-2 border-dashed border-blue-300 p-4 hover:border-blue-500 hover:bg-blue-50"
+        className="card-lift flex items-center gap-4 bg-zinc-900 rounded-3xl p-5 text-white"
       >
-        <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
-          <Send className="w-5 h-5 text-blue-600" />
+        <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center flex-shrink-0">
+          <Send className="w-6 h-6 text-white" />
         </div>
-        <div>
-          <p className="font-semibold text-gray-900 text-sm">{t('client.dashboard.reportProblem')}</p>
-          <p className="text-xs text-gray-500">{t('client.newRequest.requestType')}</p>
+        <div className="min-w-0">
+          <p className="font-bold text-base">{t('client.dashboard.reportProblem')}</p>
+          <p className="text-sm text-zinc-400 truncate">{t('client.newRequest.requestType')}</p>
         </div>
-        <ArrowRight className="w-4 h-4 text-gray-400 ml-auto" />
+        <div className="ml-auto w-9 h-9 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0">
+          <ArrowRight className="w-4 h-4 text-white" />
+        </div>
       </Link>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 stagger-children">
+      {/* Bento stats — dark tiles with big orange numbers */}
+      <div className="grid grid-cols-2 gap-3 stagger-children">
         {statCards.map((card, i) => (
-          <Link key={i} to={card.to} className="card-lift bg-white rounded-xl p-4 border border-gray-200 text-center">
-            <div className={`w-10 h-10 ${card.iconBg} rounded-xl flex items-center justify-center mx-auto mb-2`}>
-              <card.icon className={`w-5 h-5 ${card.iconColor}`} />
+          <Link key={i} to={card.to}
+            className="card-lift relative bg-zinc-900 rounded-3xl p-4 text-white overflow-hidden">
+            <div className="flex items-start justify-between">
+              <div className="w-10 h-10 bg-white/10 rounded-2xl flex items-center justify-center">
+                <card.icon className="w-5 h-5 text-blue-400" />
+              </div>
+              <ArrowRight className="w-4 h-4 text-zinc-600" />
             </div>
-            <p className="text-2xl font-bold text-gray-900">
+            <p className="text-3xl font-bold mt-3 text-blue-400">
               <CountUp value={card.value} />
             </p>
-            <p className="text-[10px] text-gray-500 mt-0.5">{card.label}</p>
+            <p className="text-xs text-zinc-400 mt-0.5">{card.label}</p>
           </Link>
         ))}
       </div>
 
-      {/* Latest Invoice (if any) */}
+      {/* Latest Invoice (if any) — dark feature tile with orange accent */}
       {latestInvoice && (
         <Link to={`/client/invoices/${latestInvoice.id}`}
-          className="card-lift block bg-gradient-to-r from-green-600 to-emerald-600 animate-gradient rounded-xl p-4 text-white">
+          className="card-lift block bg-zinc-900 rounded-3xl p-5 text-white">
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[10px] uppercase tracking-wider text-green-100">{t('client.dashboard.latestInvoice')}</p>
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase tracking-wider text-zinc-500">{t('client.dashboard.latestInvoice')}</p>
               <p className="text-lg font-bold mt-0.5">{latestInvoice.invoice_number}</p>
-              <p className="text-sm text-green-100">{formatTZS(latestInvoice.total_amount)} · {t(`invoices.statuses.${latestInvoice.status}`)}</p>
+              <p className="text-sm text-zinc-300">
+                <span className="text-blue-400 font-semibold">{formatTZS(latestInvoice.total_amount)}</span>
+                {' · '}{t(`invoices.statuses.${latestInvoice.status}`)}
+              </p>
             </div>
-            <ArrowRight className="w-5 h-5 text-white/80" />
+            <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0">
+              <ArrowRight className="w-4 h-4 text-white" />
+            </div>
           </div>
         </Link>
       )}
 
       {/* Active Services / Job Cards */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="flex items-center justify-between p-4 border-b border-gray-100">
-          <h2 className="font-semibold text-gray-900">{t('client.dashboard.jobCardsTitle')}</h2>
+      <div className="bg-white rounded-3xl border border-gray-200 overflow-hidden">
+        <div className="flex items-center justify-between p-4 pb-3">
+          <h2 className="font-bold text-gray-900">{t('client.dashboard.jobCardsTitle')}</h2>
           {activeServices.length > 0 && (
-            <Link to="/client/services" className="text-sm text-blue-600 flex items-center gap-1">
+            <Link to="/client/services" className="text-sm text-blue-600 font-medium flex items-center gap-1">
               {t('client.dashboard.viewAll')} <ArrowRight className="w-3 h-3" />
             </Link>
           )}
@@ -197,11 +207,11 @@ export default function ClientDashboard() {
       </div>
 
       {/* Inspection Reports */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="flex items-center justify-between p-4 border-b border-gray-100">
-          <h2 className="font-semibold text-gray-900">{t('client.dashboard.inspectionsTitle')}</h2>
+      <div className="bg-white rounded-3xl border border-gray-200 overflow-hidden">
+        <div className="flex items-center justify-between p-4 pb-3">
+          <h2 className="font-bold text-gray-900">{t('client.dashboard.inspectionsTitle')}</h2>
           {recentInspections.length > 0 && (
-            <Link to="/client/inspections" className="text-sm text-blue-600 flex items-center gap-1">
+            <Link to="/client/inspections" className="text-sm text-blue-600 font-medium flex items-center gap-1">
               {t('client.dashboard.viewAll')} <ArrowRight className="w-3 h-3" />
             </Link>
           )}

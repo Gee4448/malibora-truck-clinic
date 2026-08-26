@@ -224,7 +224,7 @@ export default function ClientServiceDetail() {
       </Link>
 
       {/* Header */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
+      <div className="bg-white rounded-2xl border border-gray-200 p-4">
         <div className="flex items-center justify-between mb-3">
           <p className="text-lg font-bold text-gray-900">{jobCard.job_number}</p>
           <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
@@ -251,7 +251,7 @@ export default function ClientServiceDetail() {
 
       {/* Progress */}
       {!isPreJobCard && (
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="bg-white rounded-2xl border border-gray-200 p-4">
           <h3 className="font-semibold text-gray-900 mb-3 text-sm">{t('customerView.repairProgress')}</h3>
           <div className="flex items-center justify-between">
             {progressSteps.map((step, idx) => (
@@ -270,7 +270,7 @@ export default function ClientServiceDetail() {
 
       {/* Customer Complaint */}
       {(inspection?.description || jobCard.description) && (
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="bg-white rounded-2xl border border-gray-200 p-4">
           <h3 className="text-xs font-semibold text-gray-400 mb-1">{t('customerView.yourComplaint')}</h3>
           <p className="text-sm text-gray-800 whitespace-pre-line">{inspection?.description || jobCard.description}</p>
         </div>
@@ -278,7 +278,7 @@ export default function ClientServiceDetail() {
 
       {/* Live Repair Progress */}
       {items.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
+        <div className="bg-white rounded-2xl border border-gray-200 p-4 space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="font-semibold text-gray-900 text-sm flex items-center gap-1.5">
               <Wrench className="w-4 h-4 text-blue-600" /> {t('customerView.repairProgress')}
@@ -305,7 +305,7 @@ export default function ClientServiceDetail() {
 
       {/* Inspection Findings */}
       {items.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
           <div className="p-4 border-b border-gray-100 bg-gray-50">
             <div className="flex items-center justify-between">
               <div>
@@ -413,7 +413,7 @@ export default function ClientServiceDetail() {
 
       {/* Work & Costs — the priced job-card line items (what the client will pay) */}
       {jobItems.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
           <div className="p-4 border-b border-gray-100 bg-gray-50 flex items-center gap-2">
             <Receipt className="w-4 h-4 text-blue-600" />
             <h3 className="font-semibold text-gray-900 text-sm">{t('client.services.workCosts')}</h3>
@@ -444,7 +444,7 @@ export default function ClientServiceDetail() {
           against. One press only: after that this becomes a way through to the
           proforma, never the same button again. */}
       {jobItems.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="bg-white rounded-2xl border border-gray-200 p-4">
           {proforma ? (
             // Staff have prepared it — this is the "press pay, go to mobile
             // money" step Antony describes. Shown for a DRAFT proforma too:
@@ -480,7 +480,7 @@ export default function ClientServiceDetail() {
       )}
 
       {/* Contact */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
+      <div className="bg-white rounded-2xl border border-gray-200 p-4 text-center">
         <p className="text-xs text-gray-500 mb-2">{t('customerView.contactQuestion')}</p>
         <a href="tel:+255123456789" className="inline-flex items-center gap-2 px-4 py-2 bg-blue-700 text-white rounded-lg text-sm font-medium hover:bg-blue-800 active:scale-95 transition">
           <Phone className="w-4 h-4" /> {t('customerView.callUs')}
