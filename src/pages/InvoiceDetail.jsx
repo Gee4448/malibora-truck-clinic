@@ -691,7 +691,7 @@ export default function InvoiceDetail() {
       )}
 
       {/* Invoice Document */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-8 print:border-0 print:shadow-none print:p-0">
+      <div className="bg-white rounded-2xl border border-gray-200 p-4 sm:p-8 print:border-0 print:shadow-none print:p-0">
         {/* Header */}
         <div className="flex justify-between items-start border-b-2 border-blue-700 pb-4 mb-6">
           <div>
@@ -1075,7 +1075,7 @@ export default function InvoiceDetail() {
 
       {/* Negotiation Thread (no-print) */}
       {invoice.invoice_type === 'proforma' && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden no-print">
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden no-print">
           <div className="p-4 border-b border-gray-100 flex items-center gap-2">
             <MessageSquare className="w-4 h-4 text-gray-500" />
             <h3 className="text-sm font-semibold text-gray-700">{t('invoices.negotiation')}</h3>

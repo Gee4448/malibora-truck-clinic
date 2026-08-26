@@ -57,7 +57,7 @@ export default function Settings() {
       <h1 className="text-2xl font-bold text-gray-900">{t('nav.settings')}</h1>
 
       {/* Language */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5">
+      <div className="bg-white rounded-2xl border border-gray-200 p-5">
         <h2 className="font-semibold text-gray-900 flex items-center gap-2 mb-4">
           <Globe className="w-5 h-5 text-blue-600" /> {t('settings.language')}
         </h2>
@@ -78,7 +78,7 @@ export default function Settings() {
       </div>
 
       {/* Profile */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5">
+      <div className="bg-white rounded-2xl border border-gray-200 p-5">
         <h2 className="font-semibold text-gray-900 flex items-center gap-2 mb-4">
           <User className="w-5 h-5 text-blue-600" /> {t('settings.profile')}
         </h2>
@@ -117,7 +117,7 @@ export default function Settings() {
       </div>
 
       {/* Password */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5">
+      <div className="bg-white rounded-2xl border border-gray-200 p-5">
         <h2 className="font-semibold text-gray-900 flex items-center gap-2 mb-4">
           <Lock className="w-5 h-5 text-blue-600" /> {t('settings.changePassword')}
         </h2>
@@ -156,7 +156,7 @@ export default function Settings() {
       {isManager && <PaymentChannelsManager />}
 
       {/* Business Info */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5">
+      <div className="bg-white rounded-2xl border border-gray-200 p-5">
         <h2 className="font-semibold text-gray-900 flex items-center gap-2 mb-4">
           <Building className="w-5 h-5 text-blue-600" /> {t('settings.businessInfo')}
         </h2>

@@ -179,7 +179,7 @@ export default function CustomerDetail() {
       </div>
 
       {/* Personal info */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5">
+      <div className="bg-white rounded-2xl border border-gray-200 p-5">
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">{t('customers.detail.personalInfo')}</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {infoRows.map((row, i) => (
@@ -204,7 +204,7 @@ export default function CustomerDetail() {
       </div>
 
       {/* Vehicles */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5">
+      <div className="bg-white rounded-2xl border border-gray-200 p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
             {t('customers.vehicles')} <span className="text-gray-400">({vehicles.length})</span>
@@ -368,7 +368,7 @@ export default function CustomerDetail() {
 
 function HistoryCard({ title, icon: Icon, items, empty, renderItem }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4">
+    <div className="bg-white rounded-2xl border border-gray-200 p-4">
       <div className="flex items-center gap-2 mb-3">
         <Icon className="w-4 h-4 text-gray-400" />
         <h3 className="text-sm font-semibold text-gray-700">{title}</h3>

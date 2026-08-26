@@ -143,7 +143,7 @@ function Messages({ me }) {
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden grid md:grid-cols-[260px_1fr] min-h-[28rem]">
+    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden grid md:grid-cols-[260px_1fr] min-h-[28rem]">
       {/* People. On a phone this IS the screen until you tap someone. */}
       <div className={`border-r border-gray-200 md:block ${active ? 'hidden' : ''}`}>
         <p className="px-3 pt-3 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-400 md:hidden">
@@ -313,7 +313,7 @@ function Tasks({ me }) {
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5">
+    <div className="bg-white rounded-2xl border border-gray-200 p-5">
       <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
         <div className="flex gap-2">
           {['mine', 'all'].map(f => (

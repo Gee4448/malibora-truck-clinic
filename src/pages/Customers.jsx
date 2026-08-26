@@ -274,7 +274,7 @@ export default function Customers() {
         {/* Card 1: Add new walk-in customer (always an action, never a filter) */}
         <button
           onClick={() => { resetForm(); setShowForm(true) }}
-          className="text-left p-4 rounded-xl border-2 border-dashed border-blue-300 bg-blue-50 hover:bg-blue-100 hover:border-blue-400 transition"
+          className="text-left p-4 rounded-2xl border-2 border-dashed border-blue-300 bg-blue-50 hover:bg-blue-100 hover:border-blue-400 transition"
         >
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-lg bg-blue-600 text-white flex items-center justify-center">
@@ -288,7 +288,7 @@ export default function Customers() {
         {/* Card 2: Online registration requests (filter = pending) */}
         <button
           onClick={() => setStatusFilter('pending')}
-          className={`text-left p-4 rounded-xl border-2 transition ${
+          className={`text-left p-4 rounded-2xl border-2 transition ${
             statusFilter === 'pending'
               ? 'border-orange-400 bg-orange-50 ring-2 ring-orange-200'
               : 'border-gray-200 bg-white hover:border-orange-200 hover:bg-orange-50/50'
@@ -315,7 +315,7 @@ export default function Customers() {
         {/* Card 3: Already registered (approved) customers (filter = approved) */}
         <button
           onClick={() => setStatusFilter('approved')}
-          className={`text-left p-4 rounded-xl border-2 transition ${
+          className={`text-left p-4 rounded-2xl border-2 transition ${
             statusFilter === 'approved'
               ? 'border-green-400 bg-green-50 ring-2 ring-green-200'
               : 'border-gray-200 bg-white hover:border-green-200 hover:bg-green-50/50'
@@ -360,7 +360,7 @@ export default function Customers() {
       </div>
 
       {/* Customer List */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
         {loading ? (
           <div className="flex justify-center p-8">
             <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full"></div>

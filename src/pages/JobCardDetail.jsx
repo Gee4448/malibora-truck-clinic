@@ -548,7 +548,7 @@ export default function JobCardDetail() {
       {/* Job Info Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Customer Info */}
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
+        <div className="bg-white rounded-2xl border border-gray-200 p-5">
           <h3 className="font-semibold text-gray-900 mb-3">{t('jobs.customer')}</h3>
           <div className="space-y-2 text-sm">
             <p><span className="text-gray-500">{t('customers.name')}:</span> <span className="font-medium">{job.customers?.full_name}</span></p>
@@ -559,7 +559,7 @@ export default function JobCardDetail() {
         </div>
 
         {/* Vehicle Info */}
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
+        <div className="bg-white rounded-2xl border border-gray-200 p-5">
           <h3 className="font-semibold text-gray-900 mb-3">{t('jobs.vehicle')}</h3>
           <div className="space-y-2 text-sm">
             <p><span className="text-gray-500">{t('vehicles.regNumber')}:</span> <span className="font-bold">{job.vehicles?.registration_number}</span></p>
@@ -571,7 +571,7 @@ export default function JobCardDetail() {
       </div>
 
       {/* Work Description */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5">
+      <div className="bg-white rounded-2xl border border-gray-200 p-5">
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-semibold text-gray-900">{t('jobs.description')}</h3>
           {job.status !== 'completed' && job.status !== 'cancelled' && !editingDesc && (
@@ -690,7 +690,7 @@ export default function JobCardDetail() {
       )}
 
       {/* Items Table */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
         <div className="flex items-center justify-between p-5 border-b border-gray-100">
           <h3 className="font-semibold text-gray-900">{t('jobs.items')}</h3>
           {job.status !== 'completed' && job.status !== 'cancelled' && (
@@ -806,7 +806,7 @@ export default function JobCardDetail() {
         const loggedHours = labourEntries.reduce((s, e) => s + Number(e.hours || 0), 0)
         const canBill = unbilledHours > 0 && job.status !== 'completed' && job.status !== 'cancelled'
         return (
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <div className="bg-white rounded-2xl border border-gray-200 p-5">
             <h2 className="font-semibold text-gray-900 flex items-center gap-2 mb-1">
               <Clock className="w-5 h-5 text-amber-600" /> {t('jobs.labourLogged')}
             </h2>
@@ -875,7 +875,7 @@ export default function JobCardDetail() {
           The mechanic files words and a photo; pricing is the office's job, and
           the priced line then goes through the normal additional-item approval. */}
       {findings.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
+        <div className="bg-white rounded-2xl border border-gray-200 p-5">
           <h2 className="font-semibold text-gray-900 flex items-center gap-2 mb-1">
             <Flag className="w-5 h-5 text-red-500" /> {t('jobs.reportedFaults')}
           </h2>
@@ -926,7 +926,7 @@ export default function JobCardDetail() {
 
       {/* Evidence the mechanic uploaded from the workshop (migration 030) */}
       {evidence.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
+        <div className="bg-white rounded-2xl border border-gray-200 p-5">
           <h2 className="font-semibold text-gray-900 flex items-center gap-2 mb-1">
             <Camera className="w-5 h-5 text-blue-600" /> {t('jobs.evidence')}
           </h2>

@@ -185,7 +185,7 @@ export default function JobCards() {
           ].map(s => (
             <button key={s.key} onClick={() => setStatusFilter(s.key)}
               className={`px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition ${
-                statusFilter === s.key ? 'bg-blue-700 text-white' : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
+                statusFilter === s.key ? 'bg-zinc-900 text-white' : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
               }`}>
               {s.label}
             </button>
@@ -200,12 +200,12 @@ export default function JobCards() {
             <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full"></div>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="bg-white rounded-xl p-8 text-center border border-gray-200">
+          <div className="bg-white rounded-2xl p-8 text-center border border-gray-200">
             <p className="text-gray-500">{t('common.noData')}</p>
           </div>
         ) : (
           filtered.map((job) => (
-            <div key={job.id} className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-shadow">
+            <div key={job.id} className="bg-white rounded-2xl border border-gray-200 p-4 hover:shadow-md transition-shadow">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 flex-wrap">

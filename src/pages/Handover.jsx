@@ -200,13 +200,13 @@ export default function Handover() {
         {loading ? (
           <div className="flex justify-center p-8"><div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full"></div></div>
         ) : filtered.length === 0 ? (
-          <div className="bg-white rounded-xl p-8 text-center border border-gray-200">
+          <div className="bg-white rounded-2xl p-8 text-center border border-gray-200">
             <ClipboardCheck className="w-12 h-12 text-gray-300 mx-auto mb-3" />
             <p className="text-gray-500">{t('common.noData')}</p>
           </div>
         ) : (
           filtered.map((h) => (
-            <div key={h.id} className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-shadow">
+            <div key={h.id} className="bg-white rounded-2xl border border-gray-200 p-4 hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="font-bold text-blue-700">{h.handover_number}</h3>

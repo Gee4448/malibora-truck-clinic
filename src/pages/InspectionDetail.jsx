@@ -626,7 +626,7 @@ export default function InspectionDetail() {
       </div>
 
       {/* Step Progress */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
+      <div className="bg-white rounded-2xl border border-gray-200 p-4">
         <div className="flex items-center justify-between">
           {[
             { label: t('inspection.stepSubmit'), done: true },
@@ -647,7 +647,7 @@ export default function InspectionDetail() {
 
       {/* Info Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
+        <div className="bg-white rounded-2xl border border-gray-200 p-5">
           <h3 className="font-semibold text-gray-900 mb-3">{t('inspection.customer')}</h3>
           <div className="space-y-2 text-sm">
             <p><span className="text-gray-500">{t('customers.name')}:</span> <span className="font-medium">{inspection.customers?.full_name}</span></p>
@@ -655,7 +655,7 @@ export default function InspectionDetail() {
             {inspection.customers?.company_name && <p><span className="text-gray-500">{t('customers.company')}:</span> {inspection.customers?.company_name}</p>}
           </div>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
+        <div className="bg-white rounded-2xl border border-gray-200 p-5">
           <h3 className="font-semibold text-gray-900 mb-3">{t('inspection.vehicle')}</h3>
           <div className="space-y-2 text-sm">
             <p><span className="text-gray-500">{t('vehicles.regNumber')}:</span> <span className="font-bold">{inspection.vehicles?.registration_number}</span></p>
@@ -671,7 +671,7 @@ export default function InspectionDetail() {
       </div>
 
       {/* Payment Info */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5">
+      <div className="bg-white rounded-2xl border border-gray-200 p-5">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold text-gray-900">{t('inspection.paymentDetails')}</h3>
           {/* A request has no fee yet, so it is neither paid nor overdue. */}
@@ -765,7 +765,7 @@ export default function InspectionDetail() {
       {/* Price negotiation. Rendered at EVERY status, because the haggling that
           matters most happens over the inspection fee — before the customer
           pays and before there is a single finding to show. */}
-      <div id="negotiation" className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div id="negotiation" className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
         <div className="p-4 border-b border-gray-100 flex items-center gap-2">
             <MessageCircle className="w-4 h-4 text-gray-500" />
             <h3 className="font-semibold text-gray-900">{t('inspection.bargainTitle')}</h3>
@@ -882,13 +882,13 @@ export default function InspectionDetail() {
       </div>
 
       {/* Customer Complaint */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5">
+      <div className="bg-white rounded-2xl border border-gray-200 p-5">
         <h3 className="font-semibold text-gray-900 mb-2">{t('inspection.description')}</h3>
         <p className="text-sm text-gray-700">{inspection.description}</p>
       </div>
 
       {/* Problems Found */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
         <div className="flex items-center justify-between p-5 border-b border-gray-100">
           <div>
             <h3 className="font-semibold text-gray-900">{t('inspection.problems')}</h3>
@@ -1019,7 +1019,7 @@ export default function InspectionDetail() {
 
       {/* Current Car Situation — mechanic posts an update the customer sees live */}
       {items.length > 0 && (isInProgress || isCompleted) && (
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
+        <div className="bg-white rounded-2xl border border-gray-200 p-5">
           <div className="flex items-center gap-2 mb-1">
             <Wrench className="w-4 h-4 text-blue-600" />
             <h3 className="font-semibold text-gray-900">{t('inspection.currentSituation')}</h3>

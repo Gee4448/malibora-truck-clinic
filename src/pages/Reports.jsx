@@ -110,7 +110,7 @@ export default function Reports() {
           {['today', 'week', 'month', 'quarter', 'year'].map(p => (
             <button key={p} onClick={() => setPeriod(p)}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition capitalize ${
-                period === p ? 'bg-blue-700 text-white' : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
+                period === p ? 'bg-zinc-900 text-white' : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
               }`}>
               <Calendar className="w-3 h-3 inline mr-1" />{p}
             </button>
@@ -139,7 +139,7 @@ export default function Reports() {
           </div>
 
           {/* Profit Breakdown Bar */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <div className="bg-white rounded-2xl border border-gray-200 p-5">
             <h2 className="font-semibold text-gray-900 mb-4">{t('reports.profitBreakdown')}</h2>
             <div className="space-y-4">
               <div>
@@ -189,7 +189,7 @@ export default function Reports() {
           </div>
 
           {/* Recent Paid Invoices */}
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
             <h2 className="font-semibold text-gray-900 p-5 border-b border-gray-100">{t('reports.recentPaidInvoices')}</h2>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
