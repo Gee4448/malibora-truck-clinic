@@ -50,6 +50,12 @@
     "pendingApprovals": "Pending Approvals",
     "customerRequests": "Customer Requests",
     "viewAll": "View all",
+    "kpi": {
+      "inspRequested": "Inspections to quote",
+      "jobsActive": "Jobs in progress",
+      "messages": "New messages",
+      "handovers": "Handovers"
+    },
     "widgets": {
       "inspections": {
         "title": "Inspections",

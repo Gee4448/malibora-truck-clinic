@@ -115,22 +115,65 @@ export default function Dashboard() {
     )
   }
 
+  const scrollToMessages = () => {
+    document.getElementById('dash-messages')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  // The "act now" numbers, hoisted out of the widgets below so the summary
+  // reads at a glance before the detail (all from data already fetched).
+  const kpis = [
+    { to: '/admin/inspections?status=requested', Icon: ClipboardCheck, count: counts.inspections.requested, label: t('dashboard.kpi.inspRequested') },
+    { to: '/admin/job-cards?status=in_progress', Icon: Wrench, count: counts.jobs.in_progress, label: t('dashboard.kpi.jobsActive') },
+    { onClick: scrollToMessages, Icon: MessageSquare, count: unreadCount, label: t('dashboard.kpi.messages'), badge: unreadCount },
+    { to: '/admin/handover', Icon: HandMetal, count: counts.handovers, label: t('dashboard.kpi.handovers') },
+  ]
+
   return (
     <div className="space-y-6">
-      {/* Welcome */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">
-          {t('dashboard.welcome')}, {profile?.full_name?.split(' ')[0] || 'User'}!
-        </h1>
-        <p className="text-gray-500 text-sm mt-1">
-          {new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-        </p>
+      {/* Greeting hero */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-500 to-blue-700 animate-gradient rounded-3xl p-6 text-white">
+        <div className="absolute -top-10 -right-6 w-40 h-40 rounded-full bg-white/10 animate-float pointer-events-none" />
+        <div className="absolute -bottom-12 right-24 w-28 h-28 rounded-full bg-white/5 animate-float-delayed pointer-events-none" />
+        <div className="relative">
+          <p className="text-blue-100 text-xs font-medium">
+            {new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          </p>
+          <h1 className="text-2xl sm:text-3xl font-bold mt-1 leading-tight">
+            {t('dashboard.welcome')}, {profile?.full_name?.split(' ')[0] || 'User'} 👋
+          </h1>
+        </div>
+      </div>
+
+      {/* KPI bento — dark tiles with big orange numbers */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {kpis.map((k, i) => {
+          const inner = (
+            <>
+              <div className="flex items-start justify-between">
+                <div className="w-10 h-10 bg-white/10 rounded-2xl flex items-center justify-center">
+                  <k.Icon className="w-5 h-5 text-blue-400" />
+                </div>
+                {k.badge > 0 && (
+                  <span className="min-w-[20px] h-5 px-1 flex items-center justify-center text-[10px] font-bold text-white bg-red-500 rounded-full">
+                    {k.badge > 9 ? '9+' : k.badge}
+                  </span>
+                )}
+              </div>
+              <p className="text-3xl font-bold mt-3 text-blue-400 tabular-nums">{k.count}</p>
+              <p className="text-xs text-zinc-400 mt-0.5">{k.label}</p>
+            </>
+          )
+          const cls = 'card-lift text-left relative bg-zinc-900 rounded-3xl p-4 text-white overflow-hidden'
+          return k.to
+            ? <Link key={i} to={k.to} className={cls}>{inner}</Link>
+            : <button key={i} onClick={k.onClick} className={cls}>{inner}</button>
+        })}
       </div>
 
       {/* Customer messages — negotiations, requests and declared payments.
           Sits above the counters because it is the only thing here that is
           waiting on a human reply. */}
-      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+      <div id="dash-messages" className="bg-white rounded-3xl border border-gray-200 overflow-hidden scroll-mt-20">
         <div className="flex items-center justify-between p-5 border-b border-gray-100">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-11 h-11 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0 relative">
@@ -258,7 +301,7 @@ export default function Dashboard() {
       />
 
       {/* Handover Widget — customer reports for completed jobs */}
-      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-3xl border border-gray-200 overflow-hidden">
         <div className="flex items-center justify-between p-5 border-b border-gray-100">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-xl bg-green-100 flex items-center justify-center">
@@ -309,7 +352,7 @@ export default function Dashboard() {
 
 function WidgetCard({ icon: Icon, iconColor, iconBg, title, subtitle, viewAllTo, viewAllLabel, buttons }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+    <div className="bg-white rounded-3xl border border-gray-200 overflow-hidden">
       <div className="flex items-center justify-between p-5 border-b border-gray-100">
         <div className="flex items-center gap-3">
           <div className={`w-11 h-11 rounded-xl ${iconBg} flex items-center justify-center`}>
@@ -329,9 +372,9 @@ function WidgetCard({ icon: Icon, iconColor, iconBg, title, subtitle, viewAllTo,
           <Link
             key={b.to}
             to={b.to}
-            className={`flex items-center gap-3 p-4 rounded-xl border ${b.bg} transition-colors active:scale-[0.99]`}
+            className={`flex items-center gap-3 p-4 rounded-2xl border ${b.bg} transition-colors active:scale-[0.99]`}
           >
-            <div className={`w-10 h-10 rounded-lg bg-white/70 flex items-center justify-center flex-shrink-0`}>
+            <div className={`w-10 h-10 rounded-xl bg-white/70 flex items-center justify-center flex-shrink-0`}>
               <b.Icon className={`w-5 h-5 ${b.color}`} />
             </div>
             <div className="flex-1 min-w-0">

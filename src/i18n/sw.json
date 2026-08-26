@@ -50,6 +50,12 @@
     "pendingApprovals": "Idhini Zinazosubiri",
     "customerRequests": "Maombi ya Wateja",
     "viewAll": "Angalia zote",
+    "kpi": {
+      "inspRequested": "Ukaguzi wa kupanga bei",
+      "jobsActive": "Kazi zinazoendelea",
+      "messages": "Ujumbe mpya",
+      "handovers": "Makabidhiano"
+    },
     "widgets": {
       "inspections": {
         "title": "Ukaguzi",
