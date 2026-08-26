@@ -30,7 +30,7 @@ export default function ClientLayout() {
   return (
     <div className="min-h-screen bg-gray-50 pb-20 lg:pb-0">
       {/* Top Header */}
-      <header className="glass-header bg-blue-800/95 text-white sticky top-0 z-40 shadow-lg shadow-blue-900/10">
+      <header className="glass-header bg-blue-800/80 text-white sticky top-0 z-40 shadow-lg shadow-blue-900/10">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <Truck className="w-7 h-7" />
@@ -91,7 +91,7 @@ export default function ClientLayout() {
       </main>
 
       {/* Bottom Tab Navigation (mobile) */}
-      <nav className="fixed bottom-0 left-0 right-0 glass-header bg-white/90 border-t border-gray-200 z-40 lg:hidden safe-area-bottom shadow-[0_-4px_20px_-8px_rgb(0_0_0/0.1)]">
+      <nav className="fixed bottom-0 left-0 right-0 glass-header bg-white/75 border-t border-white/40 z-40 lg:hidden safe-area-bottom shadow-[0_-4px_20px_-8px_rgb(0_0_0/0.1)]">
         <div className="max-w-3xl mx-auto flex">
           {tabs.map((tab) => (
             <NavLink

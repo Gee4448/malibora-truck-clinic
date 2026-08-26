@@ -433,7 +433,7 @@ export default function ClientInvoiceView() {
 
       {/* Payment modal */}
       {showPay && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => setShowPay(false)}>
+        <div className="fixed inset-0 glass-overlay z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => setShowPay(false)}>
           <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md p-5 space-y-4" onClick={e => e.stopPropagation()}>
             <h2 className="text-lg font-bold text-gray-900">{t('client.invoices.makePayment')}</h2>
 

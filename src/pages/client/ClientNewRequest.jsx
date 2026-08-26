@@ -5,8 +5,28 @@ import { useClient } from '../../contexts/ClientAuthContext'
 import { supabase } from '../../lib/supabase'
 import { notifyStaff } from '../../lib/notifications'
 import { PART_CATEGORIES, categoryForVehicleType, buildReportedPartsText } from '../../lib/partsCatalog'
-import { Truck, Wrench, Search, MapPin, ArrowLeft, Send, ChevronDown, Check, X } from 'lucide-react'
+import {
+  Truck, Wrench, Search, MapPin, ArrowLeft, Send, ChevronDown, Check, X,
+  Cog, Settings2, CircleDot, Zap, Disc3, LifeBuoy, Waves, PaintBucket, Wind,
+} from 'lucide-react'
 import toast from 'react-hot-toast'
+
+// A recognizable glyph per vehicle system, so the client sees what area each
+// group covers rather than reading a wall of labels. Keyed by the stable system
+// ids in partsCatalog.js. (The ui-ux-pro-max icon set is UI-only — no automotive
+// icons — so these are chosen by hand from Lucide.)
+const SYSTEM_ICONS = {
+  engine: Cog,
+  transmission: Settings2,
+  axle: CircleDot,
+  electrical: Zap,
+  brakes: Disc3,
+  steering: LifeBuoy,
+  suspension: Waves,
+  body: PaintBucket,
+  air: Wind,
+  cabin: Truck,
+}
 
 export default function ClientNewRequest() {
   const { t, locale } = useLanguage()
@@ -313,7 +333,12 @@ export default function ClientNewRequest() {
                           onClick={() => setOpenSystem(open ? null : system.id)}
                           className="w-full flex items-center justify-between gap-2 px-3 py-3 text-left"
                         >
-                          <span className="text-sm font-medium text-gray-800">{system.label[locale]}</span>
+                          <span className="flex items-center gap-2.5 min-w-0">
+                            <span className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${count > 0 ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-600'}`}>
+                              {(() => { const Icon = SYSTEM_ICONS[system.id] || Cog; return <Icon className="w-4 h-4" /> })()}
+                            </span>
+                            <span className="text-sm font-medium text-gray-800 truncate">{system.label[locale]}</span>
+                          </span>
                           <span className="flex items-center gap-2 shrink-0">
                             {count > 0 && (
                               <span className="text-[11px] font-semibold bg-blue-600 text-white rounded-full px-2 py-0.5">

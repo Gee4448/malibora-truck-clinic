@@ -47,7 +47,7 @@ export default function Sidebar({ isOpen, onClose }) {
       {/* Overlay — always visible when drawer is open, on every screen size. */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 animate-fade-in"
+          className="fixed inset-0 glass-overlay backdrop-blur-sm z-40 animate-fade-in"
           onClick={onClose}
         />
       )}

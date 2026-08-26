@@ -284,10 +284,37 @@ button:not(:disabled):not(.absolute):not(.fixed):active {
   transition-duration: 80ms;
 }
 
-/* Glass surface — sticky headers */
+/* Frosted-glass surfaces (per ui-ux-pro-max: blur 12-20px + saturate,
+   translucent fill, 1px light border; keep text contrast >= 4.5:1). */
 .glass-header {
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+}
+
+/* Modal / sheet backdrop — blurs the page behind instead of a flat dim. */
+.glass-overlay {
+  background: rgba(17, 17, 20, 0.45);
+  backdrop-filter: blur(6px) saturate(140%);
+  -webkit-backdrop-filter: blur(6px) saturate(140%);
+}
+
+/* Frosted panel for use OVER colour/gradient (heroes, dark tiles) — needs a
+   vibrant backdrop to read as glass, so don't place it on plain white. */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+/* Frosted card for light surfaces — a whisper of blur + a highlight edge so a
+   card lifts off the page without the flat "AI card" look. */
+.glass-card {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 8px 30px -12px rgba(17, 24, 39, 0.18);
 }
 
 /* Bottom-nav icon spring on activation */

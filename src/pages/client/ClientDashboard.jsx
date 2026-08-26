@@ -102,6 +102,19 @@ export default function ClientDashboard() {
           <h1 className="text-2xl font-bold mt-1 leading-tight">
             {t('client.dashboard.welcome')}, {customer?.full_name?.split(' ')[0]} <span className="inline-block">👋</span>
           </h1>
+          {(stats.activeJobs > 0 || stats.pendingInvoices > 0) && (
+            <div className="glass-panel rounded-2xl px-3.5 py-2 mt-4 inline-flex items-center gap-3 text-sm text-white">
+              <span className="flex items-center gap-1.5">
+                <Wrench className="w-4 h-4" />
+                <span className="font-bold">{stats.activeJobs}</span> {t('client.dashboard.activeServices').toLowerCase()}
+              </span>
+              <span className="w-px h-4 bg-white/30" />
+              <span className="flex items-center gap-1.5">
+                <FileText className="w-4 h-4" />
+                <span className="font-bold">{stats.pendingInvoices}</span> {t('client.dashboard.pendingInvoices').toLowerCase()}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
