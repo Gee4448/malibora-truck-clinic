@@ -273,7 +273,7 @@ export default function MechanicJobDetail() {
       </Link>
 
       {/* Vehicle / job header */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
+      <div className="bg-white rounded-2xl border border-gray-200 p-4">
         <div className="flex items-center justify-between mb-2">
           <p className="text-lg font-bold text-gray-900">{job.job_number}</p>
           <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-slate-100 text-slate-700">
@@ -294,7 +294,7 @@ export default function MechanicJobDetail() {
 
       {/* Progress */}
       {items.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="bg-white rounded-2xl border border-gray-200 p-4">
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-sm font-medium text-gray-600">{t('mechanic.job.progress')}</span>
             <span className="text-sm font-bold text-green-700">{done}/{items.length} · {pct}%</span>
@@ -307,7 +307,7 @@ export default function MechanicJobDetail() {
 
       {/* Repair checklist */}
       {items.length > 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
           <div className="p-4 border-b border-gray-100">
             <h3 className="font-semibold text-gray-900 text-sm">{t('mechanic.job.checklist')}</h3>
             <p className="text-xs text-gray-500">{t('mechanic.job.checklistHint')}</p>
@@ -360,7 +360,7 @@ export default function MechanicJobDetail() {
           </div>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+        <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center">
           <Wrench className="w-12 h-12 text-gray-300 mx-auto mb-3" />
           <p className="text-gray-500 text-sm">{t('mechanic.job.noItems')}</p>
         </div>
@@ -368,7 +368,7 @@ export default function MechanicJobDetail() {
 
       {/* Current situation note */}
       {inspection?.id && (
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="bg-white rounded-2xl border border-gray-200 p-4">
           <div className="flex items-center gap-2 mb-1">
             <Wrench className="w-4 h-4 text-amber-600" />
             <h3 className="font-semibold text-gray-900 text-sm">{t('mechanic.job.situation')}</h3>
@@ -399,7 +399,7 @@ export default function MechanicJobDetail() {
       )}
 
       {/* Log my time — hours only, never a price */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
+      <div className="bg-white rounded-2xl border border-gray-200 p-4">
         <div className="flex items-center gap-2 mb-1">
           <Clock className="w-4 h-4 text-amber-600" />
           <h3 className="font-semibold text-gray-900 text-sm">{t('mechanic.job.logTime')}</h3>
@@ -459,7 +459,7 @@ export default function MechanicJobDetail() {
       </div>
 
       {/* Report a fault the customer never mentioned */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
+      <div className="bg-white rounded-2xl border border-gray-200 p-4">
         <div className="flex items-center gap-2 mb-1">
           <Flag className="w-4 h-4 text-red-500" />
           <h3 className="font-semibold text-gray-900 text-sm">{t('mechanic.job.reportFault')}</h3>
@@ -537,7 +537,7 @@ export default function MechanicJobDetail() {
       </div>
 
       {/* Evidence photos */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
+      <div className="bg-white rounded-2xl border border-gray-200 p-4">
         <div className="flex items-center gap-2 mb-1">
           <Camera className="w-4 h-4 text-amber-600" />
           <h3 className="font-semibold text-gray-900 text-sm">{t('mechanic.job.evidence')}</h3>
@@ -578,7 +578,7 @@ export default function MechanicJobDetail() {
       </div>
 
       {/* The tick: work finished */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
+      <div className="bg-white rounded-2xl border border-gray-200 p-4">
         {job.mechanic_completed_at ? (
           <>
             <div className="flex items-center gap-2 text-green-700 mb-1">

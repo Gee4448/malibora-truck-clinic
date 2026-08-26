@@ -62,7 +62,7 @@ export default function MechanicJobs() {
             key={f}
             onClick={() => setFilter(f)}
             className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-              filter === f ? 'bg-slate-800 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+              filter === f ? 'bg-zinc-900 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
             }`}
           >
             {t(`mechanic.jobs.filter.${f}`)}
@@ -71,7 +71,7 @@ export default function MechanicJobs() {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+        <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center">
           <CheckCircle2 className="w-12 h-12 text-green-300 mx-auto mb-3" />
           <p className="text-gray-500 text-sm">{t('mechanic.jobs.empty')}</p>
         </div>
@@ -81,7 +81,7 @@ export default function MechanicJobs() {
             <Link
               key={job.id}
               to={`/mechanic/jobs/${job.id}`}
-              className="block bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md active:scale-[0.99] transition"
+              className="block bg-white rounded-2xl border border-gray-200 p-4 hover:shadow-md active:scale-[0.99] transition"
             >
               <div className="flex items-center gap-3">
                 <div className="w-11 h-11 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
