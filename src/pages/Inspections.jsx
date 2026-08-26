@@ -4,6 +4,7 @@ import { useLanguage } from '../contexts/LanguageContext'
 import { supabase, formatDate, formatTZS } from '../lib/supabase'
 import { Plus, Search, Eye, X, ClipboardCheck, CreditCard, MapPin } from 'lucide-react'
 import toast from 'react-hot-toast'
+import Reveal from '../components/common/Reveal'
 
 export default function Inspections() {
   const { t } = useLanguage()
@@ -171,8 +172,8 @@ export default function Inspections() {
             <p className="text-gray-500">{t('common.noData')}</p>
           </div>
         ) : (
-          filtered.map((insp) => (
-            <div key={insp.id} className="bg-white rounded-2xl border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer"
+          filtered.map((insp, i) => (
+            <Reveal key={insp.id} delay={Math.min(i, 8) * 40} className="bg-white rounded-2xl border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer"
               onClick={() => navigate(`/admin/inspections/${insp.id}`)}>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex-1">
@@ -215,7 +216,7 @@ export default function Inspections() {
                   </button>
                 </div>
               </div>
-            </div>
+            </Reveal>
           ))
         )}
       </div>

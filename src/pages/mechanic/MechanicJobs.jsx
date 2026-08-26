@@ -5,6 +5,7 @@ import { useMechanic } from '../../contexts/MechanicAuthContext'
 import { supabase, formatDate } from '../../lib/supabase'
 import { Truck, ClipboardList, ArrowRight, CheckCircle2, Wrench } from 'lucide-react'
 import { ListSkeleton } from '../../components/common/Skeleton'
+import Reveal from '../../components/common/Reveal'
 
 const ACTIVE = ['customer_request', 'pre_job_card', 'pending_approval', 'open', 'in_progress', 'waiting_parts']
 
@@ -77,9 +78,11 @@ export default function MechanicJobs() {
         </div>
       ) : (
         <div className="space-y-3">
-          {filtered.map((job) => (
-            <Link
+          {filtered.map((job, i) => (
+            <Reveal
+              as={Link}
               key={job.id}
+              delay={Math.min(i, 8) * 45}
               to={`/mechanic/jobs/${job.id}`}
               className="block bg-white rounded-2xl border border-gray-200 p-4 hover:shadow-md active:scale-[0.99] transition"
             >
@@ -103,7 +106,7 @@ export default function MechanicJobs() {
                 </span>
                 <ArrowRight className="w-4 h-4 text-gray-300 flex-shrink-0" />
               </div>
-            </Link>
+            </Reveal>
           ))}
         </div>
       )}

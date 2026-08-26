@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { supabase, formatTZS } from '../lib/supabase'
 import { Plus, Search, Edit2, Trash2, X, Package, AlertTriangle } from 'lucide-react'
 import toast from 'react-hot-toast'
+import Reveal from '../components/common/Reveal'
 
 export default function Inventory() {
   const { t } = useLanguage()
@@ -145,7 +146,7 @@ export default function Inventory() {
       </div>
 
       {/* Parts Table */}
-      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+      <Reveal className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
         {loading ? (
           <div className="flex justify-center p-8"><div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full"></div></div>
         ) : (
@@ -216,7 +217,7 @@ export default function Inventory() {
             </table>
           </div>
         )}
-      </div>
+      </Reveal>
 
       {/* Add/Edit Modal */}
       {showForm && (

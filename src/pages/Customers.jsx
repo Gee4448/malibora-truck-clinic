@@ -10,6 +10,7 @@ import VehicleFormBlock from '../components/vehicles/VehicleFormBlock'
 import NotifyCustomerModal from '../components/customers/NotifyCustomerModal'
 import { sendSMS, smsTemplates } from '../lib/sms'
 import { portalUrl } from '../lib/whatsapp'
+import Reveal from '../components/common/Reveal'
 
 export default function Customers() {
   const { t } = useLanguage()
@@ -270,7 +271,7 @@ export default function Customers() {
       <h1 className="text-2xl font-bold text-gray-900">{t('customers.title')}</h1>
 
       {/* Action cards — the three entry points into customer management */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <Reveal group className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {/* Card 1: Add new walk-in customer (always an action, never a filter) */}
         <button
           onClick={() => { resetForm(); setShowForm(true) }}
@@ -331,7 +332,7 @@ export default function Customers() {
             {t('customers.tiles.registered.desc').replace('{count}', approvedCount)}
           </p>
         </button>
-      </div>
+      </Reveal>
 
       {/* "Show all" — still reachable, just less prominent */}
       <div className="flex justify-end">
@@ -360,7 +361,7 @@ export default function Customers() {
       </div>
 
       {/* Customer List */}
-      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+      <Reveal className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
         {loading ? (
           <div className="flex justify-center p-8">
             <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full"></div>
@@ -464,7 +465,7 @@ export default function Customers() {
             </table>
           </div>
         )}
-      </div>
+      </Reveal>
 
       {/* Tell the customer the outcome (WhatsApp / copy) */}
       {notify && (
