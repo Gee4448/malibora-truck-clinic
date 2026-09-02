@@ -120,7 +120,7 @@ export default function Inventory() {
               </span>
             )}
             {outOfStockCount > 0 && (
-              <span className="text-xs text-red-600">{outOfStockCount} out of stock</span>
+              <span className="text-xs text-red-700">{outOfStockCount} out of stock</span>
             )}
           </div>
         </div>

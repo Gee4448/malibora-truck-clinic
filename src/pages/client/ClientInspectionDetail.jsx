@@ -542,7 +542,7 @@ export default function ClientInspectionDetail() {
                         <span className="text-xs text-green-600 font-medium">{t('client.inspections.approvedItem')}</span>
                       )}
                       {item.customer_approved === false && (
-                        <span className="text-xs text-red-600 font-medium">{t('client.inspections.declinedItem')}</span>
+                        <span className="text-xs text-red-700 font-medium">{t('client.inspections.declinedItem')}</span>
                       )}
                     </div>
                     <p className="text-sm font-medium text-gray-900">{item.problem_description}</p>

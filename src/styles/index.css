@@ -842,19 +842,43 @@ button:not(:disabled):not(.absolute):not(.fixed):active {
   color-scheme: dark;
 }
 
-/* 0.90 rather than the work area's 0.78. Over the bloom that lands around
-   rgb(243 232 225) and over the black around rgb(229 229 229) — light enough
-   in both that gray-900 body text and gray-500 helper text keep their contrast
-   wherever on the stage the card happens to sit. Below about 0.85 the helper
-   text starts failing over the bright corner. */
+/* The card is DARK glass, and that is the whole point of it.
+
+   It used to be white at 0.90 alpha. Over the stage that composites to a flat
+   rgb(230,230,230) — grey plastic, with nothing of the bloom behind it coming
+   through. That was not a value that needed tuning, it was the wrong way
+   round. Light glass on a dark ground has to sit near-opaque to keep small
+   dark text legible, and at that opacity it has stopped being glass; there is
+   no setting where it is both. Dark glass on a dark ground has the opposite
+   budget: at 0.55 it still carries white text at ~12:1, so the alpha can go
+   where the material actually reads.
+
+   Note this does NOT contradict the rule further down that the app's dark
+   tiles are opaque. That rule is about dark panels on the LIGHT work area,
+   where the page bleeds through and turns them muddy brown. Here the ground is
+   already black, so the physics run the right way.
+
+   Measured at three viewport widths by scripts/gradient-hotspot.js, with the
+   fill taken at its lightest alpha and composited over the hot spot of the
+   whole stage rather than the patch the card covers. */
 .auth-card {
   position: relative;
-  background: rgb(255 255 255 / 0.90);
-  backdrop-filter: blur(22px) saturate(180%);
-  -webkit-backdrop-filter: blur(22px) saturate(180%);
-  border: 1px solid rgb(255 255 255 / 0.62);
-  box-shadow: 0 30px 70px -30px rgb(0 0 0 / 0.85);
+  border-radius: 1.5rem;
+  color: var(--brand-white);
+  color-scheme: dark;
+  /* Lighter at the top-left, denser at the bottom-right: the same single
+     overhead light source the rest of the system is lit by. */
+  background: linear-gradient(158deg, rgb(46 32 26 / 0.55), rgb(10 7 5 / 0.72) 62%);
+  backdrop-filter: blur(26px) saturate(180%);
+  -webkit-backdrop-filter: blur(26px) saturate(180%);
+  border: 1px solid rgb(255 255 255 / 0.13);
+  box-shadow:
+    0 40px 80px -34px rgb(0 0 0 / 0.90),
+    0 2px 10px -4px rgb(0 0 0 / 0.50);
 }
+/* The bevel, dialled right down from the 0.95 it carried as a white card. On
+   dark glass a bright ring reads as a drawn outline rather than as an edge
+   catching the light. */
 .auth-card::after {
   content: '';
   position: absolute;
@@ -862,7 +886,7 @@ button:not(:disabled):not(.absolute):not(.fixed):active {
   border-radius: inherit;
   padding: 1px;
   pointer-events: none;
-  background: linear-gradient(160deg, rgb(255 255 255 / 0.95), transparent 45%);
+  background: linear-gradient(160deg, rgb(255 255 255 / 0.34), transparent 46%);
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
     linear-gradient(#000 0 0);
@@ -873,11 +897,120 @@ button:not(:disabled):not(.absolute):not(.fixed):active {
   mask-composite: exclude;
 }
 
+/* ----------------------------------------------------------------------------
+   Repainting the card's contents for the dark material.
+
+   Six screens sit on `.auth-card` — both logins, both registrations, the staff
+   gate and the mechanic PIN pad — and all of them are marked up in grays for a
+   white card. Rather than edit the same class lists six times, the gray ramp is
+   remapped inside the card. Unlayered again, for the reason documented at the
+   glass-card rule: Tailwind v4's utilities live in a cascade layer, and layers
+   beat specificity.
+
+   Alert boxes (amber/red/orange) are deliberately NOT remapped. A warning that
+   stops looking like a warning to match the mood is a worse card.
+   ---------------------------------------------------------------------------- */
+.auth-card :is(h1, h2, h3, .text-gray-900) { color: #fff; }
+.auth-card :is(label, .text-gray-700, .text-gray-800) { color: rgb(255 255 255 / 0.84); }
+.auth-card :is(.text-gray-500, .text-gray-600) { color: rgb(255 255 255 / 0.72); }
+.auth-card .text-gray-400 { color: rgb(255 255 255 / 0.58); }
+.auth-card :is(.border-gray-100, .border-gray-200) { border-color: rgb(255 255 255 / 0.10); }
+.auth-card :is(.bg-gray-50, .bg-gray-100) { background-color: rgb(255 255 255 / 0.06); }
+
+/* The blue (= brand orange) accents. On a white card `bg-blue-50` is a soft
+   peach band and `text-blue-700` is dark ink on it; on this card that pairing
+   is a bright sticker stuck to dark glass, and the ink lands at 1.9:1.
+
+   So the whole accent family joins the dark material: the tints become lit
+   wells, the borders become orange at low alpha, and the text moves to the 300
+   step. Measured 5.65:1 for #ff9a68 on the 0.14 well over the card.
+
+   Alert boxes (amber / red / orange) are deliberately left out of this. A
+   warning that stops looking like a warning in order to match the mood is a
+   worse card, and their dark-on-light ink is already fine. */
+.auth-card :is(.bg-blue-50, .bg-blue-100) { background-color: rgb(232 80 2 / 0.14); }
+
+/* The portal header badges. The three portals shipped three different tints —
+   blue-100 for the customer, green-100 for registration, amber-100 for the
+   mechanic — which on a white card read as gentle accents and on this one read
+   as three different stickers. They fold into the brand well, which is the same
+   move that removed the mechanic portal's separate slate-and-amber identity.
+
+   The -50 alert boxes keep their own colours; a warning has to look like one. */
+.auth-card :is(.bg-green-100, .bg-amber-100) { background-color: rgb(232 80 2 / 0.14); }
+/* Scoped INSIDE the badge. A blanket `.text-amber-600` remap would also catch
+   the "account pending approval" hint, which sits on a light `bg-amber-50`
+   alert — light orange on pale amber, and unreadable. */
+.auth-card :is(.bg-green-100, .bg-amber-100, .bg-blue-100) :is(.text-green-600, .text-amber-600, .text-blue-700, svg) {
+  color: #ff9a68;
+}
+.auth-card :is(.border-blue-200, .border-blue-300) { border-color: rgb(232 80 2 / 0.34); }
+.auth-card :is(.text-blue-600, .text-blue-700, .text-blue-800, .text-blue-900) { color: #ff9a68; }
+.auth-card :is(.hover\:bg-blue-50, .hover\:bg-blue-100):hover {
+  background-color: rgb(232 80 2 / 0.22);
+}
+
+/* Inputs had NO background of their own — `border` and `text-*` only. On a
+   white card that is invisible and looks deliberate; it is not. It means the
+   field has no surface, so anything painted behind it shows through, and
+   Chrome's autofill tint turns the whole control a muddy slate. They get a real
+   well now, on both materials. */
+.auth-card :is(input, select, textarea) {
+  background-color: rgb(255 255 255 / 0.06);
+  border-color: rgb(255 255 255 / 0.16);
+  color: #fff;
+}
+.auth-card :is(input, select, textarea):focus {
+  background-color: rgb(255 255 255 / 0.10);
+  border-color: var(--brand-orange);
+}
+/* 0.56, not the 0.4-ish a placeholder usually gets: measured at 4.86:1 on the
+   narrowest viewport, where 0.42 was 3.43:1. A placeholder is text. */
+.auth-card :is(input, select, textarea)::placeholder {
+  color: rgb(255 255 255 / 0.56);
+}
+
+/* Chrome paints autofilled fields with its own background and text colour, and
+   neither is overridable directly — the only lever is an inset box-shadow big
+   enough to cover the control, plus -webkit-text-fill-color for the glyphs.
+   The absurd transition delay is the standard trick for stopping the UA
+   animating its colour back in on focus. */
+.auth-card :is(input, select, textarea):-webkit-autofill,
+.auth-card :is(input, select, textarea):-webkit-autofill:hover,
+.auth-card :is(input, select, textarea):-webkit-autofill:focus {
+  -webkit-text-fill-color: #fff;
+  caret-color: #fff;
+  -webkit-box-shadow: inset 0 0 0 1000px rgb(38 26 20 / 0.96);
+  box-shadow: inset 0 0 0 1000px rgb(38 26 20 / 0.96);
+  transition: background-color 9999s ease-out 0s;
+}
+
+/* Disabled controls. The app fades them with `disabled:opacity-40`, which works
+   on a white card and fails on this one: a 40%-opacity orange button over dark
+   glass is a muddy maroon block with unreadable text, and it reads as broken
+   rather than as not-yet-available. Given a surface of its own instead.
+   (WCAG 1.4.3 exempts inactive controls from the contrast minimum, so the
+   muted label here is deliberate — it still has to be legible, not compliant.) */
+.auth-card button:disabled,
+.auth-card button[disabled] {
+  opacity: 1;
+  background-color: rgb(255 255 255 / 0.08);
+  background-image: none;
+  color: rgb(255 255 255 / 0.55);
+  box-shadow: none;
+}
+
+/* Fallbacks. Both must stay DARK — dropping back to a white panel would leave
+   white text on a white card, which is worse than no glass at all. */
 @media (prefers-reduced-transparency: reduce) {
-  .auth-card { background: #fff; backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .auth-card {
+    background: #140d09;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
 }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .auth-card { background: rgb(255 255 255 / 0.97); }
+  .auth-card { background: linear-gradient(158deg, rgb(32 22 18 / 0.94), rgb(8 5 4 / 0.97) 62%); }
 }
 
 

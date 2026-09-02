@@ -118,7 +118,7 @@ export default function ClientLogin() {
                 <Clock className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm font-medium text-amber-800">{t('client.login.statusPending')}</p>
-                  <p className="text-xs text-amber-600 mt-1">{t('client.login.statusPendingHint')}</p>
+                  <p className="text-xs text-amber-700 mt-1">{t('client.login.statusPendingHint')}</p>
                 </div>
               </div>
             )}
@@ -128,7 +128,7 @@ export default function ClientLogin() {
                 <XCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm font-medium text-red-800">{t('client.login.statusRejected')}</p>
-                  <p className="text-xs text-red-600 mt-1">{t('client.login.statusRejectedHint')}</p>
+                  <p className="text-xs text-red-700 mt-1">{t('client.login.statusRejectedHint')}</p>
                 </div>
               </div>
             )}

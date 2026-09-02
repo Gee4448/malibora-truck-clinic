@@ -367,7 +367,7 @@ export default function ClientServiceDetail() {
                           </span>
                         )}
                         {item.customer_approved === false && (
-                          <span className="text-xs text-red-600 font-medium flex items-center gap-0.5">
+                          <span className="text-xs text-red-700 font-medium flex items-center gap-0.5">
                             <XCircle className="w-3 h-3" /> {t('customerView.declined')}
                           </span>
                         )}

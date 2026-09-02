@@ -185,7 +185,7 @@ export default function Inspections() {
                     {/* Nothing is owed until staff have named a fee, so a
                         customer-raised request must not read as "unpaid". */}
                     {insp.payment_status === 'unpaid' && insp.status !== 'requested' && (
-                      <span className="flex items-center gap-1 text-xs text-red-600">
+                      <span className="flex items-center gap-1 text-xs text-red-700">
                         <CreditCard className="w-3 h-3" /> {t('inspection.pendingPayment')}
                       </span>
                     )}

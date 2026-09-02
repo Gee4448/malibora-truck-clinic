@@ -53,6 +53,9 @@ const linear = (deg, stops) => (x, y, W, H) => {
 }
 
 const stop = (c, at, a = 1) => ({ c, at, a })
+// A flat wash over the whole box — for modelling a translucent panel FILL,
+// where what matters is the alpha, not where the gradient sits.
+const flat = (color, alpha) => () => [...color, alpha]
 const over = (fg, bg) => [0, 1, 2].map((i) => fg[3] * fg[i] + (1 - fg[3]) * bg[i])
 const lin = (c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4 }
 const L = (c) => 0.2126 * lin(c[0]) + 0.7152 * lin(c[1]) + 0.0722 * lin(c[2])
@@ -110,6 +113,21 @@ const ATTENTION_PROBES = [
   P('ref 12px', WHITE, 4.5, { alpha: 0.76 }),
   P('amount 12px semibold', BLUE400, 4.5),
 ]
+// The auth card. Everything on it is small: a 14px label, a 12px helper line,
+// an 18px input value, and the icon in the header badge. Nothing here is large
+// text except the h1, so almost all of it owes the full 4.5:1.
+const INPUT_WELL = [255, 255, 255, 0.06]
+const ORANGE_WELL = [232, 80, 2, 0.18]
+const AUTH_PROBES = [
+  P('h1 white 24px bold', WHITE, 3),
+  P('label 14px', WHITE, 4.5, { alpha: 0.84 }),
+  P('helper 12px', WHITE, 4.5, { alpha: 0.72 }),
+  P('faint 12px', WHITE, 4.5, { alpha: 0.58 }),
+  P('input value 18px', WHITE, 4.5, { groundOver: INPUT_WELL }),
+  P('placeholder 18px', WHITE, 4.5, { alpha: 0.56, groundOver: INPUT_WELL }),
+  P('badge icon (graphic)', hex('#ff9a68'), 3, { groundOver: ORANGE_WELL }),
+]
+
 // The CTA is a single row of white text: 16px bold is NOT large text, so it
 // needs the full 4.5 even though it looks like a heading.
 const EMBER_PROBES = [
@@ -163,6 +181,36 @@ const TILE_LAYERS = [
 ]
 
 const SURFACES = {
+  /* The auth card, rebuilt 2026-09-02 as DARK glass.
+
+     It used to be white at 0.90 alpha, which composites to a flat rgb(230,230,230)
+     over the stage — grey plastic, with nothing of the background coming
+     through. That is not a tuning problem, it is the wrong way round: light
+     glass on a dark ground has to be nearly opaque to keep small dark text
+     legible, and at that opacity it stops being glass. Dark glass on a dark
+     ground has the opposite budget — it can sit at 0.55 and still carry white
+     text at 12:1, so the bloom actually shows through.
+
+     Modelled conservatively in two ways. The fill is taken at its LIGHTEST
+     alpha (0.55, the top of its gradient) rather than the 0.72 it reaches at
+     the bottom; and it is composited over the hot spot of the WHOLE stage
+     rather than the patch the card really covers, since the card is centred
+     and the stage's bright corner moves with the viewport.
+
+     The backdrop-filter is not modelled. blur() averages the backdrop, which
+     lowers its peak, while saturate(180%) raises it; taking the unblurred hot
+     spot bounds the pair. */
+  'auth-card (dark glass)': {
+    sizes: [[380, 720], [768, 900], [1440, 900]],
+    probes: AUTH_PROBES,
+    layers: [
+      flat([46, 32, 26], 0.55),
+      radial(44, 32, 82, -18, [241, 96, 1], 60, 0.62),
+      radial(36, 30, -12, 108, [193, 8, 1], 64, 0.52),
+      radial(30, 24, 50, 52, [217, 195, 171], 70, 0.10),
+      linear(155, [stop(hex('#140d09'), 0), stop(hex('#000000'), 0.55), stop(hex('#0a0605'), 1)]),
+    ],
+  },
   // The greeting hero. This is the card that follows the reference: charcoal at
   // the top, crimson rising out of the bottom edge, one orange ember off the
   // far top corner so the sand wash has something to be a reflection of.
@@ -233,7 +281,7 @@ for (const [name, s] of Object.entries(SURFACES)) {
       const p = peak.rows[i]
       if (!row.pass) failed++
       console.log(`   ${row.pass ? 'ok  ' : 'FAIL'} ${row.label.padEnd(22)} rest ${String(row.got).padStart(6)}  ` +
-                  `peak ${String(p.got).padStart(6)}${p.pass ? '' : '  <- sweep dips under'}   needs ${row.need}`)
+                  `peak ${String(p.got).padStart(6)}${p.pass || !s.layers.includes(SHEEN) ? '' : '  <- sweep dips under'}   needs ${row.need}`)
     })
   }
 }

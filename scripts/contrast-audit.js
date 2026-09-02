@@ -31,6 +31,7 @@
     'hero-dark': [136, 35, 3],
     'tile-dark': [79, 43, 23],
     'tile-ember': [128, 36, 3],
+    'auth-card': [68, 36, 16],
     'auth-stage': [150, 62, 10],
   }
   const LIGHT_BASE = [244, 218, 204]
@@ -70,13 +71,29 @@
   const lin = (c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4) }
   const L = (c) => 0.2126 * lin(c[0]) + 0.7152 * lin(c[1]) + 0.0722 * lin(c[2])
   const ratio = (a, b) => { const l1 = L(a), l2 = L(b); return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05) }
+  // Surfaces painted with a GRADIENT are invisible to this walk: an element
+  // whose background is only a background-image reports `backgroundColor:
+  // rgba(0, 0, 0, 0)`, so the walk sails straight past it and scores the text
+  // against whatever sits behind. That is how the dark auth card's text came
+  // to be measured against the STAGE behind the card, which is 2.5x brighter —
+  // four failures that were not real, and on a different day the same
+  // mechanism hides one that is.
+  //
+  // A gradient surface must therefore have an entry in GROUND. `ungrounded`
+  // collects any that do not, so a newly added gradient panel announces itself
+  // instead of quietly skewing every reading inside it.
+  const ungrounded = new Set()
   const effBg = (el) => {
     const stack = []; let n = el
     while (n && n !== document.documentElement) {
       for (const k in GROUND) {
         if (n.classList && n.classList.contains(k)) return stack.reduceRight((a, f) => over(f, a), GROUND[k])
       }
-      const c = px(getComputedStyle(n).backgroundColor)
+      const cs = getComputedStyle(n)
+      if (cs.backgroundImage && cs.backgroundImage !== 'none') {
+        ungrounded.add((n.className || n.tagName).toString().trim().split(/\s+/).slice(0, 3).join('.'))
+      }
+      const c = px(cs.backgroundColor)
       if (c && c[3] > 0) {
         stack.push(c)
         if (c[3] === 1 && n !== document.body) return stack.reduceRight((a, f) => over(f, a), c.slice(0, 3))
@@ -92,6 +109,11 @@
     // Purely decorative text hidden from assistive tech is out of scope for the
     // contrast rule — it conveys nothing, so there is nothing to fail to read.
     if (el.closest('[aria-hidden="true"]')) return
+    // WCAG 1.4.3 exempts inactive controls from the contrast minimum, so a
+    // disabled button is not a failure. Skipping it is not a loophole: the
+    // whole point of the greyed-out treatment is to read as unavailable. It
+    // still has to be LEGIBLE, which is a judgement the probe cannot make.
+    if (el.closest('button:disabled, button[disabled], [aria-disabled="true"], fieldset:disabled')) return
     const cs = getComputedStyle(el)
     if (cs.visibility === 'hidden' || cs.display === 'none' || +cs.opacity === 0) return
     const r = el.getBoundingClientRect(); if (!r.width || !r.height) return
@@ -103,5 +125,5 @@
     const got = ratio(fgc, bg)
     if (got < need) out.push({ txt: el.textContent.trim().slice(0, 34), size, w, got: +got.toFixed(2), need, color: cs.color, ground: bg.map(Math.round).join(',') })
   })
-  return JSON.stringify({ url: location.pathname, failures: out.length, out }, null, 1)
+  return JSON.stringify({ url: location.pathname, failures: out.length, out, gradientSurfacesNotInGROUND: [...ungrounded] }, null, 1)
 })()

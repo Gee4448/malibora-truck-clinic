@@ -329,7 +329,7 @@ export default function MechanicJobDetail() {
                           {t(`inspection.severities.${item.severity}`)}
                         </span>
                         {item.customer_approved === false && (
-                          <span className="text-xs text-red-600 font-medium">{t('customerView.declined')}</span>
+                          <span className="text-xs text-red-700 font-medium">{t('customerView.declined')}</span>
                         )}
                       </div>
                       <p className="text-sm font-medium text-gray-900">{item.problem_description}</p>
