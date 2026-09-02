@@ -29,3 +29,4 @@ dev-dist
 
 # Client correspondence (contains customer names, phone numbers, prices)
 _client-notes
+scripts/.classes.json

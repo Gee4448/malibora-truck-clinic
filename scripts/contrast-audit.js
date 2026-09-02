@@ -24,17 +24,31 @@
   // prints the hot spot for each. Re-derive them whenever a .*-dark background
   // changes, or this probe keeps scoring text against a ground the app no
   // longer paints and hands back a pass that is not real.
-  const GROUND = {
-    'app-bar': [26, 17, 12],
-    'drawer-dark': [24, 16, 12],
-    'tab-bar': [26, 17, 12],
-    'hero-dark': [136, 35, 3],
-    'tile-dark': [79, 43, 23],
-    'tile-ember': [128, 36, 3],
-    'auth-card': [68, 36, 16],
-    'auth-stage': [150, 62, 10],
-  }
-  const LIGHT_BASE = [244, 218, 204]
+  // SELECTORS, not class names, because the card is now matched by a pair
+  // (`.bg-white` plus a large radius) rather than by a class of its own. First
+  // match up the ancestor chain wins, so order matters: the most specific
+  // surface has to come before the container it sits in.
+  const GROUND = [
+    ['.app-bar', [26, 17, 12]],
+    ['.drawer-dark', [24, 16, 12]],
+    ['.tab-bar', [26, 17, 12]],
+    ['.hero-dark', [136, 35, 3]],
+    ['.tile-dark', [79, 43, 23]],
+    ['.tile-ember', [128, 36, 3]],
+    ['.auth-card', [68, 36, 16]],
+    ['.auth-stage', [150, 62, 10]],
+    ['.modal-card', [68, 35, 19]],
+    // A nested card, or any `--well`, sitting on a card. Lighter than its host,
+    // so it must be checked BEFORE the plain card selector below.
+    ['.bg-white.rounded-xl .bg-white.rounded-xl, .bg-white.rounded-xl .bg-white.rounded-2xl,' +
+     '.bg-white.rounded-2xl .bg-white.rounded-xl, .bg-white.rounded-2xl .bg-white.rounded-2xl,' +
+     '.glass .bg-white.rounded-xl, .glass .bg-white.rounded-2xl', [87, 50, 32]],
+    ['.bg-white.rounded-xl, .bg-white.rounded-2xl, .bg-white.rounded-3xl,' +
+     '.glass, .glass-strong, .glass-card', [74, 35, 15]],
+  ]
+  // The page itself: the hot spot of the body gradient, which is the worst case
+  // for the white text sitting directly on it (section labels, empty states).
+  const PAGE_BASE = [87, 34, 8]
 
   // Colours are resolved by PAINTING them, not by parsing. Tailwind v4 emits
   // its default palette as oklch(), so a regex over rgb() silently returns null
@@ -86,21 +100,28 @@
   const effBg = (el) => {
     const stack = []; let n = el
     while (n && n !== document.documentElement) {
-      for (const k in GROUND) {
-        if (n.classList && n.classList.contains(k)) return stack.reduceRight((a, f) => over(f, a), GROUND[k])
+      for (const [sel, rgb] of GROUND) {
+        if (n.matches && n.matches(sel)) return stack.reduceRight((a, f) => over(f, a), rgb)
       }
       const cs = getComputedStyle(n)
       if (cs.backgroundImage && cs.backgroundImage !== 'none') {
         ungrounded.add((n.className || n.tagName).toString().trim().split(/\s+/).slice(0, 3).join('.'))
       }
       const c = px(cs.backgroundColor)
-      if (c && c[3] > 0) {
+      // body's own background-color is skipped, not just "not returned on". It
+      // is an opaque base sitting UNDER the gradient on body::before, so
+      // pushing it would paint over the very ground we are trying to measure
+      // and hand back rgb(10,6,5) for every element on the page.
+      if (c && c[3] > 0 && n !== document.body) {
         stack.push(c)
-        if (c[3] === 1 && n !== document.body) return stack.reduceRight((a, f) => over(f, a), c.slice(0, 3))
+        if (c[3] === 1) return stack.reduceRight((a, f) => over(f, a), c.slice(0, 3))
       }
       n = n.parentElement
     }
-    return stack.reduceRight((a, f) => over(f, a), LIGHT_BASE)
+    // `body` carries an opaque background-color, but the gradient that actually
+    // lights the page lives on body::before, which no computed style exposes.
+    // So the walk must not stop at body's flat colour — it ends here instead.
+    return stack.reduceRight((a, f) => over(f, a), PAGE_BASE)
   }
 
   const out = []

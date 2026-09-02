@@ -104,27 +104,45 @@
      frosted surface in the app moves together — that consistency is most of
      what separates "glassmorphic" from "some cards happen to be see-through".
 
-     One family, for the light frosted work-area surfaces. The dark surfaces
-     are opaque, so they carry their own colours rather than a shared alpha —
-     see .app-bar / .hero-dark / .tile-dark in the SHELL section.
+     The app runs ONE material now: dark glass over the brand gradient. The
+     earlier split — light frosted cards on a light work area — could not
+     actually be glass, and that was not a tuning failure. A frosted panel only
+     reads as glass when something varied shows through it, and a near-white
+     panel on a near-white page has nothing to refract; it has to sit at 0.78
+     to keep small dark text legible, by which point it is just paper. Dark
+     glass over a lit gradient has the opposite budget: measured, it can sit at
+     0.34 and still carry muted white text above 5:1.
      ====================================================================== */
-  --glass-blur: 14px;
-  --glass-blur-chrome: 20px;   /* headers, rails, sheets — more separation */
-  --glass-sat: 175%;
+  --glass-blur: 18px;
+  --glass-blur-chrome: 24px;   /* headers, rails, sheets — more separation */
+  --glass-sat: 165%;
 
-  /* Light family. 0.78, not the 0.5-ish alpha most glassmorphism reaches for.
-     Measured: at 0.66 a `text-gray-500` subtitle over the brightest part of the
-     orange bloom composites to 4.38:1 — under AA, invisibly, only in the corners
-     of the page where the bloom is strongest. 0.78 puts it back at 4.6:1
-     everywhere. The blur, the saturation and the bevel are what make it read as
-     glass; the alpha was only ever buying a contrast failure. */
-  --glass-fill: rgb(255 255 255 / 0.78);
-  --glass-fill-strong: rgb(255 255 255 / 0.88);
-  --glass-stroke: rgb(255 255 255 / 0.72);
-  --glass-edge: rgb(255 255 255 / 0.85);   /* the 1px top highlight */
+  /* The card fill. Two stops, lighter at the top-left, so a card is lit by the
+     same single overhead source as everything else rather than being a flat
+     tinted rectangle. Verified by scripts/gradient-hotspot.js over the hot spot
+     of the page gradient at 380px and 1440px. */
+  --glass-fill: linear-gradient(158deg, rgb(52 36 29 / 0.34), rgb(12 8 6 / 0.52));
+  --glass-fill-strong: linear-gradient(158deg, rgb(52 36 29 / 0.52), rgb(12 8 6 / 0.68));
+  /* Flat equivalents, for the places that need a colour rather than an image
+     (backdrop-less fallbacks, and anywhere `background-color` is what is set). */
+  --glass-fill-flat: rgb(24 16 13 / 0.46);
+  --glass-fill-flat-strong: rgb(20 13 11 / 0.66);
+  --glass-stroke: rgb(255 255 255 / 0.14);
+  --glass-edge: rgb(255 255 255 / 0.26);   /* the 1px top highlight */
   --glass-shadow:
-    0 1px 1px rgb(23 12 6 / 0.04),
-    0 8px 28px -10px rgb(23 12 6 / 0.16);
+    0 1px 1px rgb(0 0 0 / 0.20),
+    0 18px 40px -20px rgb(0 0 0 / 0.55);
+
+  /* Text on the dark material. Derived, not picked: over the lightest point the
+     card reaches these are 13.5 / 10.4 / 8.1 / 7.9 / 5.5 to 1. */
+  --ink:        #ffffff;                    /* was text-gray-900 */
+  --ink-strong: rgb(255 255 255 / 0.86);    /* was text-gray-700 */
+  --ink-mid:    rgb(255 255 255 / 0.78);    /* was text-gray-600 */
+  --ink-muted:  rgb(255 255 255 / 0.72);    /* was text-gray-500 */
+  --ink-faint:  rgb(255 255 255 / 0.58);    /* was text-gray-400 */
+  --hairline:   rgb(255 255 255 / 0.10);    /* was border-gray-100/200 */
+  --well:       rgb(255 255 255 / 0.07);    /* was bg-gray-50/100 */
+  --well-hover: rgb(255 255 255 / 0.12);
 
   /* Motion tokens */
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -151,10 +169,14 @@
    ============================================================ */
 body {
   font-family: var(--font-sans);
-  background-color: #f6f4f2; /* warm off-white, not the old cool gray-50 */
-  color: var(--color-gray-900);
+  /* The brand gradient, straight off the palette sheet: black through #C10801
+     and #F16001, with the sand stop as the one warm highlight. It is the whole
+     reason the cards can be glass — a frosted panel refracts what is behind it,
+     and until now what was behind it was a flat off-white. */
+  background-color: #0a0605;
+  color: var(--ink);
+  color-scheme: dark;
   -webkit-tap-highlight-color: transparent;
-  /* Crisper glyphs — thinner strokes read lighter than the OS default. */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -166,10 +188,15 @@ body::before {
   inset: 0;
   z-index: -1;
   pointer-events: none;
+  /* Painted on ::before rather than on `body` so `background-color` stays
+     available as an opaque base, and FIXED so the field never scrolls: a
+     gradient moving behind twenty blurred panels is what actually costs frames
+     on a cheap phone, while a fixed one is composited once. */
   background:
-    radial-gradient(60rem 40rem at 8% -10%,   rgb(232 80 2 / 0.13),    transparent 60%),
-    radial-gradient(45rem 34rem at 105% 8%,   rgb(193 8 1 / 0.10),     transparent 62%),
-    radial-gradient(50rem 40rem at 50% 108%,  rgb(217 195 171 / 0.34), transparent 65%);
+    radial-gradient(58rem 42rem at 6% -8%,    rgb(241 96 1 / 0.30),    transparent 62%),
+    radial-gradient(48rem 38rem at 104% 6%,   rgb(193 8 1 / 0.28),     transparent 64%),
+    radial-gradient(54rem 44rem at 48% 108%,  rgb(217 195 171 / 0.10), transparent 66%),
+    linear-gradient(168deg, #150e0b 0%, #000000 52%, #0d0705 100%);
 }
 
 /* Headings and figures take the display face. Set here once, rather than as a
@@ -507,24 +534,26 @@ button:not(:disabled):not(.absolute):not(.fixed):active {
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
 }
+/* A frosted chip sitting ON a card — one step lighter than its host, so it
+   reads as nearer rather than as a hole. */
 .glass-panel {
   position: relative;
-  background: rgb(255 255 255 / 0.14);
-  border: 1px solid rgb(255 255 255 / 0.22);
+  background: rgb(255 255 255 / 0.10);
+  border: 1px solid rgb(255 255 255 / 0.16);
   backdrop-filter: blur(var(--glass-blur-chrome)) saturate(var(--glass-sat));
   -webkit-backdrop-filter: blur(var(--glass-blur-chrome)) saturate(var(--glass-sat));
 }
 
 /* Modal / sheet backdrop — blurs the page behind instead of a flat dim. */
 .glass-overlay {
-  background: rgb(10 6 4 / 0.48);
-  backdrop-filter: blur(8px) saturate(140%);
-  -webkit-backdrop-filter: blur(8px) saturate(140%);
+  background: rgb(4 2 2 / 0.62);
+  backdrop-filter: blur(10px) saturate(140%);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
 }
 
 /* ----------------------------------------------------------------------------
    Systemic upgrade: every card in the app becomes glass, without hand-editing
-   236 `bg-white` call sites across 60 files.
+   227 `bg-white` call sites across 60 files.
 
    These rules are UNLAYERED on purpose. Tailwind v4 puts its utilities in
    `@layer utilities`, and cascade layers outrank specificity — so the same rule
@@ -532,18 +561,30 @@ button:not(:disabled):not(.absolute):not(.fixed):active {
    it was, while unlayered CSS beats every layer. This is the only place the
    override can live and still win.
 
-   Scoped to the card signature (`bg-white` plus a large radius) rather than to
-   `bg-white` alone, which is also worn by inputs, selects, badges and table
-   rows. Those keep `rounded-lg` or smaller and stay deliberately opaque: a form
-   field you can see through is a form field you misread.
+   Two tiers, split on radius, because `bg-white` is worn by two different
+   things. At `rounded-xl` and above it is a CARD, and gets the full frosted
+   material. Below that it is a chip, a swatch or a small control, which gets a
+   flat well instead: those are usually only a few pixels tall, and a blur that
+   size costs a compositor pass to render something nobody can perceive.
    ---------------------------------------------------------------------------- */
 .bg-white.rounded-xl,
 .bg-white.rounded-2xl,
 .bg-white.rounded-3xl {
-  background-color: var(--glass-fill);
+  background: var(--glass-fill);
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
   border-color: var(--glass-stroke);
+  /* The lit top edge, as an INSET shadow rather than a masked ::after ring.
+     Two reasons: a card is an arbitrary div in this app and its ::after may
+     already be spoken for, and on a dark page the drop shadow does almost
+     nothing — a black shadow on a black ground is invisible. Measured, a card
+     sits only 1.06:1 from the page behind it, so essentially all of the
+     separation is carried by this 1px highlight. It is what stops the layout
+     collapsing into one flat sheet on a cheap screen in daylight. */
+  box-shadow: inset 0 1px 0 var(--glass-edge), var(--glass-shadow);
+}
+.bg-white:not(.rounded-xl):not(.rounded-2xl):not(.rounded-3xl):not(.no-glass) {
+  background-color: var(--well);
 }
 
 /* Nesting kills it. Glass inside glass double-blurs into an opaque smear and
@@ -559,28 +600,42 @@ button:not(:disabled):not(.absolute):not(.fixed):active {
 .glass-strong .bg-white.rounded-2xl {
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
-  background-color: rgb(255 255 255 / 0.55);
+  background: rgb(255 255 255 / 0.07);
+  box-shadow: none;
 }
 
-/* Escape hatch for anything that must stay solid — chart canvases, PDF
-   previews, image crops. Put `no-glass` alongside the card classes. */
+/* Escape hatch for anything that must stay solid AND light — the logo tiles on
+   the auth screens, chart canvases, PDF previews, image crops. Put `no-glass`
+   alongside the card classes. Its contents keep the light ink ramp; see the
+   INK section. */
 .no-glass,
 .no-glass.bg-white.rounded-xl,
 .no-glass.bg-white.rounded-2xl,
 .no-glass.bg-white.rounded-3xl {
-  background-color: #fff;
+  background: #fff;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 }
-
 /* ----------------------------------------------------------------------------
    The four ways this can go wrong, handled.
    ---------------------------------------------------------------------------- */
 
-/* 1. Print. A translucent invoice prints as grey mush, and backdrop-filter is
-      ignored on paper anyway, so print gets flat white and real borders back. */
+/* 1. Print. This is the one that matters most, because the app prints invoices
+      and job cards, and getting it wrong means a customer is handed a black
+      rectangle — or, worse, a blank one.
+
+      It is not enough to force the panels white: the INK section above turned
+      every `text-gray-*` white, so a white card would print white-on-white.
+      Print therefore restores the whole light ramp, not just the surfaces.
+      backdrop-filter is ignored on paper anyway. */
 @media print {
+  html, body {
+    background: #fff !important;
+    color: #111827 !important;
+  }
+  body::before { display: none; }
   .glass, .glass-strong, .glass-card, .glass-rail, .glass-header,
+  .modal-card,
   .bg-white.rounded-xl, .bg-white.rounded-2xl, .bg-white.rounded-3xl {
     background: #fff !important;
     backdrop-filter: none !important;
@@ -589,27 +644,50 @@ button:not(:disabled):not(.absolute):not(.fixed):active {
     box-shadow: none !important;
   }
   .glass::after, .glass-strong::after { display: none; }
-  body::before { display: none; }
+  /* The ink, back to paper values. */
+  :is(.text-gray-900, .text-gray-800, .text-black) { color: #111827 !important; }
+  .text-gray-700 { color: #374151 !important; }
+  .text-gray-600 { color: #4b5563 !important; }
+  .text-gray-500 { color: #5f6673 !important; }
+  :is(.text-gray-400, .text-gray-300) { color: #6e7480 !important; }
+  :is(.border-gray-100, .border-gray-200, .border-gray-300) { border-color: #e5e7eb !important; }
+  :is(.divide-gray-100, .divide-gray-200) > :not([hidden]) ~ :not([hidden]) {
+    border-color: #e5e7eb !important;
+  }
+  :is(.bg-gray-50, .bg-gray-100) { background-color: #f9fafb !important; }
+  /* Dark surfaces have no business on paper either. */
+  .hero-dark, .tile-dark, .tile-ember, .auth-card, .app-bar, .drawer-dark {
+    background: #fff !important;
+    color: #111827 !important;
+    border-color: #e5e7eb !important;
+  }
+  input, select, textarea {
+    background: #fff !important;
+    color: #111827 !important;
+    border-color: #d1d5db !important;
+  }
 }
 
 /* 2. Reduced transparency. A real OS-level accessibility setting (iOS, macOS,
       Windows), and one this material has to respect rather than treat as a
       nicety — people turn it on because translucency makes text unreadable for
-      them. Everything goes opaque; nothing moves and nothing disappears. */
+      them. Everything goes opaque, in the DARK direction: the ink is white now,
+      so falling back to white panels would be the same white-on-white bug the
+      print block above exists to avoid. Nothing moves and nothing disappears. */
 @media (prefers-reduced-transparency: reduce) {
   .glass, .glass-strong, .glass-card, .glass-rail, .glass-header,
   .bg-white.rounded-xl, .bg-white.rounded-2xl, .bg-white.rounded-3xl {
-    background-color: #fff;
+    background: #18110d;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
   .glass-panel {
-    background-color: #0b0705;
+    background-color: #241a15;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
   .glass-overlay {
-    background: rgb(10 6 4 / 0.85);
+    background: rgb(4 2 2 / 0.90);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
@@ -630,14 +708,14 @@ button:not(:disabled):not(.absolute):not(.fixed):active {
 /* 4. No backdrop-filter at all. Without this, an unsupported browser renders
       these as flat see-through panels with page content showing through the
       text — unreadable rather than merely plain. The feature query makes the
-      fallback opaque. */
+      fallback opaque, and dark, for the same reason as (2). */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .glass, .glass-strong, .glass-card, .glass-rail, .glass-header,
   .bg-white.rounded-xl, .bg-white.rounded-2xl, .bg-white.rounded-3xl {
-    background-color: rgb(255 255 255 / 0.96);
+    background: rgb(22 16 12 / 0.97);
   }
-  .glass-panel { background-color: rgb(11 7 5 / 0.55); }
-  .glass-overlay { background: rgb(10 6 4 / 0.8); }
+  .glass-panel { background-color: rgb(48 34 28 / 0.92); }
+  .glass-overlay { background: rgb(4 2 2 / 0.88); }
 }
 
 
@@ -1089,13 +1167,15 @@ button:not(:disabled):not(.absolute):not(.fixed):active {
   max-height: calc(100dvh - 2rem);
   overflow-y: auto;
   overscroll-behavior: contain;
-  background-color: rgb(255 255 255 / 0.97);
+  background: var(--glass-fill-strong);
+  background-color: var(--glass-fill-flat-strong);
   backdrop-filter: blur(26px) saturate(180%);
   -webkit-backdrop-filter: blur(26px) saturate(180%);
-  border: 1px solid rgb(255 255 255 / 0.7);
+  border: 1px solid rgb(255 255 255 / 0.14);
+  box-shadow: 0 40px 90px -30px rgb(0 0 0 / 0.85);
 }
 @media (prefers-reduced-transparency: reduce) {
-  .modal-card { background-color: #fff; backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .modal-card { background: #16100c; backdrop-filter: none; -webkit-backdrop-filter: none; }
 }
 
 /* Bottom-nav icon spring on activation */
@@ -1420,4 +1500,184 @@ button:not(:disabled):not(.absolute):not(.fixed):active {
 button,
 a {
   -webkit-tap-highlight-color: transparent;
+}
+
+/* ============================================================================
+   THE INK
+   ----------------------------------------------------------------------------
+   The app is marked up in grays for a white page: ~970 `text-gray-*` call sites
+   across 60 files, plus ~340 pastel `bg-*-50/100` panels. Editing those by hand
+   is not a refactor, it is a fortnight and a hundred missed spots.
+
+   So the ramps are remapped once, here. Same trick as the card rule, and same
+   reason it has to be UNLAYERED: Tailwind v4's utilities live in a cascade
+   layer, and layers outrank specificity, so a `components`-layer rule loses to
+   `text-gray-500` however specific it is.
+
+   The alphas are derived, not chosen. scripts/gradient-hotspot.js composites the
+   card over the hot spot of the page gradient and scores each step; on the
+   lightest point a card reaches they are 13.5 / 10.4 / 8.1 / 7.9 / 5.5 to one.
+   There is a lot of headroom, which is the point — dark glass buys contrast
+   where light glass spent it.
+
+   NOTE on the hardcoded hexes below: Tailwind v4 only emits `--color-<hue>-300`
+   for ramp steps the markup actually uses, so half of them
+   (`--color-orange-300`, `--color-purple-300`, …) do not exist at runtime.
+   Referencing them would resolve to nothing and silently inherit. They have to
+   be literals.
+   ============================================================================ */
+
+/* ---- Gray text ------------------------------------------------------------ */
+:is(.text-gray-900, .text-gray-800, .text-black) { color: var(--ink); }
+.text-gray-700 { color: var(--ink-strong); }
+.text-gray-600 { color: var(--ink-mid); }
+.text-gray-500 { color: var(--ink-muted); }
+:is(.text-gray-400, .text-gray-300) { color: var(--ink-faint); }
+
+/* ---- Hairlines ------------------------------------------------------------ */
+:is(.border-gray-100, .border-gray-200, .border-gray-300) { border-color: var(--hairline); }
+:is(.divide-gray-100, .divide-gray-200) > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--hairline);
+}
+
+/* ---- Gray fills ----------------------------------------------------------- */
+:is(.bg-gray-50, .bg-gray-100) { background-color: var(--well); }
+.bg-gray-200 { background-color: var(--well-hover); }
+:is(.hover\:bg-gray-50, .hover\:bg-gray-100):hover { background-color: var(--well-hover); }
+
+/* ---- Coloured tints and their text ----------------------------------------
+   Status chips, alert boxes and icon badges. The tint becomes a lit well of the
+   same hue and the ink moves to the 300 step, so a green chip still reads green
+   and a red alert still reads red — the point of the colour survives, only the
+   polarity flips. Blue is the brand orange, remapped in the theme block.
+   ---------------------------------------------------------------------------- */
+:is(.bg-blue-50, .bg-blue-100)       { background-color: rgb(232 80 2 / 0.16); }
+:is(.bg-green-50, .bg-green-100)     { background-color: rgb(34 197 94 / 0.16); }
+:is(.bg-emerald-50, .bg-emerald-100) { background-color: rgb(16 185 129 / 0.16); }
+:is(.bg-red-50, .bg-red-100)         { background-color: rgb(239 68 68 / 0.16); }
+:is(.bg-orange-50, .bg-orange-100)   { background-color: rgb(249 115 22 / 0.16); }
+:is(.bg-amber-50, .bg-amber-100)     { background-color: rgb(245 158 11 / 0.16); }
+:is(.bg-yellow-50, .bg-yellow-100)   { background-color: rgb(234 179 8 / 0.16); }
+:is(.bg-purple-50, .bg-purple-100)   { background-color: rgb(168 85 247 / 0.16); }
+:is(.bg-pink-50, .bg-pink-100)       { background-color: rgb(236 72 153 / 0.16); }
+:is(.bg-slate-50, .bg-slate-100)     { background-color: var(--well); }
+
+:is(.border-blue-200, .border-blue-300)       { border-color: rgb(232 80 2 / 0.32); }
+:is(.border-green-200, .border-green-300)     { border-color: rgb(34 197 94 / 0.30); }
+:is(.border-emerald-200, .border-emerald-300) { border-color: rgb(16 185 129 / 0.30); }
+:is(.border-red-200, .border-red-300)         { border-color: rgb(239 68 68 / 0.32); }
+:is(.border-orange-200, .border-orange-300)   { border-color: rgb(249 115 22 / 0.32); }
+:is(.border-amber-200, .border-amber-300)     { border-color: rgb(245 158 11 / 0.32); }
+:is(.border-yellow-200, .border-yellow-300)   { border-color: rgb(234 179 8 / 0.32); }
+:is(.border-purple-200, .border-purple-300)   { border-color: rgb(168 85 247 / 0.30); }
+:is(.border-pink-200, .border-pink-300)       { border-color: rgb(236 72 153 / 0.30); }
+
+:is(.text-blue-600, .text-blue-700, .text-blue-800, .text-blue-900)         { color: #ff9a68; }
+:is(.text-green-600, .text-green-700, .text-green-800, .text-green-900)     { color: #86efac; }
+:is(.text-emerald-600, .text-emerald-700, .text-emerald-800)                { color: #6ee7b7; }
+:is(.text-red-600, .text-red-700, .text-red-800, .text-red-900)             { color: #fca5a5; }
+:is(.text-orange-600, .text-orange-700, .text-orange-800)                   { color: #fdba74; }
+:is(.text-amber-600, .text-amber-700, .text-amber-800, .text-amber-900)     { color: #fcd34d; }
+:is(.text-yellow-600, .text-yellow-700, .text-yellow-800)                   { color: #fde047; }
+:is(.text-purple-600, .text-purple-700, .text-purple-800)                   { color: #d8b4fe; }
+:is(.text-pink-600, .text-pink-700, .text-pink-800)                         { color: #f9a8d4; }
+:is(.text-slate-600, .text-slate-700, .text-slate-800, .text-slate-900)     { color: var(--ink-strong); }
+
+/* ---- Form controls --------------------------------------------------------
+   Same reasoning as on the auth card: an input needs a surface of its own.
+   Several of these carry only `border` and `text-*` in the markup, so without
+   this they would be transparent holes in the card and Chrome's autofill would
+   paint them slate.
+   ---------------------------------------------------------------------------- */
+input:not([type='checkbox']):not([type='radio']):not([type='range']),
+select,
+textarea {
+  background-color: var(--well);
+  border-color: rgb(255 255 255 / 0.15);
+  color: var(--ink);
+}
+:is(input, select, textarea)::placeholder { color: rgb(255 255 255 / 0.56); }
+:is(input, select, textarea):focus {
+  background-color: rgb(255 255 255 / 0.11);
+  border-color: var(--brand-orange);
+}
+/* A <select>'s dropdown list is painted by the OS, not the page: without a dark
+   option background the menu opens as white-on-white on some platforms. */
+option { background-color: #16100c; color: #fff; }
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-text-fill-color: #fff;
+  caret-color: #fff;
+  -webkit-box-shadow: inset 0 0 0 1000px rgb(38 26 20 / 0.96);
+  box-shadow: inset 0 0 0 1000px rgb(38 26 20 / 0.96);
+  transition: background-color 9999s ease-out 0s;
+}
+
+/* ---- The light island -----------------------------------------------------
+   `.no-glass` marks the few surfaces that must stay genuinely white — the logo
+   tiles, a chart canvas, a PDF preview. Their contents keep the ORIGINAL light
+   ramp, otherwise the remap above would put white ink on white paper. Higher
+   specificity, so these win wherever they apply.
+   ---------------------------------------------------------------------------- */
+.no-glass :is(.text-gray-900, .text-gray-800, .text-black) { color: #111827; }
+.no-glass .text-gray-700 { color: #374151; }
+.no-glass .text-gray-600 { color: #4b5563; }
+.no-glass .text-gray-500 { color: #5f6673; }
+.no-glass .text-gray-400 { color: #6e7480; }
+.no-glass :is(.border-gray-100, .border-gray-200) { border-color: #e5e7eb; }
+
+/* ---- Ramp steps the first pass missed --------------------------------------
+   Caught by rendering all 903 static class strings from the app's JSX against
+   the new card and scoring them, rather than by reading the CSS and hoping.
+
+   The -900 steps are the worst of these: `text-purple-900` measured 1.24:1 and
+   `text-orange-900` 1.45:1 on a card, because near-black ink on a near-black
+   panel is very nearly invisible. The -500 steps are icon colours, at 3.5-3.6.
+   ---------------------------------------------------------------------------- */
+.text-blue-500                    { color: #ff9a68; }
+:is(.text-green-500, .text-green-900)     { color: #86efac; }
+:is(.text-red-500, .text-red-900)         { color: #fca5a5; }
+:is(.text-orange-500, .text-orange-900)   { color: #fdba74; }
+:is(.text-amber-500, .text-amber-900)     { color: #fcd34d; }
+.text-yellow-500                  { color: #fde047; }
+.text-purple-500, .text-purple-900 { color: #d8b4fe; }
+.text-pink-500                    { color: #f9a8d4; }
+.text-emerald-500                 { color: #6ee7b7; }
+
+/* Tailwind writes an opacity modifier as part of the class name
+   (`text-blue-700/80` is one token, not two), so none of the rules above reach
+   them. Only two variants exist in the app, and both were failing: the blue one
+   at 1.73:1, and `text-white/40` at 3.44:1 — the latter simply too faint to be
+   a text colour on any ground. Escaped selectors, since `/` is not a valid
+   identifier character in CSS. */
+.text-blue-700\/80 { color: rgb(255 154 104 / 0.9); }
+.text-white\/40 { color: rgb(255 255 255 / 0.58); }
+
+/* ---- Two surfaces the global ramp cannot serve ----------------------------- */
+
+/* The auth stage is the brightest ground in the app — the bloom reaches
+   rgb(150,62,10) — so the card ramp does not survive on it. `--ink-faint` at
+   0.58 measures 5.6:1 on a card and only 3.4:1 out here. Text sitting directly
+   on the stage gets the same 0.76 that `.on-dark-muted` already uses, which is
+   4.8:1 against the hot corner. Do not "simplify" this back into the ramp. */
+.auth-stage > :not(.auth-card) :is(.text-gray-300, .text-gray-400, .text-gray-500) {
+  color: rgb(255 255 255 / 0.76);
+}
+
+/* `bg-white` + brand ink is the app's ACTIVE pill: the selected registration
+   step, the selected tab. The white was the solid fill, not a card, so turning
+   it into a faint well leaves orange ink on near-black at 2.9:1. It inverts to
+   a solid brand pill instead.
+
+   The `:not()` chain is not decoration — it matches the specificity of the
+   small-radius `bg-white` rule above (0,5,0), which would otherwise win.
+   blue-600 rather than 500: white on #e85002 is 3.76:1, on #c74301 it is
+   4.96:1, and this text is 12px. */
+.bg-white.text-blue-700:not(.rounded-xl):not(.rounded-2xl):not(.rounded-3xl):not(.no-glass) {
+  background-color: var(--color-blue-600);
+  color: #fff;
 }

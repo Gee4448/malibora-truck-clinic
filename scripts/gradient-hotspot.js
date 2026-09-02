@@ -135,6 +135,27 @@ const EMBER_PROBES = [
   P('CTA sub 14px', WHITE, 4.5, { alpha: 0.76 }),
 ]
 
+// The app-wide surfaces, in the order they stack. PAGE_LAYERS is the brand
+// gradient on body::before; every card in the app is composited over it.
+const PAGE_LAYERS = [
+  radial(58, 42, 6, -8,   [241, 96, 1],    62, 0.30),
+  radial(48, 38, 104, 6,  [193, 8, 1],     64, 0.28),
+  radial(54, 44, 48, 108, [217, 195, 171], 66, 0.10),
+  linear(168, [stop(hex('#150e0b'), 0), stop(hex('#000000'), 0.52), stop(hex('#0d0705'), 1)]),
+]
+const CARD_FILL = (a1, a2) => linear(158, [stop([52, 36, 29], 0, a1), stop([12, 8, 6], 1, a2)])
+const WELL = linear(0, [stop([255, 255, 255], 0, 0.07), stop([255, 255, 255], 1, 0.07)])
+
+// The five steps of the ink ramp, at the sizes they are actually used.
+const INK_PROBES = [
+  P('ink        #fff', WHITE, 4.5),
+  P('ink-strong  .86', WHITE, 4.5, { alpha: 0.86 }),
+  P('ink-mid     .78', WHITE, 4.5, { alpha: 0.78 }),
+  P('ink-muted   .72', WHITE, 4.5, { alpha: 0.72 }),
+  P('ink-faint   .58', WHITE, 4.5, { alpha: 0.58 }),
+  P('placeholder .56', WHITE, 4.5, { alpha: 0.56 }),
+]
+
 // Sample a surface. `layers` are listed TOP-first, exactly as CSS lists them.
 function hotspot(name, W, H, layers, probes) {
   let best = null
@@ -181,6 +202,38 @@ const TILE_LAYERS = [
 ]
 
 const SURFACES = {
+  /* The page itself — the brand gradient on body::before. Everything else in
+     the app is composited over this, so it is the root of every reading below.
+     Text sits directly on it too: section labels, empty states, the footer. */
+  'PAGE (body gradient)': {
+    sizes: [[380, 760], [768, 1024], [1440, 900]],
+    probes: INK_PROBES,
+    layers: PAGE_LAYERS,
+  },
+  /* The default card. This is the surface the whole app is made of, and the
+     one the ink ramp is tuned against. Note how little separation it has from
+     the page — about 1.06:1 — which is why the card rule carries a lit top
+     edge; on a dark ground the highlight does the work a drop shadow does on
+     a light one. */
+  'CARD (glass .34/.52)': {
+    sizes: [[380, 760], [768, 1024], [1440, 900]],
+    probes: INK_PROBES,
+    layers: [CARD_FILL(0.34, 0.52), ...PAGE_LAYERS],
+  },
+  /* A card inside a card, or any `--well`. Lighter than its host by design, so
+     it is the worst case for the ink ramp and has to be checked separately. */
+  'CARD nested / well': {
+    sizes: [[380, 600], [768, 800]],
+    probes: INK_PROBES,
+    layers: [WELL, CARD_FILL(0.34, 0.52), ...PAGE_LAYERS],
+  },
+  /* Dialogs use the strong fill: they are the densest thing in the app and sit
+     over a blurred overlay, so they can afford to be less see-through. */
+  'MODAL (strong .52/.68)': {
+    sizes: [[380, 700], [640, 800]],
+    probes: INK_PROBES,
+    layers: [CARD_FILL(0.52, 0.68), ...PAGE_LAYERS],
+  },
   /* The auth card, rebuilt 2026-09-02 as DARK glass.
 
      It used to be white at 0.90 alpha, which composites to a flat rgb(230,230,230)
