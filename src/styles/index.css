@@ -484,19 +484,21 @@ button:not(:disabled):not(.absolute):not(.fixed):active {
     0 100%,
     var(--chev) 50%
   );
-  padding-left: calc(var(--chev) + 6px);
-  padding-right: calc(var(--chev) + 4px);
+  /* Tight on purpose: at these paddings the English job track fits a 375px
+     phone with no scroll at all. Loosening them by 3px puts it back over. */
+  padding-left: calc(var(--chev) + 4px);
+  padding-right: calc(var(--chev) + 2px);
   animation: chevIn var(--dur-base) var(--ease-out-expo) both;
   animation-delay: calc(var(--seg-i, 0) * 70ms);
 }
 /* The ends square off so the ribbon has a clean start and finish. */
 .chev:first-child {
   clip-path: polygon(0 0, calc(100% - var(--chev)) 0, 100% 50%, calc(100% - var(--chev)) 100%, 0 100%);
-  padding-left: 10px;
+  padding-left: 8px;
 }
 .chev:last-child {
   clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, var(--chev) 50%);
-  padding-right: 10px;
+  padding-right: 8px;
 }
 .chev:first-child:last-child { clip-path: none; }
 

@@ -40,25 +40,6 @@ export default function ClientLayout() {
             </div>
           </div>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-1">
-            {tabs.map((tab) => (
-              <NavLink
-                key={tab.to}
-                to={tab.to}
-                end={tab.end}
-                className={({ isActive }) =>
-                  `flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 press ${
-                    isActive ? 'bg-white/20 text-white shadow-sm' : 'text-blue-200 hover:bg-white/10 hover:text-white'
-                  }`
-                }
-              >
-                <tab.icon className="w-3.5 h-3.5" />
-                {tab.label}
-              </NavLink>
-            ))}
-          </nav>
-
           <div className="flex items-center gap-2">
             <Link
               to="/client/profile"
@@ -83,6 +64,39 @@ export default function ClientLayout() {
             </button>
           </div>
         </div>
+
+        {/* Desktop navigation — the same chevron ribbon as the stage tracker
+            (`.chev-track` in index.css), so the portal's two horizontal bars
+            share one language.
+
+            It gets its own full-width row rather than sitting beside the logo:
+            squeezed into the header row, six labels wrapped onto two lines
+            ("My / Vehicles", "Job / Cards"). Here they never wrap, and if a
+            translation is long the ribbon scrolls instead of breaking. */}
+        <nav className="hidden lg:block border-t border-white/10">
+          <div className="max-w-3xl mx-auto px-4 py-2">
+            <div className="chev-track">
+              {tabs.map((tab, i) => (
+                <NavLink
+                  key={tab.to}
+                  to={tab.to}
+                  end={tab.end}
+                  style={{ '--seg-i': i }}
+                  className={({ isActive }) =>
+                    `chev flex items-center justify-center gap-1.5 py-2 text-xs font-semibold whitespace-nowrap transition-colors ${
+                      isActive
+                        ? 'bg-white text-blue-800'
+                        : 'bg-white/12 text-white/85 hover:bg-white/25 hover:text-white'
+                    }`
+                  }
+                >
+                  <tab.icon className="w-3.5 h-3.5 flex-shrink-0" />
+                  {tab.label}
+                </NavLink>
+              ))}
+            </div>
+          </div>
+        </nav>
       </header>
 
       {/* Page Content — key on pathname so each tab change replays the entrance */}

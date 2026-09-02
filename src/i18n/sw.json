@@ -1237,18 +1237,18 @@
       "actionPayInspection": "Ukaguzi unasubiri malipo",
       "trackTitle": "Gari lako lipo wapi",
       "stages": {
-        "requested": "Imeombwa",
+        "requested": "Ombi",
         "quoted": "Proforma",
         "repair": "Matengenezo",
-        "invoiced": "Imetolewa Ankara",
-        "delivered": "Imekabidhiwa",
+        "invoiced": "Ankara",
+        "delivered": "Kabidhiwa",
         "cancelled": "Imefutwa"
       },
       "inspectionStages": {
-        "requested": "Imeombwa",
+        "requested": "Ombi",
         "paid": "Imelipwa",
-        "inspecting": "Inakaguliwa",
-        "report": "Ripoti Tayari"
+        "inspecting": "Ukaguzi",
+        "report": "Ripoti"
       }
     },
     "newRequest": {

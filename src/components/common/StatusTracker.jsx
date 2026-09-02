@@ -97,9 +97,11 @@ export default function StatusTracker({
 
   if (!steps.length) return null
 
+  // 9px on a phone is what makes the English track fit 375px without scrolling;
+  // the roomier 10px is kept for tablets and up, where there is space for it.
   const size = compact
     ? 'text-[9px] leading-none py-1.5 tracking-wide'
-    : 'text-[10px] leading-none py-2 tracking-wide'
+    : 'text-[9px] sm:text-[10px] leading-none py-2 tracking-wide'
 
   return (
     <div

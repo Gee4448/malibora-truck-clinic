@@ -1237,18 +1237,18 @@
       "actionPayInspection": "Inspection waiting for payment",
       "trackTitle": "Where your vehicle is",
       "stages": {
-        "requested": "Requested",
-        "quoted": "Quotation",
-        "repair": "In Repair",
-        "invoiced": "Invoiced",
-        "delivered": "Delivered",
+        "requested": "Request",
+        "quoted": "Quote",
+        "repair": "Repair",
+        "invoiced": "Invoice",
+        "delivered": "Done",
         "cancelled": "Cancelled"
       },
       "inspectionStages": {
-        "requested": "Requested",
+        "requested": "Request",
         "paid": "Paid",
-        "inspecting": "Inspecting",
-        "report": "Report Ready"
+        "inspecting": "Checking",
+        "report": "Report"
       }
     },
     "newRequest": {
