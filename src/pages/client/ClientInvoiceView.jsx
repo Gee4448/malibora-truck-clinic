@@ -7,6 +7,7 @@ import { notifyStaff } from '../../lib/notifications'
 import PaymentChannels from '../../components/common/PaymentChannels'
 import { ArrowLeft, FileText, CheckCircle2, XCircle, Phone, Send, MessageSquare, CreditCard, Clock } from 'lucide-react'
 import toast from 'react-hot-toast'
+import Reveal from '../../components/common/Reveal'
 
 export default function ClientInvoiceView() {
   const { id } = useParams()
@@ -203,7 +204,7 @@ export default function ClientInvoiceView() {
       </Link>
 
       {/* Invoice Header */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-5">
+      <Reveal className="bg-white rounded-2xl border border-gray-200 p-5">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
@@ -246,11 +247,11 @@ export default function ClientInvoiceView() {
             <p className="font-medium text-gray-900">{formatDate(invoice.created_at)}</p>
           </div>
         </div>
-      </div>
+      </Reveal>
 
       {/* Items Breakdown (customer-facing: only selling prices) */}
       {parts.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+        <Reveal className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
           <div className="p-3 bg-gray-50 border-b border-gray-100">
             <h3 className="text-sm font-semibold text-gray-700">{t('invoices.partsMaterials')}</h3>
           </div>
@@ -267,11 +268,11 @@ export default function ClientInvoiceView() {
               </div>
             ))}
           </div>
-        </div>
+        </Reveal>
       )}
 
       {labour.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+        <Reveal className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
           <div className="p-3 bg-gray-50 border-b border-gray-100">
             <h3 className="text-sm font-semibold text-gray-700">{t('invoices.labourServices')}</h3>
           </div>
@@ -288,11 +289,11 @@ export default function ClientInvoiceView() {
               </div>
             ))}
           </div>
-        </div>
+        </Reveal>
       )}
 
       {additional.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+        <Reveal className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
           <div className="p-3 bg-gray-50 border-b border-gray-100">
             <h3 className="text-sm font-semibold text-gray-700">{t('invoices.additionalCosts')}</h3>
           </div>
@@ -308,11 +309,11 @@ export default function ClientInvoiceView() {
               </div>
             ))}
           </div>
-        </div>
+        </Reveal>
       )}
 
       {/* Totals */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-4">
+      <Reveal className="bg-white rounded-2xl border border-gray-200 p-4">
         {invoice.subtotal_parts > 0 && (
           <div className="flex justify-between text-sm py-1">
             <span className="text-gray-500">{t('invoices.subtotalParts')}</span>
@@ -356,11 +357,11 @@ export default function ClientInvoiceView() {
             </p>
           </div>
         )}
-      </div>
+      </Reveal>
 
       {/* Payment status — amount paid / balance owed */}
       {(amountPaid > 0 && invoice.status !== 'paid') && (
-        <div className="bg-white rounded-2xl border border-gray-200 p-4 space-y-1.5">
+        <Reveal className="bg-white rounded-2xl border border-gray-200 p-4 space-y-1.5">
           <div className="flex justify-between text-sm">
             <span className="text-gray-500">{t('client.invoices.amountPaid')}</span>
             <span className="font-medium text-green-700">{formatTZS(amountPaid)}</span>
@@ -369,12 +370,12 @@ export default function ClientInvoiceView() {
             <span className="text-gray-700 font-medium">{t('client.invoices.balanceOwed')}</span>
             <span className="font-bold text-gray-900">{formatTZS(balanceOwed)}</span>
           </div>
-        </div>
+        </Reveal>
       )}
 
       {/* Payment awaiting staff confirmation */}
       {pendingDeclared.length > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-2.5">
+        <Reveal className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-2.5">
           <Clock className="w-4 h-4 text-amber-600 mt-0.5" />
           <div>
             <p className="text-sm font-medium text-amber-800">{t('client.invoices.paymentDeclared')}</p>
@@ -382,14 +383,14 @@ export default function ClientInvoiceView() {
               {formatTZS(pendingDeclared.reduce((s, p) => s + Number(p.amount || 0), 0))} · {t('client.invoices.awaitingConfirmation')}
             </p>
           </div>
-        </div>
+        </Reveal>
       )}
 
       {/* Money the garage has handed back (migration 027). Shown to the customer
           because a refund they can't see is indistinguishable from money that
           went missing. */}
       {refunds.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-200 p-4">
+        <Reveal className="bg-white rounded-2xl border border-gray-200 p-4">
           <p className="font-semibold text-gray-900 text-sm mb-2">{t('invoices.refundsMade')}</p>
           <div className="space-y-1.5 text-sm">
             {refunds.map(r => (
@@ -407,17 +408,17 @@ export default function ClientInvoiceView() {
             <span>{t('invoices.totalRefunded')}</span>
             <span>{formatTZS(refunds.reduce((s, r) => s + Number(r.amount || 0), 0))}</span>
           </div>
-        </div>
+        </Reveal>
       )}
 
       {/* An invoice with no amount on it hid the Pay button and said nothing,
           which reads as "the app is broken" rather than "we haven't priced this
           yet". That is exactly how the stale-totals bug stayed invisible. */}
       {!canPay && nothingToPay && (
-        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex items-start gap-2.5">
+        <Reveal className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex items-start gap-2.5">
           <Clock className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
           <p className="text-sm text-gray-600">{t('client.invoices.nothingToPay')}</p>
-        </div>
+        </Reveal>
       )}
 
       {/* Pay button — client declares a full or partial payment */}
@@ -509,7 +510,7 @@ export default function ClientInvoiceView() {
 
       {/* Deposit Info */}
       {invoice.invoice_type === 'proforma' && invoice.deposit_percentage > 0 && invoice.status !== 'paid' && (
-        <div className="bg-amber-50 rounded-xl border border-amber-200 p-4">
+        <Reveal className="bg-amber-50 rounded-xl border border-amber-200 p-4">
           <h3 className="text-sm font-semibold text-amber-800 mb-3 flex items-center gap-1.5">
             {t('client.invoices.depositInfo')}
           </h3>
@@ -529,7 +530,7 @@ export default function ClientInvoiceView() {
               </span>
             </div>
           </div>
-        </div>
+        </Reveal>
       )}
 
       {/* Agree Button */}
@@ -558,17 +559,17 @@ export default function ClientInvoiceView() {
 
       {/* Customer Agreed */}
       {invoice.customer_agreed_at && invoice.status !== 'paid' && (
-        <div className="bg-green-50 border border-green-200 rounded-xl p-3 flex items-center gap-2">
+        <Reveal className="bg-green-50 border border-green-200 rounded-xl p-3 flex items-center gap-2">
           <CheckCircle2 className="w-4 h-4 text-green-600" />
           <p className="text-sm text-green-700">
             {t('client.invoices.agreed')} — {formatDate(invoice.customer_agreed_at)}
           </p>
-        </div>
+        </Reveal>
       )}
 
       {/* Negotiation Chat */}
       {invoice.invoice_type === 'proforma' && !['draft', 'paid'].includes(invoice.status) && (
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+        <Reveal className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
           <div className="p-4 border-b border-gray-100 flex items-center gap-2">
             <MessageSquare className="w-4 h-4 text-gray-500" />
             <h3 className="text-sm font-semibold text-gray-700">{t('client.invoices.negotiation')}</h3>
@@ -610,16 +611,16 @@ export default function ClientInvoiceView() {
               </button>
             </div>
           )}
-        </div>
+        </Reveal>
       )}
 
       {/* Contact */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-4 text-center">
+      <Reveal className="bg-white rounded-2xl border border-gray-200 p-4 text-center">
         <p className="text-xs text-gray-500 mb-2">{t('client.invoices.paymentQuestion')}</p>
         <a href="tel:+255123456789" className="inline-flex items-center gap-2 px-4 py-2 bg-blue-700 text-white rounded-lg text-sm font-medium hover:bg-blue-800 active:scale-95 transition">
           <Phone className="w-4 h-4" /> {t('customerView.callUs')}
         </a>
-      </div>
+      </Reveal>
     </div>
   )
 }

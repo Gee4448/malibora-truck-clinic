@@ -5,6 +5,7 @@ import { sendSMS, smsTemplates } from '../lib/sms'
 import { Plus, Eye, Download, Search, X, ClipboardCheck } from 'lucide-react'
 import { generateHandoverPDF } from '../lib/pdf'
 import toast from 'react-hot-toast'
+import Reveal from '../components/common/Reveal'
 
 // Numbered add-one-at-a-time list input; entries are joined into the
 // existing text columns on save, so no schema change is needed.
@@ -205,8 +206,8 @@ export default function Handover() {
             <p className="text-gray-500">{t('common.noData')}</p>
           </div>
         ) : (
-          filtered.map((h) => (
-            <div key={h.id} className="bg-white rounded-2xl border border-gray-200 p-4 hover:shadow-md transition-shadow">
+          filtered.map((h, i) => (
+            <Reveal key={h.id} delay={Math.min(i, 8) * 40} className="bg-white rounded-2xl border border-gray-200 p-4 hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="font-bold text-blue-700">{h.handover_number}</h3>
@@ -224,7 +225,7 @@ export default function Handover() {
                   </button>
                 </div>
               </div>
-            </div>
+            </Reveal>
           ))
         )}
       </div>

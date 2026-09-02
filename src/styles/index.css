@@ -145,6 +145,14 @@ button:not(:disabled):not(.absolute):not(.fixed):active {
   .print-only {
     display: block !important;
   }
+  /* A scroll-reveal that never entered the viewport is still opacity:0 — on
+     paper that is a blank invoice. Print always shows everything. */
+  .reveal-ready .reveal,
+  .reveal-ready .reveal-group > * {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
 }
 
 /* ============================================================

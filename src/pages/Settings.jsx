@@ -9,6 +9,7 @@ import MechanicsManager from '../components/admin/MechanicsManager'
 import PaymentChannelsManager from '../components/admin/PaymentChannelsManager'
 import BranchesManager from '../components/admin/BranchesManager'
 import StaffManager from '../components/admin/StaffManager'
+import Reveal from '../components/common/Reveal'
 
 export default function Settings() {
   const { t, locale, switchLanguage } = useLanguage()
@@ -57,7 +58,7 @@ export default function Settings() {
       <h1 className="text-2xl font-bold text-gray-900">{t('nav.settings')}</h1>
 
       {/* Language */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-5">
+      <Reveal className="bg-white rounded-2xl border border-gray-200 p-5">
         <h2 className="font-semibold text-gray-900 flex items-center gap-2 mb-4">
           <Globe className="w-5 h-5 text-blue-600" /> {t('settings.language')}
         </h2>
@@ -75,10 +76,10 @@ export default function Settings() {
             Kiswahili
           </button>
         </div>
-      </div>
+      </Reveal>
 
       {/* Profile */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-5">
+      <Reveal className="bg-white rounded-2xl border border-gray-200 p-5">
         <h2 className="font-semibold text-gray-900 flex items-center gap-2 mb-4">
           <User className="w-5 h-5 text-blue-600" /> {t('settings.profile')}
         </h2>
@@ -114,10 +115,10 @@ export default function Settings() {
             <Save className="w-4 h-4" /> {t('common.save')}
           </button>
         </form>
-      </div>
+      </Reveal>
 
       {/* Password */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-5">
+      <Reveal className="bg-white rounded-2xl border border-gray-200 p-5">
         <h2 className="font-semibold text-gray-900 flex items-center gap-2 mb-4">
           <Lock className="w-5 h-5 text-blue-600" /> {t('settings.changePassword')}
         </h2>
@@ -139,7 +140,7 @@ export default function Settings() {
             <Save className="w-4 h-4" /> {t('settings.updatePassword')}
           </button>
         </form>
-      </div>
+      </Reveal>
 
       {/* Branches first — staff and mechanics are both assigned to one, so the
           list has to exist before those two panels are useful. */}
@@ -156,7 +157,7 @@ export default function Settings() {
       {isManager && <PaymentChannelsManager />}
 
       {/* Business Info */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-5">
+      <Reveal className="bg-white rounded-2xl border border-gray-200 p-5">
         <h2 className="font-semibold text-gray-900 flex items-center gap-2 mb-4">
           <Building className="w-5 h-5 text-blue-600" /> {t('settings.businessInfo')}
         </h2>
@@ -166,7 +167,7 @@ export default function Settings() {
           <p><strong>{t('settings.vatRate')}:</strong> 18%</p>
           <p><strong>{t('common.currency')}:</strong> TZS (Tanzania Shilling)</p>
         </div>
-      </div>
+      </Reveal>
     </div>
   )
 }

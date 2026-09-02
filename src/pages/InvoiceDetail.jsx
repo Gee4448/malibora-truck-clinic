@@ -8,6 +8,7 @@ import toast from 'react-hot-toast'
 import { generateInvoicePDF } from '../lib/pdf'
 import { syncProformaTotals, statusAfterRetotal, depositAfterRetotal, overpaymentOn, invoiceAfterRefund, refundLimitFor } from '../lib/proforma'
 import { sendSMS, smsTemplates } from '../lib/sms'
+import Reveal from '../components/common/Reveal'
 
 export default function InvoiceDetail() {
   const { id } = useParams()
@@ -660,7 +661,7 @@ export default function InvoiceDetail() {
 
       {/* Customer-declared payments awaiting confirmation (no-print) */}
       {declaredPayments.length > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 no-print">
+        <Reveal className="bg-amber-50 border border-amber-200 rounded-xl p-4 no-print">
           <h3 className="text-sm font-semibold text-amber-900 mb-3 flex items-center gap-1.5">
             <CreditCard className="w-4 h-4" /> {t('invoices.declaredPayments')}
           </h3>
@@ -687,11 +688,11 @@ export default function InvoiceDetail() {
               </div>
             ))}
           </div>
-        </div>
+        </Reveal>
       )}
 
       {/* Invoice Document */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-4 sm:p-8 print:border-0 print:shadow-none print:p-0">
+      <Reveal className="bg-white rounded-2xl border border-gray-200 p-4 sm:p-8 print:border-0 print:shadow-none print:p-0">
         {/* Header */}
         <div className="flex justify-between items-start border-b-2 border-blue-700 pb-4 mb-6">
           <div>
@@ -1045,11 +1046,11 @@ export default function InvoiceDetail() {
           <p>Thank you for choosing Malibora Truck Clinic</p>
           <p className="mt-1">Asante kwa kuchagua Malibora Truck Clinic</p>
         </div>
-      </div>
+      </Reveal>
 
       {/* Deposit Controls (no-print) */}
       {invoice.invoice_type === 'proforma' && invoice.status !== 'paid' && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 no-print">
+        <Reveal className="bg-amber-50 border border-amber-200 rounded-xl p-4 no-print">
           <h3 className="text-sm font-semibold text-amber-800 mb-3">{t('invoices.setDeposit')}</h3>
           <div className="flex items-center gap-3">
             <select value={depositPct} onChange={e => setDepositPct(Number(e.target.value))}
@@ -1070,12 +1071,12 @@ export default function InvoiceDetail() {
               <CheckCircle className="w-3 h-3" /> {t('invoices.customerAgreed')} — {formatDate(invoice.customer_agreed_at)}
             </p>
           )}
-        </div>
+        </Reveal>
       )}
 
       {/* Negotiation Thread (no-print) */}
       {invoice.invoice_type === 'proforma' && (
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden no-print">
+        <Reveal className="bg-white rounded-2xl border border-gray-200 overflow-hidden no-print">
           <div className="p-4 border-b border-gray-100 flex items-center gap-2">
             <MessageSquare className="w-4 h-4 text-gray-500" />
             <h3 className="text-sm font-semibold text-gray-700">{t('invoices.negotiation')}</h3>
@@ -1119,7 +1120,7 @@ export default function InvoiceDetail() {
               <Send className="w-4 h-4" />
             </button>
           </div>
-        </div>
+        </Reveal>
       )}
 
       {/* Payment Modal */}

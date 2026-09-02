@@ -3,6 +3,7 @@ import { useLanguage } from '../contexts/LanguageContext'
 import { supabase, formatTZS } from '../lib/supabase'
 import { TrendingUp, DollarSign, Package, Wrench, BarChart3, Calendar } from 'lucide-react'
 import toast from 'react-hot-toast'
+import Reveal from '../components/common/Reveal'
 
 export default function Reports() {
   const { t } = useLanguage()
@@ -123,7 +124,7 @@ export default function Reports() {
       ) : (
         <>
           {/* Stat Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Reveal group className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {statCards.map((card) => (
               <div key={card.label} className="bg-white rounded-xl p-5 border border-gray-200">
                 <div className="flex items-center justify-between mb-3">
@@ -136,10 +137,10 @@ export default function Reports() {
                 <p className="text-xs text-gray-400 mt-1">{card.sub}</p>
               </div>
             ))}
-          </div>
+          </Reveal>
 
           {/* Profit Breakdown Bar */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+          <Reveal className="bg-white rounded-2xl border border-gray-200 p-5">
             <h2 className="font-semibold text-gray-900 mb-4">{t('reports.profitBreakdown')}</h2>
             <div className="space-y-4">
               <div>
@@ -186,10 +187,10 @@ export default function Reports() {
                 <p className="text-xs text-gray-500">{t('reports.avgMargin')}</p>
               </div>
             </div>
-          </div>
+          </Reveal>
 
           {/* Recent Paid Invoices */}
-          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <Reveal className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
             <h2 className="font-semibold text-gray-900 p-5 border-b border-gray-100">{t('reports.recentPaidInvoices')}</h2>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -228,7 +229,7 @@ export default function Reports() {
                 </tbody>
               </table>
             </div>
-          </div>
+          </Reveal>
         </>
       )}
     </div>

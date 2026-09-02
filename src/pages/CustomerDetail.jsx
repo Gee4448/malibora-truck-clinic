@@ -9,6 +9,7 @@ import {
 import toast from 'react-hot-toast'
 import { emptyVehicle } from '../lib/vehicleOptions'
 import VehicleFormBlock from '../components/vehicles/VehicleFormBlock'
+import Reveal from '../components/common/Reveal'
 
 export default function CustomerDetail() {
   const { id } = useParams()
@@ -179,7 +180,7 @@ export default function CustomerDetail() {
       </div>
 
       {/* Personal info */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-5">
+      <Reveal className="bg-white rounded-2xl border border-gray-200 p-5">
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">{t('customers.detail.personalInfo')}</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {infoRows.map((row, i) => (
@@ -201,10 +202,10 @@ export default function CustomerDetail() {
             </div>
           </div>
         )}
-      </div>
+      </Reveal>
 
       {/* Vehicles */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-5">
+      <Reveal className="bg-white rounded-2xl border border-gray-200 p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
             {t('customers.vehicles')} <span className="text-gray-400">({vehicles.length})</span>
@@ -263,10 +264,10 @@ export default function CustomerDetail() {
             ))}
           </div>
         )}
-      </div>
+      </Reveal>
 
       {/* Service history */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <Reveal group className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Inspections */}
         <HistoryCard
           title={t('nav.inspections')}
@@ -326,7 +327,7 @@ export default function CustomerDetail() {
             </Link>
           )}
         />
-      </div>
+      </Reveal>
 
       {/* Add vehicle modal */}
       {showVehicleForm && (

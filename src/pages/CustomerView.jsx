@@ -7,6 +7,7 @@ import {
   ClipboardCheck, Wrench, Phone, CreditCard, Globe
 } from 'lucide-react'
 import toast, { Toaster } from 'react-hot-toast'
+import Reveal from '../components/common/Reveal'
 
 export default function CustomerView() {
   const { token } = useParams()
@@ -167,7 +168,7 @@ export default function CustomerView() {
       <div className="max-w-lg mx-auto px-4 py-6 space-y-4">
 
         {/* Status Banner */}
-        <div className={`rounded-xl p-4 flex items-center gap-3 ${
+        <Reveal className={`rounded-xl p-4 flex items-center gap-3 ${
           jobCard?.status === 'completed' ? 'bg-green-50 border border-green-200' :
           jobCard?.status === 'in_progress' ? 'bg-yellow-50 border border-yellow-200' :
           isPreJobCard ? 'bg-purple-50 border border-purple-200' :
@@ -192,19 +193,19 @@ export default function CustomerView() {
               {jobCard?.job_number && ` | Job: ${jobCard.job_number}`}
             </p>
           </div>
-        </div>
+        </Reveal>
 
         {/* Customer Complaint */}
         {data?.description && (
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <Reveal className="bg-white rounded-xl border border-gray-200 p-4">
             <h3 className="text-sm font-semibold text-gray-500 mb-1">{t('customerView.yourComplaint')}</h3>
             <p className="text-sm text-gray-800">{data.description}</p>
-          </div>
+          </Reveal>
         )}
 
         {/* Problems / Findings */}
         {items.length > 0 && (
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <Reveal className="bg-white rounded-xl border border-gray-200 overflow-hidden">
             <div className="p-4 border-b border-gray-100 bg-gray-50">
               <div className="flex items-center justify-between">
                 <div>
@@ -296,12 +297,12 @@ export default function CustomerView() {
                 </div>
               )}
             </div>
-          </div>
+          </Reveal>
         )}
 
         {/* Job Card Progress (when work is ongoing) */}
         {jobCard && !isPreJobCard && jobCard.status !== 'pre_job_card' && (
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <Reveal className="bg-white rounded-xl border border-gray-200 p-4">
             <h3 className="font-semibold text-gray-900 mb-3">{t('customerView.repairProgress')}</h3>
             <div className="flex items-center justify-between text-sm">
               {[
@@ -318,16 +319,16 @@ export default function CustomerView() {
                 </div>
               ))}
             </div>
-          </div>
+          </Reveal>
         )}
 
         {/* Contact */}
-        <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
+        <Reveal className="bg-white rounded-xl border border-gray-200 p-4 text-center">
           <p className="text-xs text-gray-500 mb-2">{t('customerView.contactQuestion')}</p>
           <a href="tel:+255123456789" className="inline-flex items-center gap-2 px-4 py-2 bg-blue-700 text-white rounded-lg text-sm font-medium hover:bg-blue-800 active:scale-95 transition">
             <Phone className="w-4 h-4" /> {t('customerView.callUs')}
           </a>
-        </div>
+        </Reveal>
 
         <p className="text-center text-xs text-gray-400 pb-4">
           {t('customerView.poweredBy')}

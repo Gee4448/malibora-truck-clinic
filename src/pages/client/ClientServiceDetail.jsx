@@ -9,6 +9,7 @@ import {
   Wrench, ClipboardCheck, Phone, Receipt, Send, FileText
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import Reveal from '../../components/common/Reveal'
 
 export default function ClientServiceDetail() {
   const { id } = useParams()
@@ -224,7 +225,7 @@ export default function ClientServiceDetail() {
       </Link>
 
       {/* Header */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-4">
+      <Reveal className="bg-white rounded-2xl border border-gray-200 p-4">
         <div className="flex items-center justify-between mb-3">
           <p className="text-lg font-bold text-gray-900">{jobCard.job_number}</p>
           <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
@@ -247,11 +248,11 @@ export default function ClientServiceDetail() {
             <p className="font-medium text-gray-900">{formatDate(jobCard.created_at)}</p>
           </div>
         </div>
-      </div>
+      </Reveal>
 
       {/* Progress */}
       {!isPreJobCard && (
-        <div className="bg-white rounded-2xl border border-gray-200 p-4">
+        <Reveal className="bg-white rounded-2xl border border-gray-200 p-4">
           <h3 className="font-semibold text-gray-900 mb-3 text-sm">{t('customerView.repairProgress')}</h3>
           <div className="flex items-center justify-between">
             {progressSteps.map((step, idx) => (
@@ -265,20 +266,20 @@ export default function ClientServiceDetail() {
               </div>
             ))}
           </div>
-        </div>
+        </Reveal>
       )}
 
       {/* Customer Complaint */}
       {(inspection?.description || jobCard.description) && (
-        <div className="bg-white rounded-2xl border border-gray-200 p-4">
+        <Reveal className="bg-white rounded-2xl border border-gray-200 p-4">
           <h3 className="text-xs font-semibold text-gray-400 mb-1">{t('customerView.yourComplaint')}</h3>
           <p className="text-sm text-gray-800 whitespace-pre-line">{inspection?.description || jobCard.description}</p>
-        </div>
+        </Reveal>
       )}
 
       {/* Live Repair Progress */}
       {items.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-200 p-4 space-y-3">
+        <Reveal className="bg-white rounded-2xl border border-gray-200 p-4 space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="font-semibold text-gray-900 text-sm flex items-center gap-1.5">
               <Wrench className="w-4 h-4 text-blue-600" /> {t('customerView.repairProgress')}
@@ -300,12 +301,12 @@ export default function ClientServiceDetail() {
           ) : !repairStarted ? (
             <p className="text-xs text-gray-400">{t('customerView.noRepairYet')}</p>
           ) : null}
-        </div>
+        </Reveal>
       )}
 
       {/* Inspection Findings */}
       {items.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+        <Reveal className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
           <div className="p-4 border-b border-gray-100 bg-gray-50">
             <div className="flex items-center justify-between">
               <div>
@@ -408,12 +409,12 @@ export default function ClientServiceDetail() {
               </div>
             )}
           </div>
-        </div>
+        </Reveal>
       )}
 
       {/* Work & Costs — the priced job-card line items (what the client will pay) */}
       {jobItems.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+        <Reveal className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
           <div className="p-4 border-b border-gray-100 bg-gray-50 flex items-center gap-2">
             <Receipt className="w-4 h-4 text-blue-600" />
             <h3 className="font-semibold text-gray-900 text-sm">{t('client.services.workCosts')}</h3>
@@ -437,14 +438,14 @@ export default function ClientServiceDetail() {
             <span className="text-gray-500">{t('client.services.estimatedTotal')}</span>
             <span className="font-bold text-gray-900">{formatTZS(jobItemsTotal)}</span>
           </div>
-        </div>
+        </Reveal>
       )}
 
       {/* Request Proforma — client asks staff to prepare a proforma to pay
           against. One press only: after that this becomes a way through to the
           proforma, never the same button again. */}
       {jobItems.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-200 p-4">
+        <Reveal className="bg-white rounded-2xl border border-gray-200 p-4">
           {proforma ? (
             // Staff have prepared it — this is the "press pay, go to mobile
             // money" step Antony describes. Shown for a DRAFT proforma too:
@@ -476,16 +477,16 @@ export default function ClientServiceDetail() {
               </button>
             </>
           )}
-        </div>
+        </Reveal>
       )}
 
       {/* Contact */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-4 text-center">
+      <Reveal className="bg-white rounded-2xl border border-gray-200 p-4 text-center">
         <p className="text-xs text-gray-500 mb-2">{t('customerView.contactQuestion')}</p>
         <a href="tel:+255123456789" className="inline-flex items-center gap-2 px-4 py-2 bg-blue-700 text-white rounded-lg text-sm font-medium hover:bg-blue-800 active:scale-95 transition">
           <Phone className="w-4 h-4" /> {t('customerView.callUs')}
         </a>
-      </div>
+      </Reveal>
     </div>
   )
 }

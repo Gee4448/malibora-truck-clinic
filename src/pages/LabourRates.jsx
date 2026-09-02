@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { supabase, formatTZS } from '../lib/supabase'
 import { Plus, Edit2, Trash2, X, Wrench, Search } from 'lucide-react'
 import toast from 'react-hot-toast'
+import Reveal from '../components/common/Reveal'
 
 export default function LabourRates() {
   const { t } = useLanguage()
@@ -124,7 +125,7 @@ export default function LabourRates() {
         </select>
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+      <Reveal className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
         {loading ? (
           <div className="flex justify-center p-8"><div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full"></div></div>
         ) : filtered.length === 0 ? (
@@ -172,7 +173,7 @@ export default function LabourRates() {
             </table>
           </div>
         )}
-      </div>
+      </Reveal>
 
       {/* Add/Edit Modal */}
       {showForm && (

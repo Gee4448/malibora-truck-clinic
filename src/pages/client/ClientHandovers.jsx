@@ -4,6 +4,7 @@ import { useClient } from '../../contexts/ClientAuthContext'
 import { supabase, formatDate } from '../../lib/supabase'
 import { ClipboardCheck, X, ArrowRight, ShieldCheck, Wrench, CalendarClock } from 'lucide-react'
 import { ListSkeleton } from '../../components/common/Skeleton'
+import Reveal from '../../components/common/Reveal'
 
 export default function ClientHandovers() {
   const { t } = useLanguage()
@@ -43,7 +44,7 @@ export default function ClientHandovers() {
           <p className="text-gray-500 text-sm">{t('client.handovers.empty')}</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <Reveal group className="space-y-3">
           {handovers.map((h) => (
             <button
               key={h.id}
@@ -65,7 +66,7 @@ export default function ClientHandovers() {
               </div>
             </button>
           ))}
-        </div>
+        </Reveal>
       )}
 
       {/* Detail modal (read-only) */}

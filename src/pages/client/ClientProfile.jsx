@@ -4,6 +4,7 @@ import { useClient } from '../../contexts/ClientAuthContext'
 import { supabase } from '../../lib/supabase'
 import { User, Phone, Building2, MapPin, Mail, Save } from 'lucide-react'
 import toast from 'react-hot-toast'
+import Reveal from '../../components/common/Reveal'
 
 export default function ClientProfile() {
   const { t } = useLanguage()
@@ -57,7 +58,7 @@ export default function ClientProfile() {
       <h1 className="text-lg font-bold text-gray-900">{t('client.profile.title')}</h1>
 
       {/* Avatar */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5 text-center">
+      <Reveal className="bg-white rounded-xl border border-gray-200 p-5 text-center">
         <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
           <span className="text-2xl font-bold text-blue-700">
             {customer?.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
@@ -65,10 +66,10 @@ export default function ClientProfile() {
         </div>
         <h2 className="text-lg font-bold text-gray-900">{customer?.full_name}</h2>
         {customer?.company_name && <p className="text-sm text-gray-500">{customer.company_name}</p>}
-      </div>
+      </Reveal>
 
       {/* Form */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-4">
+      <Reveal className="bg-white rounded-xl border border-gray-200 p-4 space-y-4">
         {fields.map((field) => (
           <div key={field.key}>
             <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-1.5">
@@ -98,7 +99,7 @@ export default function ClientProfile() {
             </>
           )}
         </button>
-      </div>
+      </Reveal>
 
       {/* Customer ID */}
       {customer?.id && (

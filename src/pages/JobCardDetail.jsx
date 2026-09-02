@@ -8,6 +8,7 @@ import { fetchEvidence, evidenceUrl, fetchFindings } from '../lib/evidence'
 import { fetchJobLabour, billLoggedLabour } from '../lib/labour'
 import { Plus, Trash2, FileText, Printer, ArrowLeft, Package, Wrench, DollarSign, X, CheckCircle2, XCircle, UserPlus, AlertCircle, Share2, Pencil, Camera, Flag, Clock } from 'lucide-react'
 import toast from 'react-hot-toast'
+import Reveal from '../components/common/Reveal'
 
 export default function JobCardDetail() {
   const { id } = useParams()
@@ -546,7 +547,7 @@ export default function JobCardDetail() {
       )}
 
       {/* Job Info Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <Reveal group className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Customer Info */}
         <div className="bg-white rounded-2xl border border-gray-200 p-5">
           <h3 className="font-semibold text-gray-900 mb-3">{t('jobs.customer')}</h3>
@@ -568,10 +569,10 @@ export default function JobCardDetail() {
             <p><span className="text-gray-500">{t('jobs.fuelLevel')}:</span> {job.fuel_level || '-'}</p>
           </div>
         </div>
-      </div>
+      </Reveal>
 
       {/* Work Description */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-5">
+      <Reveal className="bg-white rounded-2xl border border-gray-200 p-5">
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-semibold text-gray-900">{t('jobs.description')}</h3>
           {job.status !== 'completed' && job.status !== 'cancelled' && !editingDesc && (
@@ -602,7 +603,7 @@ export default function JobCardDetail() {
             <p className="text-sm text-gray-700">{job.diagnosis}</p>
           </>
         )}
-      </div>
+      </Reveal>
 
       {/* Assigned Technician */}
       {job.assigned_technician && (
@@ -623,7 +624,7 @@ export default function JobCardDetail() {
 
       {/* Pre-Job Card: Inspection Findings Approval */}
       {isPreJobCard && inspectionItems.length > 0 && (
-        <div className="bg-white rounded-xl border-2 border-purple-200 overflow-hidden">
+        <Reveal className="bg-white rounded-xl border-2 border-purple-200 overflow-hidden">
           <div className="flex items-center justify-between p-5 border-b border-purple-100 bg-purple-50">
             <div>
               <h3 className="font-semibold text-purple-900">{t('preJobCard.title')}</h3>
@@ -686,11 +687,11 @@ export default function JobCardDetail() {
               </span>
             </div>
           </div>
-        </div>
+        </Reveal>
       )}
 
       {/* Items Table */}
-      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+      <Reveal className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
         <div className="flex items-center justify-between p-5 border-b border-gray-100">
           <h3 className="font-semibold text-gray-900">{t('jobs.items')}</h3>
           {job.status !== 'completed' && job.status !== 'cancelled' && (
@@ -795,7 +796,7 @@ export default function JobCardDetail() {
             </tfoot>
           </table>
         </div>
-      </div>
+      </Reveal>
 
       {/* Labour logged by the mechanic (migration 034). The mechanic records
           HOURS from the workshop; the office sets the rate and bills it as one
@@ -806,7 +807,7 @@ export default function JobCardDetail() {
         const loggedHours = labourEntries.reduce((s, e) => s + Number(e.hours || 0), 0)
         const canBill = unbilledHours > 0 && job.status !== 'completed' && job.status !== 'cancelled'
         return (
-          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+          <Reveal className="bg-white rounded-2xl border border-gray-200 p-5">
             <h2 className="font-semibold text-gray-900 flex items-center gap-2 mb-1">
               <Clock className="w-5 h-5 text-amber-600" /> {t('jobs.labourLogged')}
             </h2>
@@ -867,7 +868,7 @@ export default function JobCardDetail() {
             ) : unbilledHours === 0 && (
               <p className="mt-3 text-xs text-green-700">{t('jobs.labourAllBilled')}</p>
             )}
-          </div>
+          </Reveal>
         )
       })()}
 
@@ -875,7 +876,7 @@ export default function JobCardDetail() {
           The mechanic files words and a photo; pricing is the office's job, and
           the priced line then goes through the normal additional-item approval. */}
       {findings.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-200 p-5">
+        <Reveal className="bg-white rounded-2xl border border-gray-200 p-5">
           <h2 className="font-semibold text-gray-900 flex items-center gap-2 mb-1">
             <Flag className="w-5 h-5 text-red-500" /> {t('jobs.reportedFaults')}
           </h2>
@@ -921,12 +922,12 @@ export default function JobCardDetail() {
               </div>
             ))}
           </div>
-        </div>
+        </Reveal>
       )}
 
       {/* Evidence the mechanic uploaded from the workshop (migration 030) */}
       {evidence.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-200 p-5">
+        <Reveal className="bg-white rounded-2xl border border-gray-200 p-5">
           <h2 className="font-semibold text-gray-900 flex items-center gap-2 mb-1">
             <Camera className="w-5 h-5 text-blue-600" /> {t('jobs.evidence')}
           </h2>
@@ -940,7 +941,7 @@ export default function JobCardDetail() {
               </a>
             ))}
           </div>
-        </div>
+        </Reveal>
       )}
 
       {/* Assign Technician Modal */}

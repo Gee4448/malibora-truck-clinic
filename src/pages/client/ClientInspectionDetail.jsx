@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { DashboardSkeleton } from '../../components/common/Skeleton'
+import Reveal from '../../components/common/Reveal'
 
 // The customer reads their inspection report and either accepts the quoted work
 // or opens a negotiation over the price.
@@ -310,7 +311,7 @@ export default function ClientInspectionDetail() {
       </Link>
 
       {/* Report header */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-4">
+      <Reveal className="bg-white rounded-2xl border border-gray-200 p-4">
         <div className="flex items-start gap-3">
           <div className="w-11 h-11 rounded-xl bg-purple-100 flex items-center justify-center flex-shrink-0">
             <ClipboardCheck className="w-6 h-6 text-purple-600" />
@@ -333,11 +334,11 @@ export default function ClientInspectionDetail() {
             <p className="text-sm text-gray-800">{inspection.description}</p>
           </div>
         )}
-      </div>
+      </Reveal>
 
       {/* Inspection fee — the customer pays the garage for the diagnosis */}
       {fee > 0 && (
-        <div className={`rounded-2xl border overflow-hidden ${
+        <Reveal className={`rounded-2xl border overflow-hidden ${
           feePaid ? 'bg-white border-gray-200'
             : awaitingConfirmation ? 'bg-amber-50 border-amber-200'
             : 'bg-white border-blue-300'
@@ -473,24 +474,24 @@ export default function ClientInspectionDetail() {
               ))}
             </div>
           )}
-        </div>
+        </Reveal>
       )}
 
       {/* Why the buttons aren't there yet */}
       {!findingsFinal && (
-        <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-xl">
+        <Reveal className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-xl">
           <Wrench className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
           <p className="text-xs text-blue-700">{t('client.inspections.notFinalYet')}</p>
-        </div>
+        </Reveal>
       )}
       {workStarted && (
-        <div className="flex items-start gap-2 p-3 bg-gray-50 border border-gray-200 rounded-xl">
+        <Reveal className="flex items-start gap-2 p-3 bg-gray-50 border border-gray-200 rounded-xl">
           <Lock className="w-4 h-4 text-gray-500 flex-shrink-0 mt-0.5" />
           <p className="text-xs text-gray-600">
             {t('client.inspections.workStarted')}
             {jobCard?.job_number && ` (${jobCard.job_number})`}
           </p>
-        </div>
+        </Reveal>
       )}
 
       {/* Findings */}
@@ -500,7 +501,7 @@ export default function ClientInspectionDetail() {
           <p className="text-gray-500 text-sm">{t('client.inspections.noFindings')}</p>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+        <Reveal className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
           <div className="p-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between gap-2">
             <div>
               <h2 className="font-semibold text-gray-900 text-sm">{t('client.inspections.findings')}</h2>
@@ -601,7 +602,7 @@ export default function ClientInspectionDetail() {
               </div>
             )}
           </div>
-        </div>
+        </Reveal>
       )}
 
       {/* Confirm the decision */}
@@ -619,7 +620,7 @@ export default function ClientInspectionDetail() {
       )}
 
       {/* Bargaining */}
-      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+      <Reveal className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
         <div className="p-4 border-b border-gray-100 flex items-center gap-2">
           <MessageCircle className="w-4 h-4 text-gray-500" />
           <h2 className="font-semibold text-gray-900 text-sm">{t('client.inspections.bargainTitle')}</h2>
@@ -706,7 +707,7 @@ export default function ClientInspectionDetail() {
           )}
           <p className="text-xs text-gray-400 mt-3 text-center">{t('client.inspections.bargainHint')}</p>
         </div>
-      </div>
+      </Reveal>
     </div>
   )
 }
