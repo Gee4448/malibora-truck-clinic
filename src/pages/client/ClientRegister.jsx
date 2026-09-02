@@ -113,7 +113,7 @@ export default function ClientRegister() {
   if (success) {
     return (
       <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center px-4 animate-in fade-in duration-200">
-        <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 w-full max-w-sm text-center">
+        <div className="auth-card rounded-2xl p-6 sm:p-8 w-full max-w-sm text-center">
           <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <CheckCircle2 className="w-8 h-8 text-green-600" />
           </div>
@@ -124,7 +124,7 @@ export default function ClientRegister() {
             {t('client.register.requestReceivedMessage')}
           </p>
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-5 flex items-center gap-2 justify-center">
-            <Clock className="w-4 h-4 text-blue-600 flex-shrink-0" />
+            <Clock className="w-4 h-4 text-blue-700 flex-shrink-0" />
             <p className="text-sm text-blue-700 font-medium">
               {t('client.register.withinTwentyFour')}
             </p>
@@ -135,9 +135,9 @@ export default function ClientRegister() {
           >
             {t('client.register.backToLogin')}
           </button>
-          <div className="mt-4 text-xs text-gray-400">
+          <div className="mt-4 text-xs text-gray-500">
             {t('client.register.contactInfo')}{' '}
-            <a href="tel:+255123456789" className="text-blue-600 font-medium">+255 123 456 789</a>
+            <a href="tel:+255123456789" className="text-blue-700 font-medium">+255 123 456 789</a>
           </div>
         </div>
       </div>
@@ -145,16 +145,16 @@ export default function ClientRegister() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-700 flex flex-col">
+    <div className="min-h-screen auth-stage flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-4">
         <div className="flex items-center gap-2">
-          <div className="bg-white rounded-xl p-2">
+          <div className="bg-white no-glass rounded-xl p-2">
             <Truck className="w-6 h-6 text-blue-700" />
           </div>
           <div className="text-white">
             <h1 className="text-sm font-bold">{t('app.name')}</h1>
-            <p className="text-blue-200 text-[10px]">{t('client.login.portal')}</p>
+            <p className="on-dark-muted text-[10px]">{t('client.login.portal')}</p>
           </div>
         </div>
         <button
@@ -168,15 +168,15 @@ export default function ClientRegister() {
 
       {/* Step Indicator */}
       <div className="flex items-center justify-center gap-3 px-4 py-2">
-        <div className={`flex items-center gap-1.5 ${step >= 1 ? 'text-white' : 'text-blue-300'}`}>
-          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${step >= 1 ? 'bg-white text-blue-700' : 'bg-white/20 text-blue-200'}`}>
+        <div className={`flex items-center gap-1.5 ${step >= 1 ? 'text-white' : 'text-white/78'}`}>
+          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${step >= 1 ? 'bg-white text-blue-700' : 'bg-black/40 text-white/85 ring-1 ring-white/15'}`}>
             {step > 1 ? <CheckCircle2 className="w-4 h-4 text-blue-700" /> : '1'}
           </div>
           <span className="text-xs font-medium">{t('client.register.stepPersonal')}</span>
         </div>
         <div className={`w-8 h-0.5 ${step >= 2 ? 'bg-white' : 'bg-white/20'}`} />
-        <div className={`flex items-center gap-1.5 ${step >= 2 ? 'text-white' : 'text-blue-300'}`}>
-          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${step >= 2 ? 'bg-white text-blue-700' : 'bg-white/20 text-blue-200'}`}>
+        <div className={`flex items-center gap-1.5 ${step >= 2 ? 'text-white' : 'text-white/78'}`}>
+          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${step >= 2 ? 'bg-white text-blue-700' : 'bg-black/40 text-white/85 ring-1 ring-white/15'}`}>
             2
           </div>
           <span className="text-xs font-medium">
@@ -187,7 +187,7 @@ export default function ClientRegister() {
 
       {/* Form Card */}
       <div className="flex-1 flex items-start justify-center px-4 pb-12 pt-2">
-        <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 w-full max-w-sm">
+        <div className="auth-card rounded-2xl p-6 sm:p-8 w-full max-w-sm">
           {step === 1 ? (
             <>
               <div className="text-center mb-5">
@@ -214,7 +214,7 @@ export default function ClientRegister() {
                 {/* Password */}
                 <div>
                   <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-1.5">
-                    <Lock className="w-3.5 h-3.5 text-gray-400" />
+                    <Lock className="w-3.5 h-3.5 text-gray-500" />
                     {t('client.register.passwordLabel')} *
                   </label>
                   <div className="relative">
@@ -229,7 +229,7 @@ export default function ClientRegister() {
                     <button
                       type="button"
                       onClick={() => setShowPassword(s => !s)}
-                      className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-gray-600"
+                      className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-gray-700"
                       tabIndex={-1}
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -267,7 +267,7 @@ export default function ClientRegister() {
                     <Plus className="w-4 h-4" />
                     {t('client.register.addVehicleOptional')}
                   </button>
-                  <p className="text-xs text-gray-400 text-center pt-1">
+                  <p className="text-xs text-gray-500 text-center pt-1">
                     {t('client.register.vehicleHint')}
                   </p>
                 </div>
@@ -294,7 +294,7 @@ export default function ClientRegister() {
                 ))}
 
                 <button type="button" onClick={addVehicle}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-dashed border-blue-300 text-blue-600 font-medium rounded-xl hover:bg-blue-50 transition active:scale-[0.98]">
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-dashed border-blue-300 text-blue-700 font-medium rounded-xl hover:bg-blue-50 transition active:scale-[0.98]">
                   <Plus className="w-4 h-4" />
                   {t('client.register.addAnotherVehicle')}
                 </button>
@@ -322,8 +322,8 @@ export default function ClientRegister() {
           )}
 
           <div className="mt-5 pt-4 border-t border-gray-100 text-center">
-            <p className="text-xs text-gray-400">{t('client.register.hasAccount')}</p>
-            <Link to="/client" className="text-sm text-blue-600 font-medium hover:text-blue-700">
+            <p className="text-xs text-gray-500">{t('client.register.hasAccount')}</p>
+            <Link to="/client" className="text-sm text-blue-700 font-medium hover:text-blue-700">
               {t('client.register.loginLink')}
             </Link>
           </div>
@@ -337,7 +337,7 @@ function FormInput({ icon: Icon, label, required, ...props }) {
   return (
     <div>
       <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-1.5">
-        {Icon && <Icon className="w-3.5 h-3.5 text-gray-400" />}
+        {Icon && <Icon className="w-3.5 h-3.5 text-gray-500" />}
         {label} {required && '*'}
       </label>
       <input

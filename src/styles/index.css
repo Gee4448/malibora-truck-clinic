@@ -1,37 +1,71 @@
 @import "tailwindcss";
-
-/* Lighter, airier shadow scale — the default xl/2xl shadows read heavy and
-   dark. Softening opacity and cool-tinting (slate) makes the whole app feel
-   lighter without editing the ~24 elevated surfaces individually. */
 @theme {
-  --shadow-md: 0 3px 8px -2px rgb(15 23 42 / 0.07), 0 1px 3px -1px rgb(15 23 42 / 0.05);
-  --shadow-lg: 0 8px 20px -6px rgb(15 23 42 / 0.08), 0 2px 6px -3px rgb(15 23 42 / 0.05);
-  --shadow-xl: 0 14px 32px -10px rgb(15 23 42 / 0.10), 0 4px 10px -5px rgb(15 23 42 / 0.06);
-  --shadow-2xl: 0 22px 48px -14px rgb(15 23 42 / 0.14);
+  /* ---- Elevation -------------------------------------------------------
+     Warm-tinted rather than slate: on a glass surface a cool shadow reads as
+     dirt under the panel. These are keyed to the brand's near-black (#000)
+     with a trace of the orange so the whole stack feels lit by one source. */
+  --shadow-md: 0 3px 8px -2px rgb(23 12 6 / 0.08), 0 1px 3px -1px rgb(23 12 6 / 0.05);
+  --shadow-lg: 0 8px 20px -6px rgb(23 12 6 / 0.10), 0 2px 6px -3px rgb(23 12 6 / 0.06);
+  --shadow-xl: 0 14px 32px -10px rgb(23 12 6 / 0.12), 0 4px 10px -5px rgb(23 12 6 / 0.07);
+  --shadow-2xl: 0 22px 48px -14px rgb(23 12 6 / 0.16);
 
-  /* Brand recolor: the app was built with `blue-*` as its de-facto primary
-     (500+ usages). Malibora's brand is orange (logo mark ≈ #F58220), so we
-     remap the whole blue ramp to a matching orange ramp — every existing
-     `bg-blue-600`, `text-blue-700`, etc. becomes on-brand with no markup edits.
-     Mid shades hit the logo orange; 600–800 stay deep enough for legible white
-     button text. (New code can keep using `blue-*` for primary.) */
-  --color-blue-50:  #fff6ec;
-  --color-blue-100: #ffe7d0;
-  --color-blue-200: #fecfa4;
-  --color-blue-300: #fdae70;
-  --color-blue-400: #fa9340;
-  --color-blue-500: #f58220; /* brand orange — accents, rings, icons */
-  --color-blue-600: #c95c0c; /* primary buttons — deep enough for white text */
-  --color-blue-700: #a94d0a; /* hover / headers */
-  --color-blue-800: #97430c;
-  --color-blue-900: #7c370b;
+  /* ---- Typography ------------------------------------------------------
+     Two families, each doing the job it is best at.
+
+     Space Grotesk carries headings, figures and labels. It descends from
+     technical drafting lettering, so it reads as engineering rather than as
+     marketing, and its numerals are even-width enough that a column of TZS
+     amounts lines up without extra work.
+
+     Inter stays for running text. Nothing beats it at 13px on the cheap
+     Android screens this app actually lives on, and legibility in a workshop
+     outranks personality. */
+  --font-display: 'Space Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* ---- Brand ramp ------------------------------------------------------
+     The app was built with `blue-*` as its de-facto primary (500+ usages), so
+     the whole blue ramp is remapped to the brand orange. Every existing
+     `bg-blue-600` / `text-blue-700` recolours with no markup edits.
+
+     Anchored on the brand sheet: 500 IS #E85002 exactly. Note 500 only clears
+     3.8:1 against white — fine for large text, icons and borders, not for 13px
+     labels — so 600 (#c74301, 4.96:1) stays the button and small-text colour.
+     Do not "simplify" by pointing buttons at 500; that silently fails AA. */
+  --color-blue-50:  #fff4ee;
+  --color-blue-100: #ffe2d3;
+  --color-blue-200: #ffc0a2;
+  --color-blue-300: #ff9a68;
+  --color-blue-400: #fa6f28;
+  --color-blue-500: #e85002; /* brand orange, verbatim from the palette sheet */
+  --color-blue-600: #c74301; /* primary buttons — 4.96:1 on white */
+  --color-blue-700: #a33601; /* hover / headers */
+  --color-blue-800: #832c02;
+  --color-blue-900: #6b2503;
 }
 
-/* Custom theme variables */
 :root {
-  --color-primary: #e26c12;
-  --color-primary-light: #f58220;
-  --color-primary-dark: #bd550d;
+  /* ======================================================================
+     BRAND — transcribed from the palette sheet, unaltered.
+     ====================================================================== */
+  --brand-orange: #e85002;   /* rgb(232, 80, 2)    Branding Orange */
+  --brand-black:  #000000;   /* rgb(0, 0, 0)       Primary        */
+  --brand-white:  #f9f9f9;   /* rgb(249, 249, 249) White          */
+  --brand-gray-light: #a7a7a7; /* rgb(167,167,167) Light Gray     */
+  --brand-gray:   #646464;   /* rgb(100,100,100)   Gray           */
+  --brand-gray-dark: #333333;/* rgb(51, 51, 51)    Dark Gray      */
+
+  /* The four gradient stops from the sheet, kept as separate tokens so the
+     bloom can be rebuilt at any angle or size without re-deriving them. */
+  --brand-grad-1: #000000;
+  --brand-grad-2: #c10801;
+  --brand-grad-3: #f16001;
+  --brand-grad-4: #d9c3ab;   /* the warm sand stop — the palette's only highlight */
+
+  /* Semantic aliases (kept: existing components reference these) */
+  --color-primary: #e85002;
+  --color-primary-light: #f16001;
+  --color-primary-dark: #a33601;
   --color-success: #059669;
   --color-warning: #d97706;
   --color-danger: #dc2626;
@@ -39,9 +73,48 @@
   --color-gray-100: #f3f4f6;
   --color-gray-200: #e5e7eb;
   --color-gray-300: #d1d5db;
-  --color-gray-500: #6b7280;
+  /* Also darkened, and for a longer-standing reason than the glass: this app
+     uses gray-400 for timestamps and metadata — information, not decoration —
+     and Tailwind's #9ca3af is 2.55:1 there, which was already failing AA before
+     any of this. #6e7480 is 4.56:1 and still reads a step lighter than
+     gray-500, so the three-level text hierarchy survives intact. */
+  --color-gray-400: #6e7480;
+  /* Darkened from Tailwind's #6b7280. That default is only 4.83:1 on pure
+     WHITE, and this app no longer has any pure white: every card is frosted
+     over a warm field, which costs a few tenths and drops the app's ~200
+     `text-gray-500` subtitles under AA. Measured on the darkest surface a
+     subtitle can land on (an auth card over the bloom) this is 4.96:1. */
+  --color-gray-500: #5f6673;
   --color-gray-700: #374151;
   --color-gray-900: #111827;
+
+  /* ======================================================================
+     GLASS
+     One set of dials for the entire material. Change the blur here and every
+     frosted surface in the app moves together — that consistency is most of
+     what separates "glassmorphic" from "some cards happen to be see-through".
+
+     One family, for the light frosted work-area surfaces. The dark surfaces
+     are opaque, so they carry their own colours rather than a shared alpha —
+     see .app-bar / .hero-dark / .tile-dark in the SHELL section.
+     ====================================================================== */
+  --glass-blur: 14px;
+  --glass-blur-chrome: 20px;   /* headers, rails, sheets — more separation */
+  --glass-sat: 175%;
+
+  /* Light family. 0.78, not the 0.5-ish alpha most glassmorphism reaches for.
+     Measured: at 0.66 a `text-gray-500` subtitle over the brightest part of the
+     orange bloom composites to 4.38:1 — under AA, invisibly, only in the corners
+     of the page where the bloom is strongest. 0.78 puts it back at 4.6:1
+     everywhere. The blur, the saturation and the bevel are what make it read as
+     glass; the alpha was only ever buying a contrast failure. */
+  --glass-fill: rgb(255 255 255 / 0.78);
+  --glass-fill-strong: rgb(255 255 255 / 0.88);
+  --glass-stroke: rgb(255 255 255 / 0.72);
+  --glass-edge: rgb(255 255 255 / 0.85);   /* the 1px top highlight */
+  --glass-shadow:
+    0 1px 1px rgb(23 12 6 / 0.04),
+    0 8px 28px -10px rgb(23 12 6 / 0.16);
 
   /* Motion tokens */
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -51,16 +124,57 @@
   --dur-slow: 500ms;
 }
 
-/* Base styles */
+/* ============================================================
+   Base + the ambient field
+
+   Glass is not a colour, it is a relationship: a frosted panel only reads as
+   glass when there is something varied behind it to refract. The old flat
+   `bg-gray-50` gave the blur nothing to work with, so a translucent card just
+   looked like a slightly grubby grey box.
+
+   So the page itself becomes the light source. Two soft orange blooms and one
+   sand-coloured wash — the palette sheet's own gradient stops — sit fixed
+   behind all content. They are painted on `body::before` rather than on `body`
+   so `background-color` stays available as an opaque base, and so the field
+   never scrolls: a gradient moving behind ~20 blurred panels is what actually
+   costs frames on a cheap phone, while a fixed one is composited once.
+   ============================================================ */
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background-color: var(--color-gray-50);
+  font-family: var(--font-sans);
+  background-color: #f6f4f2; /* warm off-white, not the old cool gray-50 */
   color: var(--color-gray-900);
   -webkit-tap-highlight-color: transparent;
   /* Crisper glyphs — thinner strokes read lighter than the OS default. */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(60rem 40rem at 8% -10%,   rgb(232 80 2 / 0.13),    transparent 60%),
+    radial-gradient(45rem 34rem at 105% 8%,   rgb(193 8 1 / 0.10),     transparent 62%),
+    radial-gradient(50rem 40rem at 50% 108%,  rgb(217 195 171 / 0.34), transparent 65%);
+}
+
+/* Headings and figures take the display face. Set here once, rather than as a
+   utility class on several hundred elements; Tailwind's own `font-*` utilities
+   still win wherever a component states one explicitly. */
+h1, h2, h3, h4, .font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+/* Tabular figures wherever money or counts appear. Space Grotesk's digits are
+   close to even width but not identical; `tnum` makes an invoice column line
+   up on the decimal instead of shimmering as the values change. */
+.tabular, .font-display {
+  font-variant-numeric: tabular-nums;
 }
 
 html {
@@ -275,11 +389,11 @@ button:not(:disabled):not(.absolute):not(.fixed):active {
 }
 .card-lift:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 25px -8px rgb(226 108 18 / 0.20);
+  box-shadow: 0 10px 25px -8px rgb(232 80 2 / 0.22);
 }
 .card-lift:active {
   transform: translateY(0) scale(0.98);
-  box-shadow: 0 2px 8px -4px rgb(226 108 18 / 0.16);
+  box-shadow: 0 2px 8px -4px rgb(232 80 2 / 0.18);
   transition-duration: 80ms;
 }
 
@@ -292,37 +406,488 @@ button:not(:disabled):not(.absolute):not(.fixed):active {
   transition-duration: 80ms;
 }
 
-/* Frosted-glass surfaces (per ui-ux-pro-max: blur 12-20px + saturate,
-   translucent fill, 1px light border; keep text contrast >= 4.5:1). */
+/* ============================================================================
+   THE GLASS MATERIAL
+   ----------------------------------------------------------------------------
+   Everything frosted in this app is one of five things. Keeping it to five is
+   the point: glassmorphism falls apart the moment surfaces disagree about how
+   thick the glass is, because the eye reads inconsistent blur as inconsistent
+   depth, and the layering stops making sense.
+
+     .glass          light frosted panel — the default card in the work area
+     .glass-strong   same, denser — for panels carrying small print or inputs
+     .glass-rail     chrome: sticky headers, nav rails, bottom bars
+     .glass-panel    frosted panel for use OVER a dark ground (chips on a hero)
+     .glass-overlay  the dim behind a modal
+
+   There is deliberately no "dark glass card" here. A dark translucent panel on
+   a light page lets the page through and turns muddy brown — the physics only
+   work the other way round. Dark surfaces in this app are opaque instead; see
+   .hero-dark and .tile-dark further down.
+
+   Each panel gets a 1px highlight along its top edge, drawn as a masked ring
+   rather than a plain border, so the light falls off around the curve the way
+   it does on a real bevel. That one detail is most of the difference between
+   "translucent div" and "pane of glass".
+   ============================================================================ */
+
+/* The shared bevel. Drawn on ::after so it sits above the element background
+   but below its content, and inherits the corner radius. */
+.glass::after,
+.glass-strong::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  pointer-events: none;
+  /* Bright at the top, gone by the middle — one light source, overhead. */
+  background: linear-gradient(160deg, var(--glass-edge), transparent 45%);
+  /* Composite the gradient down to just the 1px padding ring. */
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+.glass,
+.glass-strong,
+.glass-rail {
+  position: relative;
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+}
+
+.glass {
+  background: var(--glass-fill);
+  border: 1px solid var(--glass-stroke);
+  box-shadow: var(--glass-shadow);
+}
+
+.glass-strong {
+  background: var(--glass-fill-strong);
+  border: 1px solid var(--glass-stroke);
+  box-shadow: var(--glass-shadow);
+}
+
+/* Chrome — thicker blur, and no bevel, since it butts against the viewport. */
+.glass-rail {
+  backdrop-filter: blur(var(--glass-blur-chrome)) saturate(var(--glass-sat));
+  -webkit-backdrop-filter: blur(var(--glass-blur-chrome)) saturate(var(--glass-sat));
+}
+
+/* Legacy aliases. The markup already in the app uses these names; repointing
+   them at the new material upgrades those surfaces with no file edits. */
 .glass-header {
-  backdrop-filter: blur(14px) saturate(180%);
-  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  position: relative;
+  backdrop-filter: blur(var(--glass-blur-chrome)) saturate(var(--glass-sat));
+  -webkit-backdrop-filter: blur(var(--glass-blur-chrome)) saturate(var(--glass-sat));
+}
+.glass-card {
+  position: relative;
+  background: var(--glass-fill);
+  border: 1px solid var(--glass-stroke);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+}
+.glass-panel {
+  position: relative;
+  background: rgb(255 255 255 / 0.14);
+  border: 1px solid rgb(255 255 255 / 0.22);
+  backdrop-filter: blur(var(--glass-blur-chrome)) saturate(var(--glass-sat));
+  -webkit-backdrop-filter: blur(var(--glass-blur-chrome)) saturate(var(--glass-sat));
 }
 
 /* Modal / sheet backdrop — blurs the page behind instead of a flat dim. */
 .glass-overlay {
-  background: rgba(17, 17, 20, 0.45);
-  backdrop-filter: blur(6px) saturate(140%);
-  -webkit-backdrop-filter: blur(6px) saturate(140%);
+  background: rgb(10 6 4 / 0.48);
+  backdrop-filter: blur(8px) saturate(140%);
+  -webkit-backdrop-filter: blur(8px) saturate(140%);
 }
 
-/* Frosted panel for use OVER colour/gradient (heroes, dark tiles) — needs a
-   vibrant backdrop to read as glass, so don't place it on plain white. */
-.glass-panel {
-  background: rgba(255, 255, 255, 0.14);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.22);
+/* ----------------------------------------------------------------------------
+   Systemic upgrade: every card in the app becomes glass, without hand-editing
+   236 `bg-white` call sites across 60 files.
+
+   These rules are UNLAYERED on purpose. Tailwind v4 puts its utilities in
+   `@layer utilities`, and cascade layers outrank specificity — so the same rule
+   inside a `components` layer would lose to `bg-white` no matter how specific
+   it was, while unlayered CSS beats every layer. This is the only place the
+   override can live and still win.
+
+   Scoped to the card signature (`bg-white` plus a large radius) rather than to
+   `bg-white` alone, which is also worn by inputs, selects, badges and table
+   rows. Those keep `rounded-lg` or smaller and stay deliberately opaque: a form
+   field you can see through is a form field you misread.
+   ---------------------------------------------------------------------------- */
+.bg-white.rounded-xl,
+.bg-white.rounded-2xl,
+.bg-white.rounded-3xl {
+  background-color: var(--glass-fill);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  border-color: var(--glass-stroke);
 }
 
-/* Frosted card for light surfaces — a whisper of blur + a highlight edge so a
-   card lifts off the page without the flat "AI card" look. */
-.glass-card {
-  background: rgba(255, 255, 255, 0.72);
-  backdrop-filter: blur(12px) saturate(160%);
-  -webkit-backdrop-filter: blur(12px) saturate(160%);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  box-shadow: 0 8px 30px -12px rgba(17, 24, 39, 0.18);
+/* Nesting kills it. Glass inside glass double-blurs into an opaque smear and
+   the depth cue inverts — the inner panel ends up looking further away than the
+   one containing it. A nested card drops the blur and simply goes lighter. */
+.bg-white.rounded-xl .bg-white.rounded-xl,
+.bg-white.rounded-xl .bg-white.rounded-2xl,
+.bg-white.rounded-2xl .bg-white.rounded-xl,
+.bg-white.rounded-2xl .bg-white.rounded-2xl,
+.glass .bg-white.rounded-xl,
+.glass .bg-white.rounded-2xl,
+.glass-strong .bg-white.rounded-xl,
+.glass-strong .bg-white.rounded-2xl {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background-color: rgb(255 255 255 / 0.55);
+}
+
+/* Escape hatch for anything that must stay solid — chart canvases, PDF
+   previews, image crops. Put `no-glass` alongside the card classes. */
+.no-glass,
+.no-glass.bg-white.rounded-xl,
+.no-glass.bg-white.rounded-2xl,
+.no-glass.bg-white.rounded-3xl {
+  background-color: #fff;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* ----------------------------------------------------------------------------
+   The four ways this can go wrong, handled.
+   ---------------------------------------------------------------------------- */
+
+/* 1. Print. A translucent invoice prints as grey mush, and backdrop-filter is
+      ignored on paper anyway, so print gets flat white and real borders back. */
+@media print {
+  .glass, .glass-strong, .glass-card, .glass-rail, .glass-header,
+  .bg-white.rounded-xl, .bg-white.rounded-2xl, .bg-white.rounded-3xl {
+    background: #fff !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border-color: #e5e7eb !important;
+    box-shadow: none !important;
+  }
+  .glass::after, .glass-strong::after { display: none; }
+  body::before { display: none; }
+}
+
+/* 2. Reduced transparency. A real OS-level accessibility setting (iOS, macOS,
+      Windows), and one this material has to respect rather than treat as a
+      nicety — people turn it on because translucency makes text unreadable for
+      them. Everything goes opaque; nothing moves and nothing disappears. */
+@media (prefers-reduced-transparency: reduce) {
+  .glass, .glass-strong, .glass-card, .glass-rail, .glass-header,
+  .bg-white.rounded-xl, .bg-white.rounded-2xl, .bg-white.rounded-3xl {
+    background-color: #fff;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .glass-panel {
+    background-color: #0b0705;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .glass-overlay {
+    background: rgb(10 6 4 / 0.85);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  body::before { opacity: 0.5; }
+}
+
+/* 3. Cheap phones. backdrop-filter is GPU work per surface per frame, and this
+      app's real hardware is mid-range Android in a workshop. Halving the radius
+      on small screens keeps the effect while roughly halving the sample cost,
+      and at phone size there is less backdrop detail to lose anyway. */
+@media (max-width: 767px) {
+  :root {
+    --glass-blur: 9px;
+    --glass-blur-chrome: 14px;
+  }
+}
+
+/* 4. No backdrop-filter at all. Without this, an unsupported browser renders
+      these as flat see-through panels with page content showing through the
+      text — unreadable rather than merely plain. The feature query makes the
+      fallback opaque. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass, .glass-strong, .glass-card, .glass-rail, .glass-header,
+  .bg-white.rounded-xl, .bg-white.rounded-2xl, .bg-white.rounded-3xl {
+    background-color: rgb(255 255 255 / 0.96);
+  }
+  .glass-panel { background-color: rgb(11 7 5 / 0.55); }
+  .glass-overlay { background: rgb(10 6 4 / 0.8); }
+}
+
+
+/* ============================================================================
+   THE SHELL
+   ----------------------------------------------------------------------------
+   The chrome — app bar, drawer, bottom tab bar — is dark glass; the work area
+   underneath stays light. That split is not decoration. The shell is furniture
+   you navigate by shape and position, so it can afford to be atmospheric; the
+   work area is where someone reads a chassis number off a cracked phone screen
+   in daylight, and there it is legibility first, every time.
+
+   Dark chrome also does the one thing a light header cannot: it gives the
+   frosted work-area cards something to be *lighter than*, which is what makes
+   them read as glass rather than as paper.
+   ============================================================================ */
+
+.app-bar {
+  position: relative;
+  /* Denser at the top than the bottom, so the bar has an implied thickness
+     rather than looking like a flat tinted rectangle. */
+  background: linear-gradient(180deg, rgb(10 6 4 / 0.90), rgb(14 9 7 / 0.74));
+  backdrop-filter: blur(var(--glass-blur-chrome)) saturate(var(--glass-sat));
+  -webkit-backdrop-filter: blur(var(--glass-blur-chrome)) saturate(var(--glass-sat));
+  border-bottom: 1px solid rgb(255 255 255 / 0.08);
+  color: var(--brand-white);
+  color-scheme: dark;
+}
+
+/* A one-pixel ember along the bottom edge, brightest under the left where the
+   logo sits and fading out to the right. It is the only place the full-strength
+   brand orange appears in the chrome, which is what keeps it feeling like an
+   accent rather than a colour scheme. */
+.app-bar::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg,
+    var(--brand-orange) 0%,
+    rgb(232 80 2 / 0.35) 38%,
+    transparent 72%);
+}
+
+/* The drawer. Opaque enough at the top of the stack that the nav labels never
+   have to compete with whatever page is behind them. */
+.drawer-dark {
+  background: linear-gradient(180deg, rgb(9 6 4 / 0.94), rgb(16 10 8 / 0.90));
+  backdrop-filter: blur(var(--glass-blur-chrome)) saturate(var(--glass-sat));
+  -webkit-backdrop-filter: blur(var(--glass-blur-chrome)) saturate(var(--glass-sat));
+  border-right: 1px solid rgb(255 255 255 / 0.08);
+  color: var(--brand-white);
+  color-scheme: dark;
+}
+
+/* Nav rows. The active row is an orange wash plus a solid left marker — the
+   marker carries the state on its own, so it still reads for anyone who cannot
+   separate the wash from the surrounding dark. */
+.nav-row {
+  color: rgb(255 255 255 / 0.72);
+  transition: background-color var(--dur-fast) ease, color var(--dur-fast) ease,
+              transform var(--dur-fast) var(--ease-out-expo);
+}
+.nav-row:hover {
+  background: rgb(255 255 255 / 0.07);
+  color: #fff;
+  transform: translateX(2px);
+}
+.nav-row-active {
+  position: relative;
+  color: #fff;
+  background: linear-gradient(90deg, rgb(232 80 2 / 0.30), rgb(232 80 2 / 0.06));
+}
+.nav-row-active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--brand-orange);
+}
+
+/* Bottom tab bar (client portal, phones). Same material as the app bar, flipped
+   so the denser edge is at the bottom against the home indicator. */
+.tab-bar {
+  position: relative;
+  background: linear-gradient(0deg, rgb(10 6 4 / 0.92), rgb(14 9 7 / 0.78));
+  backdrop-filter: blur(var(--glass-blur-chrome)) saturate(var(--glass-sat));
+  -webkit-backdrop-filter: blur(var(--glass-blur-chrome)) saturate(var(--glass-sat));
+  border-top: 1px solid rgb(255 255 255 / 0.10);
+  color: var(--brand-white);
+  color-scheme: dark;
+}
+.tab-bar::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -1px;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgb(232 80 2 / 0.55) 50%, transparent);
+}
+
+/* ----------------------------------------------------------------------------
+   Hero panel — the dark tile that opens a dashboard.
+   Black ground with the palette's gradient bloom pushed into the corners, so
+   the figure sitting on it (a total, a count) has a lit surface behind it.
+   ---------------------------------------------------------------------------- */
+.hero-dark {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(38rem 26rem at 88% -30%, rgb(241 96 1 / 0.46), transparent 62%),
+    radial-gradient(30rem 24rem at -8% 118%, rgb(193 8 1 / 0.50), transparent 66%),
+    linear-gradient(150deg, #17100c 0%, #000000 58%, #0d0806 100%);
+  color: var(--brand-white);
+  color-scheme: dark;
+  border: 1px solid rgb(255 255 255 / 0.10);
+}
+/* A faint sand-coloured sheen across the top — the palette's fourth gradient
+   stop, and the only warm light in the whole dark surface. Without it the tile
+   reads as black-with-orange-stickers instead of as a lit object. */
+.hero-dark::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(165deg, rgb(217 195 171 / 0.16), transparent 42%);
+}
+.hero-dark > * { position: relative; }
+
+/* Muted text on any dark surface. 0.72, checked against the BRIGHTEST point of
+   the bloom rather than against the black — over the hot corner of the auth stage
+   that is 4.8:1, while 0.62 was 3.2:1 there and fine everywhere else, which is
+   exactly the kind of failure nobody catches by eye. Do not lower it. */
+.on-dark-muted { color: rgb(255 255 255 / 0.76); }
+.on-dark-faint { color: rgb(255 255 255 / 0.55); } /* large text and icons only */
+
+
+/* ----------------------------------------------------------------------------
+   Auth stage — the front door of all three portals.
+
+   This is the one screen with nothing to read but a single form, so it is the
+   one place the brand can be stated at full strength: near-black, with the
+   palette's own gradient stops blooming out of two corners. It is a direct
+   read of the reference dashboard's ground.
+
+   The card on top of it is where the split earns its keep. The stage is
+   dark and atmospheric; the card is bright, frosted and legible, because
+   somebody is typing a phone number into it on a cracked screen in daylight.
+   ---------------------------------------------------------------------------- */
+.auth-stage {
+  position: relative;
+  background:
+    radial-gradient(44rem 32rem at 82% -18%,  rgb(241 96 1 / 0.62),    transparent 60%),
+    radial-gradient(36rem 30rem at -12% 108%, rgb(193 8 1 / 0.52),     transparent 64%),
+    radial-gradient(30rem 24rem at 50% 52%,   rgb(217 195 171 / 0.10), transparent 70%),
+    linear-gradient(155deg, #140d09 0%, #000000 55%, #0a0605 100%);
+  color: var(--brand-white);
+  color-scheme: dark;
+}
+
+/* 0.90 rather than the work area's 0.78. Over the bloom that lands around
+   rgb(243 232 225) and over the black around rgb(229 229 229) — light enough
+   in both that gray-900 body text and gray-500 helper text keep their contrast
+   wherever on the stage the card happens to sit. Below about 0.85 the helper
+   text starts failing over the bright corner. */
+.auth-card {
+  position: relative;
+  background: rgb(255 255 255 / 0.90);
+  backdrop-filter: blur(22px) saturate(180%);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  border: 1px solid rgb(255 255 255 / 0.62);
+  box-shadow: 0 30px 70px -30px rgb(0 0 0 / 0.85);
+}
+.auth-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  pointer-events: none;
+  background: linear-gradient(160deg, rgb(255 255 255 / 0.95), transparent 45%);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .auth-card { background: #fff; backdrop-filter: none; -webkit-backdrop-filter: none; }
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .auth-card { background: rgb(255 255 255 / 0.97); }
+}
+
+
+/* ----------------------------------------------------------------------------
+   Dark tiles — the KPI bento.
+
+   Note these are NOT glass, and that is deliberate. A dark translucent panel
+   sitting on a light page would let the page through and turn muddy brown; the
+   physics only work the other way round. So the app runs two materials: glass
+   for the light surfaces, obsidian for the dark ones. What ties them together
+   is that both carry the same bevel and the same single overhead light source.
+   ---------------------------------------------------------------------------- */
+.tile-dark {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(16rem 12rem at 118% -25%, rgb(241 96 1 / 0.30), transparent 62%),
+    linear-gradient(155deg, #16100c 0%, #080504 62%);
+  color: var(--brand-white);
+  color-scheme: dark;
+  border: 1px solid rgb(255 255 255 / 0.09);
+}
+.tile-dark::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(165deg, rgb(217 195 171 / 0.13), transparent 40%);
+}
+.tile-dark > * { position: relative; }
+
+
+/* ----------------------------------------------------------------------------
+   Modals are the most opaque surface in the app, and deliberately so.
+
+   A modal sits over `.glass-overlay`, which is already a dark blur. Give the
+   dialog the work area's 0.78 fill on top of that and it composites down to
+   rgb(228,228,227) — at which point `text-gray-400` metadata inside it reads
+   3.7:1 and fails. So the frosting on a dialog is carried by the BACKDROP, not
+   by the panel: the page behind blurs away, and the thing you are reading and
+   typing into stays solid.
+
+   `.modal-card` is already on every dialog in the app (it is what makes a tall
+   one scroll), so this reaches all of them without touching a single call site.
+   ---------------------------------------------------------------------------- */
+.modal-card {
+  /* A dialog taller than the phone screen must scroll rather than run off the
+     bottom with its buttons out of reach. */
+  max-height: calc(100vh - 2rem);
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background-color: rgb(255 255 255 / 0.97);
+  backdrop-filter: blur(26px) saturate(180%);
+  -webkit-backdrop-filter: blur(26px) saturate(180%);
+  border: 1px solid rgb(255 255 255 / 0.7);
+}
+@media (prefers-reduced-transparency: reduce) {
+  .modal-card { background-color: #fff; backdrop-filter: none; -webkit-backdrop-filter: none; }
 }
 
 /* Bottom-nav icon spring on activation */
@@ -542,7 +1107,7 @@ button:not(:disabled):not(.absolute):not(.fixed):active {
 }
 @media (hover: hover) {
   .glow-hover:hover {
-    box-shadow: 0 16px 44px -14px rgb(245 130 32 / 0.45);
+    box-shadow: 0 16px 44px -14px rgb(232 80 2 / 0.45);
   }
 }
 
@@ -557,7 +1122,7 @@ button:not(:disabled):not(.absolute):not(.fixed):active {
   border-radius: inherit;
   background: radial-gradient(
     260px circle at var(--mx, 50%) var(--my, 0%),
-    rgb(245 130 32 / 0.16),
+    rgb(232 80 2 / 0.18),
     transparent 60%
   );
   opacity: 0;
@@ -635,15 +1200,6 @@ button:not(:disabled):not(.absolute):not(.fixed):active {
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
   }
-}
-
-/* A dialog taller than the phone screen must scroll rather than run off the
-   bottom with its buttons out of reach. */
-.modal-card {
-  max-height: calc(100vh - 2rem);
-  max-height: calc(100dvh - 2rem);
-  overflow-y: auto;
-  overscroll-behavior: contain;
 }
 
 /* Grey flash on tap looks like a bug on Android; the active: states already

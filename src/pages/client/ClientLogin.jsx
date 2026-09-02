@@ -38,7 +38,7 @@ export default function ClientLogin() {
   }
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-700 animate-gradient flex flex-col overflow-hidden">
+    <div className="relative min-h-screen auth-stage flex flex-col overflow-hidden">
       {/* Decorative floating shapes */}
       <div className="absolute top-10 -left-16 w-56 h-56 rounded-full bg-blue-500/20 blur-2xl animate-float pointer-events-none" />
       <div className="absolute bottom-24 -right-20 w-72 h-72 rounded-full bg-blue-400/15 blur-2xl animate-float-delayed pointer-events-none" />
@@ -46,12 +46,12 @@ export default function ClientLogin() {
       {/* Header */}
       <div className="relative flex items-center justify-between px-4 py-4 animate-fade-in">
         <div className="flex items-center gap-2">
-          <div className="bg-white rounded-xl p-2">
+          <div className="bg-white no-glass rounded-xl p-2">
             <Truck className="w-6 h-6 text-blue-700" />
           </div>
           <div className="text-white">
             <h1 className="text-sm font-bold">{t('app.name')}</h1>
-            <p className="text-blue-200 text-[10px]">{t('client.login.portal')}</p>
+            <p className="on-dark-muted text-[10px]">{t('client.login.portal')}</p>
           </div>
         </div>
         <button
@@ -65,7 +65,7 @@ export default function ClientLogin() {
 
       {/* Login Card */}
       <div className="relative flex-1 flex items-center justify-center px-4 pb-12">
-        <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 w-full max-w-sm animate-scale-in">
+        <div className="auth-card rounded-2xl p-6 sm:p-8 w-full max-w-sm animate-scale-in">
           <div className="text-center mb-6">
             <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pop-in">
               <Phone className="w-8 h-8 text-blue-700" />
@@ -94,7 +94,7 @@ export default function ClientLogin() {
                 {t('client.login.passwordLabel')}
               </label>
               <div className="relative">
-                <Lock className="absolute inset-y-0 left-0 pl-3 flex items-center w-8 h-full text-gray-400" />
+                <Lock className="absolute inset-y-0 left-0 pl-3 flex items-center w-8 h-full text-gray-500" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
@@ -105,7 +105,7 @@ export default function ClientLogin() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(s => !s)}
-                  className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-gray-600"
+                  className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-gray-700"
                   tabIndex={-1}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -172,13 +172,13 @@ export default function ClientLogin() {
 
           <div className="mt-6 pt-4 border-t border-gray-100 text-center space-y-2">
             <div>
-              <p className="text-xs text-gray-400">{t('client.login.noAccount')}</p>
-              <Link to="/client/register" className="text-sm text-blue-600 font-medium hover:text-blue-700">
+              <p className="text-xs text-gray-500">{t('client.login.noAccount')}</p>
+              <Link to="/client/register" className="text-sm text-blue-700 font-medium hover:text-blue-700">
                 {t('client.login.registerLink')}
               </Link>
             </div>
             <div>
-              <a href="tel:+255123456789" className="text-xs text-gray-400 hover:text-gray-600">
+              <a href="tel:+255123456789" className="text-xs text-gray-500 hover:text-gray-700">
                 {t('client.login.callSupport')}
               </a>
             </div>
@@ -188,11 +188,13 @@ export default function ClientLogin() {
 
       {/* Footer links to staff + mechanic portals */}
       <div className="relative text-center pb-6 flex items-center justify-center gap-3 animate-fade-in">
-        <Link to="/admin/login" className="text-blue-200 text-xs hover:text-white transition-colors">
+        <Link to="/admin/login" className="on-dark-muted text-xs hover:text-white transition-colors">
           {t('landing.staffLogin')}
         </Link>
-        <span className="text-blue-300/50 text-xs">·</span>
-        <Link to="/mechanic" className="text-blue-200 text-xs hover:text-white transition-colors">
+        {/* Decorative separator only — hidden from assistive tech, which is also
+            what exempts it from the contrast rule it would otherwise fail. */}
+        <span aria-hidden="true" className="text-white/40 text-xs">·</span>
+        <Link to="/mechanic" className="on-dark-muted text-xs hover:text-white transition-colors">
           {t('mechanic.login.portal')}
         </Link>
       </div>

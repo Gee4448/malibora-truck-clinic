@@ -11,7 +11,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Malibora Truck Clinic</title>
     <meta name="description" content="Professional Vehicle Service & Repair Management System - Malibora Truck Clinic, Arusha, Tanzania" />
-    <meta name="theme-color" content="#c95c0c" />
+    <!-- Matches the dark glass header, so the phone status bar reads as part of
+         the app chrome instead of a strip of leftover browser colour. -->
+    <meta name="theme-color" content="#0b0705" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Malibora" />
@@ -21,7 +23,11 @@
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+    <!-- Inter for running text, Space Grotesk for headings and figures. One
+         request, both families, weights trimmed to the ones actually used —
+         this app is loaded over Tanzanian mobile data, so every unused weight
+         is a real cost. -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
   </head>
   <body>
     <div id="root"></div>

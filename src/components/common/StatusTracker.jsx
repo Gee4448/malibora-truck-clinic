@@ -29,7 +29,9 @@ const TONES = {
   dark: {
     done: 'bg-blue-500/25 text-blue-200',
     current: 'bg-blue-500 text-zinc-900',
-    todo: 'bg-zinc-800 text-zinc-500',
+    // zinc-400, not zinc-500: on zinc-800 the latter is 2.9:1, and these labels
+    // are 11px bold. zinc-400 is 5.3:1 and still reads clearly as "not yet".
+    todo: 'bg-zinc-800 text-zinc-400',
     cancelled: 'bg-zinc-800 text-zinc-400',
   },
 }

@@ -54,14 +54,19 @@ export default function Sidebar({ isOpen, onClose }) {
 
       {/* Sidebar — drawer at every breakpoint, hidden until the user opens it. */}
       <aside
-        className={`fixed top-0 left-0 h-full w-64 bg-white border-r border-gray-200 z-50 transform transition-transform duration-300 [transition-timing-function:var(--ease-out-expo)] flex flex-col ${
+        className={`drawer-dark fixed top-0 left-0 h-full w-64 z-50 transform transition-transform duration-300 [transition-timing-function:var(--ease-out-expo)] flex flex-col ${
           isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
         }`}
       >
-        {/* Logo */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200">
-          <Logo height={36} iconClassName="w-8 h-8 text-blue-700" />
-          <button onClick={onClose} className="p-1 rounded hover:bg-gray-100">
+        {/* Logo. The asset is a lockup on a cream ground (measured: 99.6% opaque,
+            avg rgb 233/219/209), so on the dark drawer it lands as a bright
+            rectangle. Rounding and ringing it turns that into a deliberate
+            plate rather than a stray light patch. */}
+        <div className="h-16 flex items-center justify-between px-4 border-b border-white/10">
+          <div className="rounded-lg overflow-hidden ring-1 ring-white/20">
+            <Logo height={34} iconClassName="w-8 h-8 text-blue-400" />
+          </div>
+          <button onClick={onClose} className="p-1 rounded text-white/70 hover:text-white hover:bg-white/10">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -76,10 +81,8 @@ export default function Sidebar({ isOpen, onClose }) {
                   end={item.end}
                   onClick={onClose}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 press ${
-                      isActive
-                        ? 'bg-blue-50 text-blue-700 border-r-3 border-blue-700'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 hover:translate-x-0.5'
+                    `nav-row flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium press ${
+                      isActive ? 'nav-row-active' : ''
                     }`
                   }
                 >
@@ -97,10 +100,12 @@ export default function Sidebar({ isOpen, onClose }) {
         </nav>
 
         {/* Logout */}
-        <div className="p-3 border-t border-gray-200">
+        <div className="p-3 border-t border-white/10">
           <button
             onClick={signOut}
-            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+            /* red-600 fails on black (3.0:1). red-400 clears 4.5:1 and still
+               reads unmistakably as the destructive action. */
+            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-500/15 transition-colors"
           >
             <LogOut className="w-5 h-5" />
             {t('nav.logout')}

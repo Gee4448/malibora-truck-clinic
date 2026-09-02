@@ -35,7 +35,7 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-700 flex items-center justify-center p-4">
+    <div className="min-h-screen auth-stage flex items-center justify-center p-4">
       {/* Language toggle */}
       <button
         onClick={() => switchLanguage(locale === 'en' ? 'sw' : 'en')}
@@ -48,15 +48,15 @@ export default function Login() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center bg-white rounded-2xl shadow-lg mb-4 px-5 py-4">
+          <div className="inline-flex items-center justify-center bg-white no-glass rounded-2xl shadow-lg mb-4 px-5 py-4">
             <Logo height={44} iconClassName="w-9 h-9 text-blue-700" showText={false} />
           </div>
           <h1 className="text-2xl font-bold text-white">{t('app.name')}</h1>
-          <p className="text-blue-200 text-sm mt-1">{t('app.tagline')}</p>
+          <p className="on-dark-muted text-sm mt-1">{t('app.tagline')}</p>
         </div>
 
         {/* Login Form */}
-        <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8">
+        <div className="auth-card rounded-2xl p-6 sm:p-8">
           <h2 className="text-xl font-bold text-gray-900 mb-6">{t('auth.login')}</h2>
 
           <button
@@ -80,7 +80,7 @@ export default function Login() {
 
           <div className="relative my-4">
             <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200"></div></div>
-            <div className="relative flex justify-center text-sm"><span className="bg-white px-4 text-gray-400">{t('auth.orEmail')}</span></div>
+            <div className="relative flex justify-center text-sm"><span className="bg-white px-4 text-gray-500">{t('auth.orEmail')}</span></div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -116,7 +116,7 @@ export default function Login() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -124,7 +124,7 @@ export default function Login() {
             </div>
 
             <div className="flex items-center justify-end">
-              <a href="#" className="text-sm text-blue-600 hover:text-blue-700">
+              <a href="#" className="text-sm text-blue-700 hover:text-blue-700">
                 {t('auth.forgotPassword')}
               </a>
             </div>
@@ -140,12 +140,12 @@ export default function Login() {
 
           <p className="text-center text-sm text-gray-500 mt-4">
             {t('auth.noAccount')}{' '}
-            <Link to="/admin/register" className="text-blue-600 hover:text-blue-700 font-medium">
+            <Link to="/admin/register" className="text-blue-700 hover:text-blue-700 font-medium">
               {t('auth.register')}
             </Link>
           </p>
           <p className="text-center mt-3">
-            <Link to="/" className="text-sm text-gray-400 hover:text-gray-600 transition">
+            <Link to="/" className="text-sm text-gray-500 hover:text-gray-700 transition">
               &larr; {t('common.back')}
             </Link>
           </p>

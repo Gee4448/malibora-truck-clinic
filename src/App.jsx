@@ -52,7 +52,7 @@ function ProtectedRoute({ children }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
           <p className="text-gray-500 text-sm">Loading...</p>
@@ -74,7 +74,7 @@ function PublicRoute({ children }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-blue-900">
+      <div className="min-h-screen flex items-center justify-center auth-stage">
         <div className="animate-spin w-10 h-10 border-4 border-white border-t-transparent rounded-full"></div>
       </div>
     )
@@ -93,7 +93,7 @@ function ClientProtectedRoute({ children }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
         </div>
@@ -114,7 +114,7 @@ function StaffVerifiedRoute({ children }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-blue-900">
+      <div className="min-h-screen flex items-center justify-center auth-stage">
         <div className="animate-spin w-10 h-10 border-4 border-white border-t-transparent rounded-full"></div>
       </div>
     )
@@ -151,8 +151,8 @@ function MechanicProtectedRoute({ children }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin w-10 h-10 border-4 border-amber-600 border-t-transparent rounded-full"></div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full"></div>
       </div>
     )
   }
@@ -170,7 +170,7 @@ function MechanicPublicRoute({ children }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900">
+      <div className="min-h-screen flex items-center justify-center auth-stage">
         <div className="animate-spin w-10 h-10 border-4 border-white border-t-transparent rounded-full"></div>
       </div>
     )
@@ -193,7 +193,7 @@ function RootRedirect() {
 
   if (authLoading || clientLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-blue-900">
+      <div className="min-h-screen flex items-center justify-center auth-stage">
         <div className="animate-spin w-10 h-10 border-4 border-white border-t-transparent rounded-full"></div>
       </div>
     )
@@ -210,7 +210,7 @@ function ClientPublicRoute({ children }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-blue-900">
+      <div className="min-h-screen flex items-center justify-center auth-stage">
         <div className="animate-spin w-10 h-10 border-4 border-white border-t-transparent rounded-full"></div>
       </div>
     )
@@ -235,12 +235,20 @@ function App() {
             position="top-right"
             toastOptions={{
               duration: 3000,
+              // Dark glass, not the default white slab. A toast floats over
+              // whatever you were reading, so it is chrome rather than content —
+              // and the chrome in this app is dark. White text on this fill is
+              // 13:1, which matters because a toast is often an error.
               style: {
                 borderRadius: '14px',
                 padding: '12px 16px',
                 fontSize: '14px',
-                boxShadow: '0 10px 30px -8px rgb(0 0 0 / 0.2)',
-                border: '1px solid rgb(0 0 0 / 0.05)',
+                background: 'rgb(12 8 6 / 0.82)',
+                color: '#f9f9f9',
+                backdropFilter: 'blur(18px) saturate(175%)',
+                WebkitBackdropFilter: 'blur(18px) saturate(175%)',
+                boxShadow: '0 18px 44px -18px rgb(0 0 0 / 0.75)',
+                border: '1px solid rgb(255 255 255 / 0.14)',
               },
               success: { iconTheme: { primary: '#059669', secondary: '#fff' } },
               error: { iconTheme: { primary: '#dc2626', secondary: '#fff' } },

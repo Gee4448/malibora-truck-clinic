@@ -58,18 +58,18 @@ export default function Register() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-700 flex items-center justify-center p-4">
+    <div className="min-h-screen auth-stage flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-2xl shadow-lg mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-white no-glass rounded-2xl shadow-lg mb-4">
             <Truck className="w-9 h-9 text-blue-700" />
           </div>
           <h1 className="text-2xl font-bold text-white">{t('app.name')}</h1>
         </div>
 
         {/* Register Form */}
-        <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8">
+        <div className="auth-card rounded-2xl p-6 sm:p-8">
           <h2 className="text-xl font-bold text-gray-900 mb-6">{t('auth.register')}</h2>
 
           <button
@@ -93,7 +93,7 @@ export default function Register() {
 
           <div className="relative my-4">
             <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200"></div></div>
-            <div className="relative flex justify-center text-sm"><span className="bg-white px-4 text-gray-400">{t('auth.orEmail')}</span></div>
+            <div className="relative flex justify-center text-sm"><span className="bg-white px-4 text-gray-500">{t('auth.orEmail')}</span></div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -156,7 +156,7 @@ export default function Register() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -188,7 +188,7 @@ export default function Register() {
 
           <p className="text-center text-sm text-gray-500 mt-6">
             {t('auth.hasAccount')}{' '}
-            <Link to="/admin/login" className="text-blue-600 hover:text-blue-700 font-medium">
+            <Link to="/admin/login" className="text-blue-700 hover:text-blue-700 font-medium">
               {t('auth.login')}
             </Link>
           </p>

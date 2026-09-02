@@ -39,7 +39,7 @@ export default function MechanicLogin() {
   const backspace = () => { setCode((c) => c.slice(0, -1)); setError('') }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-700 flex flex-col">
+    <div className="min-h-screen auth-stage flex flex-col">
       <div className="flex items-center justify-between px-4 py-4">
         <div className="flex items-center gap-2">
           <div className="bg-amber-500 rounded-xl p-2">
@@ -60,7 +60,7 @@ export default function MechanicLogin() {
       </div>
 
       <div className="flex-1 flex items-center justify-center px-4 pb-12">
-        <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 w-full max-w-sm">
+        <div className="auth-card rounded-2xl p-6 sm:p-8 w-full max-w-sm">
           <div className="text-center mb-6">
             <div className="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <Wrench className="w-8 h-8 text-amber-600" />
@@ -72,9 +72,9 @@ export default function MechanicLogin() {
           {/* PIN display */}
           <div className="flex items-center justify-center gap-2 mb-5 h-12">
             {code.length === 0
-              ? <span className="text-gray-300 text-sm">{t('mechanic.login.enterPin')}</span>
+              ? <span className="text-gray-500 text-sm">{t('mechanic.login.enterPin')}</span>
               : code.split('').map((_, i) => (
-                  <div key={i} className="w-4 h-4 rounded-full bg-amber-500" />
+                  <div key={i} className="w-4 h-4 rounded-full bg-blue-500" />
                 ))}
           </div>
 
@@ -124,7 +124,7 @@ export default function MechanicLogin() {
           </div>
 
           <div className="mt-6 pt-4 border-t border-gray-100 text-center">
-            <Link to="/client" className="text-xs text-gray-400 hover:text-gray-600">
+            <Link to="/client" className="text-xs text-gray-500 hover:text-gray-700">
               {t('mechanic.login.notMechanic')}
             </Link>
           </div>

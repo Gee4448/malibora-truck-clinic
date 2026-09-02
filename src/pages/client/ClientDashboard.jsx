@@ -141,11 +141,11 @@ export default function ClientDashboard() {
   return (
     <div className="space-y-4">
       {/* Greeting hero — brand orange, big rounded */}
-      <div className="sheen relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-500 to-blue-700 animate-gradient rounded-3xl p-6 text-white">
+      <div className="sheen hero-dark rounded-3xl p-6">
         <div className="absolute -top-10 -right-6 w-36 h-36 rounded-full bg-white/10 animate-float pointer-events-none" />
         <div className="absolute -bottom-12 right-20 w-24 h-24 rounded-full bg-white/5 animate-float-delayed pointer-events-none" />
         <div className="relative">
-          <p className="text-blue-100 text-xs font-medium">
+          <p className="on-dark-muted text-xs font-medium font-display tracking-wide uppercase">
             {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
           </p>
           <h1 className="text-2xl font-bold mt-1 leading-tight">
@@ -173,7 +173,7 @@ export default function ClientDashboard() {
       {/* Needs your attention — the documents waiting on the CUSTOMER, which is
           what Odoo's portal leads with instead of making them hunt through lists. */}
       {actions.length > 0 && (
-        <Reveal className="bg-zinc-900 rounded-3xl overflow-hidden text-white">
+        <Reveal className="tile-dark rounded-3xl overflow-hidden">
           <div className="flex items-center gap-2 px-5 pt-4 pb-3">
             <span className="w-7 h-7 rounded-full bg-blue-500/20 flex items-center justify-center">
               <Bell className="w-3.5 h-3.5 text-blue-400" />
@@ -193,14 +193,14 @@ export default function ClientDashboard() {
                     sentence down to "Quotation waiting…" and says nothing. */}
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium leading-snug">{a.label}</p>
-                  <p className="text-xs text-zinc-500 mt-0.5">
+                  <p className="text-xs on-dark-muted mt-0.5">
                     {a.ref}
                     {a.amount != null && (
                       <span className="text-blue-400 font-semibold"> · {formatTZS(a.amount)}</span>
                     )}
                   </p>
                 </div>
-                <ChevronRight className="w-4 h-4 text-zinc-600 flex-shrink-0" />
+                <ChevronRight className="w-4 h-4 on-dark-faint flex-shrink-0" />
               </Link>
             ))}
           </div>
@@ -211,14 +211,14 @@ export default function ClientDashboard() {
       <Link
         to="/client/new-request"
         onMouseMove={onSpot}
-        className="card-lift sheen spotlight flex items-center gap-4 bg-zinc-900 rounded-3xl p-5 text-white"
+        className="card-lift sheen spotlight flex items-center gap-4 tile-dark rounded-3xl p-5"
       >
         <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center flex-shrink-0">
           <Send className="w-6 h-6 text-white" />
         </div>
         <div className="min-w-0">
           <p className="font-bold text-base">{t('client.dashboard.reportProblem')}</p>
-          <p className="text-sm text-zinc-400 truncate">{t('client.newRequest.requestType')}</p>
+          <p className="text-sm on-dark-muted truncate">{t('client.newRequest.requestType')}</p>
         </div>
         <div className="ml-auto w-9 h-9 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0">
           <ArrowRight className="w-4 h-4 text-white" />
@@ -231,17 +231,17 @@ export default function ClientDashboard() {
         <Reveal group className="grid grid-cols-2 gap-3">
           {documents.map((doc) => (
             <Link key={doc.to} to={doc.to} onMouseMove={onSpot}
-              className="card-lift sheen spotlight relative bg-zinc-900 rounded-3xl p-4 text-white overflow-hidden">
+              className="card-lift sheen spotlight tile-dark rounded-3xl p-4">
               <div className="flex items-start justify-between">
                 <div className="w-10 h-10 bg-white/10 rounded-2xl flex items-center justify-center">
                   <doc.icon className="w-5 h-5 text-blue-400" />
                 </div>
-                <ArrowRight className="w-4 h-4 text-zinc-600" />
+                <ArrowRight className="w-4 h-4 on-dark-faint" />
               </div>
-              <p className={`text-3xl font-bold mt-3 ${doc.count ? 'text-blue-400' : 'text-zinc-600'}`}>
+              <p className={`text-3xl font-bold mt-3 ${doc.count ? 'text-blue-400' : 'on-dark-faint'}`}>
                 <CountUp value={doc.count} />
               </p>
-              <p className="text-xs text-zinc-400 mt-0.5">{doc.label}</p>
+              <p className="text-xs on-dark-muted mt-0.5">{doc.label}</p>
             </Link>
           ))}
         </Reveal>

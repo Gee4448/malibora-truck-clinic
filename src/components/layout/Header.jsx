@@ -39,14 +39,14 @@ export default function Header({ onMenuToggle }) {
   }
 
   return (
-    <header className="glass-header h-16 bg-white/85 border-b border-gray-200 flex items-center justify-between px-4 lg:px-6 sticky top-0 z-30">
+    <header className="app-bar h-16 flex items-center justify-between px-4 lg:px-6 sticky top-0 z-30">
       {/* Left: Menu toggle — always visible; the sidebar is a drawer on every viewport. */}
       <button
         onClick={onMenuToggle}
-        className="p-2 rounded-lg hover:bg-gray-100 press cursor-pointer"
+        className="p-2 rounded-lg text-white/80 hover:text-white hover:bg-white/10 press cursor-pointer"
         aria-label="Open menu"
       >
-        <Menu className="w-5 h-5 text-gray-600" />
+        <Menu className="w-5 h-5" />
       </button>
 
       {/* Right side */}
@@ -54,7 +54,7 @@ export default function Header({ onMenuToggle }) {
         {/* Language toggle */}
         <button
           onClick={() => switchLanguage(locale === 'en' ? 'sw' : 'en')}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-100 hover:bg-gray-200 transition-colors press cursor-pointer"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium font-display text-white/85 bg-white/10 hover:bg-white/20 hover:text-white transition-colors press cursor-pointer"
           title={locale === 'en' ? 'Badilisha kwa Kiswahili' : 'Switch to English'}
         >
           <Globe className="w-4 h-4" />
@@ -65,10 +65,10 @@ export default function Header({ onMenuToggle }) {
         <div className="relative" ref={panelRef}>
           <button
             onClick={() => setOpen(o => !o)}
-            className="relative p-2 rounded-lg hover:bg-gray-100 press cursor-pointer"
+            className="relative p-2 rounded-lg text-white/80 hover:text-white hover:bg-white/10 press cursor-pointer"
             aria-label={t('notifications.title')}
           >
-            <Bell className="w-5 h-5 text-gray-600" />
+            <Bell className="w-5 h-5" />
             {unreadCount > 0 && (
               <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 flex items-center justify-center text-[10px] font-bold text-white bg-red-500 rounded-full">
                 {unreadCount > 9 ? '9+' : unreadCount}
@@ -77,7 +77,10 @@ export default function Header({ onMenuToggle }) {
           </button>
 
           {open && (
-            <div className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] bg-white rounded-xl border border-gray-200 shadow-xl z-50 overflow-hidden">
+            // Light frosted, not dark: this panel is a list of things to read,
+            // so it belongs to the work area rather than to the chrome it hangs
+            // off. `glass-strong` keeps the small timestamps above 4.5:1.
+            <div className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] glass-strong rounded-2xl shadow-xl z-50 overflow-hidden">
               <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
                 <p className="text-sm font-semibold text-gray-900">{t('notifications.title')}</p>
                 {unreadCount > 0 && (
@@ -117,13 +120,13 @@ export default function Header({ onMenuToggle }) {
         </div>
 
         {/* User info */}
-        <div className="flex items-center gap-2 pl-3 border-l border-gray-200">
-          <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-bold">
+        <div className="flex items-center gap-2 pl-3 border-l border-white/15">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 ring-1 ring-white/25 flex items-center justify-center text-white text-sm font-bold font-display">
             {profile?.full_name?.charAt(0) || 'U'}
           </div>
           <div className="hidden sm:block">
-            <p className="text-sm font-medium text-gray-900">{profile?.full_name || 'User'}</p>
-            <p className="text-xs text-gray-500 capitalize">{profile?.role || 'staff'}</p>
+            <p className="text-sm font-medium text-white">{profile?.full_name || 'User'}</p>
+            <p className="text-xs on-dark-muted capitalize">{profile?.role || 'staff'}</p>
           </div>
         </div>
       </div>

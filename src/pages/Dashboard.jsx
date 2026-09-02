@@ -135,11 +135,15 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       {/* Greeting hero */}
-      <div className="sheen relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-500 to-blue-700 animate-gradient rounded-3xl p-6 text-white">
-        <div className="absolute -top-10 -right-6 w-40 h-40 rounded-full bg-white/10 animate-float pointer-events-none" />
+      {/* Black ground with the palette's bloom pushed into the corners, rather
+          than the flat orange gradient it used to be. Orange across a whole
+          panel shouts; orange as light falling across black reads as expensive,
+          and it is the same move the reference dashboard makes. */}
+      <div className="sheen hero-dark rounded-3xl p-6">
+        <div className="absolute -top-10 -right-6 w-40 h-40 rounded-full bg-white/5 animate-float pointer-events-none" />
         <div className="absolute -bottom-12 right-24 w-28 h-28 rounded-full bg-white/5 animate-float-delayed pointer-events-none" />
         <div className="relative">
-          <p className="text-blue-100 text-xs font-medium">
+          <p className="on-dark-muted text-xs font-medium font-display tracking-wide uppercase">
             {new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
           </p>
           <h1 className="text-2xl sm:text-3xl font-bold mt-1 leading-tight">
@@ -163,13 +167,13 @@ export default function Dashboard() {
                   </span>
                 )}
               </div>
-              <p className="text-3xl font-bold mt-3 text-blue-400 tabular-nums">
+              <p className="text-3xl font-bold mt-3 text-blue-400 font-display tabular-nums">
                 <CountUp value={k.count} />
               </p>
-              <p className="text-xs text-zinc-400 mt-0.5">{k.label}</p>
+              <p className="text-xs on-dark-muted mt-0.5">{k.label}</p>
             </>
           )
-          const cls = 'card-lift sheen spotlight text-left relative bg-zinc-900 rounded-3xl p-4 text-white overflow-hidden'
+          const cls = 'card-lift sheen spotlight text-left tile-dark rounded-3xl p-4'
           return k.to
             ? <Link key={i} to={k.to} className={cls} onMouseMove={onSpot}>{inner}</Link>
             : <button key={i} onClick={k.onClick} className={cls} onMouseMove={onSpot}>{inner}</button>
