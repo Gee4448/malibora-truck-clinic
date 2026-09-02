@@ -6,6 +6,8 @@ import { supabase, formatTZS, formatDate } from '../../lib/supabase'
 import { ClipboardCheck, ArrowRight, AlertTriangle, Plus, Clock } from 'lucide-react'
 import { ListSkeleton } from '../../components/common/Skeleton'
 import Reveal from '../../components/common/Reveal'
+import StatusTracker from '../../components/common/StatusTracker'
+import { INSPECTION_STAGE_KEYS, inspectionStage } from '../../lib/clientStages'
 
 // The customer's own inspection reports. Until now these were visible on the
 // dashboard as a dead-end list — no link, and the "Inspections" stat card
@@ -72,6 +74,8 @@ export default function ClientInspections() {
     ? inspections.filter(i => i.status === 'completed')
     : inspections
 
+  const inspectionSteps = INSPECTION_STAGE_KEYS.map(k => ({ key: k, label: t(`client.dashboard.inspectionStages.${k}`) }))
+
   if (loading) return <ListSkeleton rows={4} />
 
   return (
@@ -120,6 +124,7 @@ export default function ClientInspections() {
           {filtered.map((insp, i) => {
             const cfg = statusConfig[insp.status] || statusConfig.in_progress
             const needsYou = pendingIds.has(insp.id)
+            const stage = inspectionStage(insp)
             return (
               <Reveal
                 as={Link}
@@ -160,6 +165,11 @@ export default function ClientInspections() {
                   </div>
                   <ArrowRight className="w-4 h-4 text-gray-300 flex-shrink-0 mt-1" />
                 </div>
+                {/* Same stage track the dashboard shows, so tapping "View all"
+                    doesn't drop the customer into a list that has forgotten it. */}
+                {!stage.cancelled && (
+                  <StatusTracker className="mt-3" steps={inspectionSteps} current={stage.index} compact />
+                )}
               </Reveal>
             )
           })}

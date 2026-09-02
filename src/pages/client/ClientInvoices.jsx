@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { useClient } from '../../contexts/ClientAuthContext'
 import { supabase, formatTZS, formatDate } from '../../lib/supabase'
@@ -13,6 +13,12 @@ export default function ClientInvoices() {
   const [invoices, setInvoices] = useState([])
   const [filter, setFilter] = useState('all')
   const [loading, setLoading] = useState(true)
+  // Odoo's portal treats quotations and invoices as two separate entries; the
+  // dashboard tiles link here with ?type=, so the list opens already narrowed
+  // to the one the customer tapped.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const typeParam = searchParams.get('type')
+  const type = typeParam === 'proforma' || typeParam === 'final' ? typeParam : 'all'
 
   useEffect(() => {
     if (customer?.id) fetchInvoices()
@@ -36,9 +42,15 @@ export default function ClientInvoices() {
     }
   }
 
-  const filtered = filter === 'all' ? invoices
-    : filter === 'unpaid' ? invoices.filter(i => i.status !== 'paid' && i.status !== 'cancelled')
-    : invoices.filter(i => i.status === 'paid')
+  const byType = type === 'all' ? invoices : invoices.filter(i => i.invoice_type === type)
+  const filtered = filter === 'all' ? byType
+    : filter === 'unpaid' ? byType.filter(i => i.status !== 'paid' && i.status !== 'cancelled')
+    : byType.filter(i => i.status === 'paid')
+
+  const setType = (next) => {
+    if (next === 'all') setSearchParams({}, { replace: true })
+    else setSearchParams({ type: next }, { replace: true })
+  }
 
   const statusColors = {
     draft: 'bg-gray-100 text-gray-600',
@@ -60,7 +72,31 @@ export default function ClientInvoices() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-bold text-gray-900">{t('client.invoices.title')}</h1>
+      <h1 className="text-lg font-bold text-gray-900">
+        {type === 'proforma' ? t('client.dashboard.quotations')
+          : type === 'final' ? t('client.dashboard.invoicesToPay')
+          : t('client.invoices.title')}
+      </h1>
+
+      {/* Document type — quotations and invoices are separate things to the
+          customer (one to decide on, one to pay), so they get their own switch. */}
+      <div className="flex gap-1 p-1 bg-gray-100 rounded-full">
+        {[
+          { key: 'all', label: t('client.invoices.filter.all') },
+          { key: 'proforma', label: t('client.dashboard.quotations') },
+          { key: 'final', label: t('client.dashboard.invoicesToPay') },
+        ].map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setType(tab.key)}
+            className={`flex-1 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+              type === tab.key ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
       {/* Filter Tabs */}
       <div className="flex gap-2">

@@ -1223,7 +1223,33 @@
       "viewAll": "Angalia zote",
       "noActiveServices": "Hakuna huduma zinazoendelea",
       "allGood": "Magari yako yote yako katika hali nzuri!",
-      "reportProblem": "Ripoti Tatizo"
+      "reportProblem": "Ripoti Tatizo",
+      "yourDocuments": "Nyaraka Zako",
+      "needsAttention": "Inahitaji hatua yako",
+      "allClear": "Hakuna kinachokusubiri kwa sasa",
+      "services": "Huduma",
+      "quotations": "Proforma",
+      "invoicesToPay": "Ankara",
+      "handovers": "Makabidhiano",
+      "amountDue": "Kiasi kinachodaiwa",
+      "actionApproveQuote": "Proforma inasubiri idhini yako",
+      "actionPayInvoice": "Ankara inasubiri malipo",
+      "actionPayInspection": "Ukaguzi unasubiri malipo",
+      "trackTitle": "Gari lako lipo wapi",
+      "stages": {
+        "requested": "Imeombwa",
+        "quoted": "Proforma",
+        "repair": "Matengenezo",
+        "invoiced": "Imetolewa Ankara",
+        "delivered": "Imekabidhiwa",
+        "cancelled": "Imefutwa"
+      },
+      "inspectionStages": {
+        "requested": "Imeombwa",
+        "paid": "Imelipwa",
+        "inspecting": "Inakaguliwa",
+        "report": "Ripoti Tayari"
+      }
     },
     "newRequest": {
       "title": "Ripoti Tatizo",

@@ -416,6 +416,37 @@ button:not(:disabled):not(.absolute):not(.fixed):active {
 .reveal-ready .reveal-group.is-visible > *:nth-child(n + 9) { transition-delay: 420ms; }
 
 /* ============================================================
+   Status tracker (StatusTracker.jsx)
+   The Odoo-portal stage bar. The track draws itself left-to-right on mount so
+   the eye is led along the customer's journey instead of finding a finished bar.
+
+   Deliberately CSS keyframes, not a JS mount flag: requestAnimationFrame is
+   paused in a backgrounded tab or a hidden preview pane, and a JS-armed bar
+   would sit there empty — which reads as "nothing has happened on my job".
+   `both` fill-mode holds the finished state, and the reduced-motion block below
+   collapses the duration, so the end state is always what you land on.
+   ============================================================ */
+
+@keyframes trackSegGrow {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+@keyframes trackDotPop {
+  from { transform: scale(0.4); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.track-seg {
+  transform-origin: left center;
+  animation: trackSegGrow var(--dur-base) var(--ease-out-expo) both;
+  animation-delay: calc(var(--seg-i, 0) * 90ms);
+}
+.track-dot {
+  animation: trackDotPop var(--dur-fast) var(--ease-spring) both;
+  animation-delay: calc(var(--seg-i, 0) * 90ms + 60ms);
+}
+
+/* ============================================================
    Modern micro-interactions
    ============================================================ */
 

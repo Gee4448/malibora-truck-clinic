@@ -9,6 +9,8 @@ import {
 } from 'lucide-react'
 import { ListSkeleton } from '../../components/common/Skeleton'
 import Reveal from '../../components/common/Reveal'
+import StatusTracker from '../../components/common/StatusTracker'
+import { JOB_STAGE_KEYS, jobStage } from '../../lib/clientStages'
 
 export default function ClientServices() {
   const { t } = useLanguage()
@@ -16,6 +18,10 @@ export default function ClientServices() {
   const [jobs, setJobs] = useState([])
   const [filter, setFilter] = useState('active')
   const [loading, setLoading] = useState(true)
+  // The last two stages of the customer track live in other tables, so they are
+  // resolved once for the whole list rather than per row. See lib/clientStages.js.
+  const [invoicedJobIds, setInvoicedJobIds] = useState(new Set())
+  const [deliveredJobIds, setDeliveredJobIds] = useState(new Set())
 
   useEffect(() => {
     if (customer?.id) fetchJobs()
@@ -23,12 +29,20 @@ export default function ClientServices() {
 
   const fetchJobs = async () => {
     try {
-      const { data } = await supabase
-        .from('job_cards')
-        .select('*, vehicles(registration_number, make, model)')
-        .eq('customer_id', customer.id)
-        .order('created_at', { ascending: false })
-      setJobs(data || [])
+      const [jobsRes, invoicesRes, handoversRes] = await Promise.all([
+        supabase.from('job_cards')
+          .select('*, vehicles(registration_number, make, model)')
+          .eq('customer_id', customer.id)
+          .order('created_at', { ascending: false }),
+        supabase.from('invoices').select('job_card_id')
+          .eq('customer_id', customer.id)
+          .eq('invoice_type', 'final')
+          .neq('status', 'cancelled'),
+        supabase.from('handover_cards').select('job_card_id').eq('customer_id', customer.id),
+      ])
+      setJobs(jobsRes.data || [])
+      setInvoicedJobIds(new Set((invoicesRes.data || []).map(i => i.job_card_id).filter(Boolean)))
+      setDeliveredJobIds(new Set((handoversRes.data || []).map(h => h.job_card_id).filter(Boolean)))
     } catch (err) {
       console.error('Services error:', err)
     } finally {
@@ -53,6 +67,8 @@ export default function ClientServices() {
     completed: { icon: CheckCircle2, color: 'text-green-600', bg: 'bg-green-100', border: 'border-green-200' },
     cancelled: { icon: XCircle, color: 'text-red-600', bg: 'bg-red-100', border: 'border-red-200' },
   }
+
+  const jobSteps = JOB_STAGE_KEYS.map(k => ({ key: k, label: t(`client.dashboard.stages.${k}`) }))
 
   if (loading) {
     return <ListSkeleton rows={4} />
@@ -89,6 +105,10 @@ export default function ClientServices() {
         <div className="space-y-3">
           {filtered.map((job, i) => {
             const cfg = statusConfig[job.status] || statusConfig.open
+            const stage = jobStage(job, {
+              hasFinalInvoice: invoicedJobIds.has(job.id),
+              hasHandover: deliveredJobIds.has(job.id),
+            })
             return (
               <Reveal
                 as={Link}
@@ -118,6 +138,11 @@ export default function ClientServices() {
                   </div>
                   <ArrowRight className="w-4 h-4 text-gray-300 flex-shrink-0 mt-1" />
                 </div>
+                {/* Same stage track the dashboard shows, so tapping "View all"
+                    doesn't drop the customer into a list that has forgotten it. */}
+                {!stage.cancelled && (
+                  <StatusTracker className="mt-3" steps={jobSteps} current={stage.index} compact />
+                )}
               </Reveal>
             )
           })}

@@ -1223,7 +1223,33 @@
       "viewAll": "View all",
       "noActiveServices": "No active services",
       "allGood": "All your vehicles are in good shape!",
-      "reportProblem": "Report a Problem"
+      "reportProblem": "Report a Problem",
+      "yourDocuments": "Your Documents",
+      "needsAttention": "Needs your attention",
+      "allClear": "Nothing needs you right now",
+      "services": "Services",
+      "quotations": "Quotations",
+      "invoicesToPay": "Invoices",
+      "handovers": "Handovers",
+      "amountDue": "Amount due",
+      "actionApproveQuote": "Quotation waiting for your approval",
+      "actionPayInvoice": "Invoice waiting for payment",
+      "actionPayInspection": "Inspection waiting for payment",
+      "trackTitle": "Where your vehicle is",
+      "stages": {
+        "requested": "Requested",
+        "quoted": "Quotation",
+        "repair": "In Repair",
+        "invoiced": "Invoiced",
+        "delivered": "Delivered",
+        "cancelled": "Cancelled"
+      },
+      "inspectionStages": {
+        "requested": "Requested",
+        "paid": "Paid",
+        "inspecting": "Inspecting",
+        "report": "Report Ready"
+      }
     },
     "newRequest": {
       "title": "Report a Problem",

@@ -10,6 +10,8 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Reveal from '../../components/common/Reveal'
+import StatusTracker from '../../components/common/StatusTracker'
+import { JOB_STAGE_KEYS, jobStage } from '../../lib/clientStages'
 
 export default function ClientServiceDetail() {
   const { id } = useParams()
@@ -21,6 +23,11 @@ export default function ClientServiceDetail() {
   const [jobItems, setJobItems] = useState([])
   const [proformaReq, setProformaReq] = useState(null)
   const [proforma, setProforma] = useState(null)
+  // The last two stages of the customer track don't live on the job card: a job
+  // is "Invoiced" once a final invoice exists and "Delivered" once it has been
+  // handed back. See src/lib/clientStages.js.
+  const [hasFinalInvoice, setHasFinalInvoice] = useState(false)
+  const [hasHandover, setHasHandover] = useState(false)
   const [requesting, setRequesting] = useState(false)
   const [loading, setLoading] = useState(true)
 
@@ -58,7 +65,7 @@ export default function ClientServiceDetail() {
       // Costed line items staff added (customer-safe columns only — never cost/profit)
       // and any existing proforma request, so the client sees the real bill and
       // whether they've already asked for a proforma.
-      const [jobItemsRes, reqRes, proformaRes] = await Promise.all([
+      const [jobItemsRes, reqRes, proformaRes, finalRes, handoverRes] = await Promise.all([
         supabase.from('job_card_items')
           .select('id, item_type, description, quantity, selling_price, total_selling')
           .eq('job_card_id', id)
@@ -78,10 +85,22 @@ export default function ClientServiceDetail() {
           .neq('status', 'cancelled')
           .order('created_at', { ascending: false })
           .limit(1),
+        supabase.from('invoices')
+          .select('id')
+          .eq('job_card_id', id)
+          .eq('invoice_type', 'final')
+          .neq('status', 'cancelled')
+          .limit(1),
+        supabase.from('handover_cards')
+          .select('id')
+          .eq('job_card_id', id)
+          .limit(1),
       ])
       setJobItems(jobItemsRes.data || [])
       setProformaReq(reqRes.data?.[0] || null)
       setProforma(proformaRes.data?.[0] || null)
+      setHasFinalInvoice((finalRes.data?.length || 0) > 0)
+      setHasHandover((handoverRes.data?.length || 0) > 0)
 
       if (jc.inspection_id) {
         const [inspRes, itemsRes] = await Promise.all([
@@ -210,12 +229,10 @@ export default function ClientServiceDetail() {
   }
 
   const vehicle = jobCard.vehicles
-  const progressSteps = [
-    { label: t('customerView.stepInspection'), done: true },
-    { label: t('customerView.stepApproved'), done: !isPreJobCard },
-    { label: t('customerView.stepInProgress'), done: jobCard.status === 'in_progress' || jobCard.status === 'completed' },
-    { label: t('customerView.stepDone'), done: jobCard.status === 'completed' },
-  ]
+  // One stage model for the whole portal (dashboard rows and this page), so a
+  // customer never sees their job at a different point in two places.
+  const progressSteps = JOB_STAGE_KEYS.map(k => ({ key: k, label: t(`client.dashboard.stages.${k}`) }))
+  const stage = jobStage(jobCard, { hasFinalInvoice, hasHandover })
 
   return (
     <div className="space-y-4">
@@ -250,24 +267,18 @@ export default function ClientServiceDetail() {
         </div>
       </Reveal>
 
-      {/* Progress */}
-      {!isPreJobCard && (
-        <Reveal className="bg-white rounded-2xl border border-gray-200 p-4">
-          <h3 className="font-semibold text-gray-900 mb-3 text-sm">{t('customerView.repairProgress')}</h3>
-          <div className="flex items-center justify-between">
-            {progressSteps.map((step, idx) => (
-              <div key={idx} className="flex flex-col items-center gap-1 flex-1">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
-                  step.done ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-400'
-                }`}>{idx + 1}</div>
-                <span className={`text-[10px] text-center leading-tight ${step.done ? 'text-green-700 font-medium' : 'text-gray-400'}`}>
-                  {step.label}
-                </span>
-              </div>
-            ))}
-          </div>
-        </Reveal>
-      )}
+      {/* Where the vehicle is on the customer track. Shown for a pre-job card
+          too — "you are at the quotation stage" is exactly what someone waiting
+          on a price wants to see. */}
+      <Reveal className="bg-white rounded-2xl border border-gray-200 p-4">
+        <h3 className="font-semibold text-gray-900 mb-4 text-sm">{t('client.dashboard.trackTitle')}</h3>
+        <StatusTracker
+          steps={progressSteps}
+          current={stage.index}
+          cancelled={stage.cancelled}
+          cancelledLabel={t('client.dashboard.stages.cancelled')}
+        />
+      </Reveal>
 
       {/* Customer Complaint */}
       {(inspection?.description || jobCard.description) && (
