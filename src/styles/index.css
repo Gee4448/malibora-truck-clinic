@@ -12,15 +12,20 @@
   /* ---- Typography ------------------------------------------------------
      Two families, each doing the job it is best at.
 
-     Space Grotesk carries headings, figures and labels. It descends from
-     technical drafting lettering, so it reads as engineering rather than as
-     marketing, and its numerals are even-width enough that a column of TZS
-     amounts lines up without extra work.
+     Poppins carries headings, figures and labels. It is geometric — circular
+     bowls, a tall x-height, wide even spacing — which is why it is the face
+     that reads as a *mobile app* rather than as a document, and why it holds
+     the reference card's big bold heading without looking stretched. It also
+     sits well against the brand orange: both are round and high-contrast.
 
      Inter stays for running text. Nothing beats it at 13px on the cheap
      Android screens this app actually lives on, and legibility in a workshop
-     outranks personality. */
-  --font-display: 'Space Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+     outranks personality.
+
+     Poppins is wide, so the -0.02em heading track set further down matters
+     more than it did with Space Grotesk: without it a two-line h1 on a 360px
+     phone wraps a word early. */
+  --font-display: 'Poppins', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
   /* ---- Brand ramp ------------------------------------------------------
@@ -35,6 +40,11 @@
   --color-blue-50:  #fff4ee;
   --color-blue-100: #ffe2d3;
   --color-blue-200: #ffc0a2;
+  /* 300 is the ramp step for SMALL orange text on a dark tile. 400 measures
+     4.36:1 against the worst point of .tile-dark — fine for a 30px figure,
+     which only owes 3:1, and under AA for the 12px amounts and count badges
+     sitting next to it. 300 puts those at 5.9:1. Rule of thumb: on a dark
+     surface, orange under 24px is blue-300, orange above it can be 400. */
   --color-blue-300: #ff9a68;
   --color-blue-400: #fa6f28;
   --color-blue-500: #e85002; /* brand orange, verbatim from the palette sheet */
@@ -170,9 +180,12 @@ h1, h2, h3, h4, .font-display {
   letter-spacing: -0.02em;
 }
 
-/* Tabular figures wherever money or counts appear. Space Grotesk's digits are
-   close to even width but not identical; `tnum` makes an invoice column line
-   up on the decimal instead of shimmering as the values change. */
+/* Tabular figures wherever money or counts appear. The columns that actually
+   need this — invoice lines, payment ledgers, parts quantities — are body text
+   and therefore Inter, which ships a real `tnum` and locks a TZS column to the
+   decimal instead of letting it shimmer as values change. On a Poppins heading
+   the request is a no-op if the face has no `tnum` table, and that costs
+   nothing: a heading shows one figure, never a column. */
 .tabular, .font-display {
   font-variant-numeric: tabular-nums;
 }
@@ -733,34 +746,70 @@ button:not(:disabled):not(.absolute):not(.fixed):active {
   pointer-events: none;
   background: linear-gradient(90deg, transparent, rgb(232 80 2 / 0.55) 50%, transparent);
 }
-
 /* ----------------------------------------------------------------------------
-   Hero panel — the dark tile that opens a dashboard.
-   Black ground with the palette's gradient bloom pushed into the corners, so
-   the figure sitting on it (a total, a count) has a lit surface behind it.
+   Hero panel — the dark card that opens a dashboard, and the one surface in
+   the app built directly on the glass-card reference.
+
+   The reference's whole trick is where the light comes from: the card is
+   charcoal along its top edge and the colour RISES out of the bottom, so the
+   panel reads as an object standing in front of a light rather than as a
+   rectangle someone filled with a gradient. The earlier version had this
+   backwards — the orange sat in the top-right corner, which is where a
+   highlight goes, not where a glow does.
+
+   Three blooms: an orange one low and left, a deeper crimson low and centre
+   (the palette's #c10801, doing the heavy lifting), and one dim orange ember
+   far off the top-right corner so the sand sheen below has something to be a
+   reflection OF. All three are centred outside the box, so what lands on the
+   card is the soft shoulder of each bloom, never its hot core.
+
+   Verified, not eyeballed: `node scripts/gradient-hotspot.js` composites this
+   stack at four real widths and scores the white text against the lightest
+   point it reaches. Re-run it after touching any value here — the blooms are
+   sized in rem but positioned in %, so tightening one number changes the
+   contrast on a phone and not on a desktop, or the other way round.
    ---------------------------------------------------------------------------- */
 .hero-dark {
   position: relative;
   overflow: hidden;
   background:
-    radial-gradient(38rem 26rem at 88% -30%, rgb(241 96 1 / 0.46), transparent 62%),
-    radial-gradient(30rem 24rem at -8% 118%, rgb(193 8 1 / 0.50), transparent 66%),
-    linear-gradient(150deg, #17100c 0%, #000000 58%, #0d0806 100%);
+    radial-gradient(26rem 17rem at 30% 126%,  rgb(241 96 1 / 0.42),  transparent 58%),
+    radial-gradient(40rem 26rem at 66% 132%,  rgb(193 8 1 / 0.60),   transparent 64%),
+    radial-gradient(22rem 15rem at 98% -34%,  rgb(241 96 1 / 0.20),  transparent 56%),
+    linear-gradient(176deg, #1b1411 0%, #0e0908 44%, #0a0605 100%);
   color: var(--brand-white);
   color-scheme: dark;
   border: 1px solid rgb(255 255 255 / 0.10);
+  /* The card floats. Long and soft, offset well down, so the shadow reads as
+     distance from the page rather than as a dark outline. */
+  box-shadow: 0 24px 48px -24px rgb(0 0 0 / 0.55), 0 2px 8px -4px rgb(0 0 0 / 0.35);
 }
-/* A faint sand-coloured sheen across the top — the palette's fourth gradient
-   stop, and the only warm light in the whole dark surface. Without it the tile
-   reads as black-with-orange-stickers instead of as a lit object. */
-.hero-dark::before {
+/* Two things in one layer, because `.sheen` already owns ::after on these
+   elements and ::before is the only pseudo left.
+
+   First a 1px rim along the top edge — the reference's brightest detail, and
+   what makes the card look like it has a lip you could catch a fingernail on.
+   It is drawn as a hard-stopped gradient rather than a border so it appears on
+   the top edge only; `overflow: hidden` plus the radius clips it into the
+   corners, which is exactly how a real bevel dies round a curve.
+
+   Then the sand wash — the palette's fourth stop, its only warm highlight.
+   Without it the card reads as black-with-orange-stickers instead of as a lit
+   object. */
+.hero-dark::before,
+.tile-dark::before,
+.tile-ember::before {
   content: '';
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: linear-gradient(165deg, rgb(217 195 171 / 0.16), transparent 42%);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.18), rgb(255 255 255 / 0) 1px),
+    linear-gradient(165deg, rgb(217 195 171 / 0.15), transparent 42%);
 }
-.hero-dark > * { position: relative; }
+.hero-dark > *,
+.tile-dark > *,
+.tile-ember > * { position: relative; }
 
 /* Muted text on any dark surface. 0.72, checked against the BRIGHTEST point of
    the bloom rather than against the black — over the hot corner of the auth stage
@@ -833,32 +882,58 @@ button:not(:disabled):not(.absolute):not(.fixed):active {
 
 
 /* ----------------------------------------------------------------------------
-   Dark tiles — the KPI bento.
+   Dark tiles — the KPI bento, and the client's document tiles.
 
-   Note these are NOT glass, and that is deliberate. A dark translucent panel
-   sitting on a light page would let the page through and turn muddy brown; the
-   physics only work the other way round. So the app runs two materials: glass
-   for the light surfaces, obsidian for the dark ones. What ties them together
-   is that both carry the same bevel and the same single overhead light source.
+   These are NOT glass, and that is deliberate. A dark translucent panel sitting
+   on a light page lets the page through and turns muddy brown; the physics only
+   work the other way round. So the app runs two materials: glass for the light
+   surfaces, obsidian for the dark ones. What ties them together is that both
+   carry the same rim and the same single overhead light source.
+
+   Same light direction as `.hero-dark` — colour rising from the bottom — but
+   deliberately dimmer, and that restraint is load-bearing rather than taste.
+   These tiles carry a 30px ORANGE figure (`text-blue-400`, #fa6f28), and orange
+   text on a red-lit ground is the one combination in this palette that
+   collapses: pushing the hero's crimson into a 152px tile takes that figure
+   from 4.5:1 down to about 1.9:1. So the bloom here is a low ember, not a wash.
+   `node scripts/gradient-hotspot.js` scores it at four tile widths.
    ---------------------------------------------------------------------------- */
 .tile-dark {
   position: relative;
   overflow: hidden;
   background:
-    radial-gradient(16rem 12rem at 118% -25%, rgb(241 96 1 / 0.30), transparent 62%),
-    linear-gradient(155deg, #16100c 0%, #080504 62%);
+    radial-gradient(14rem 9rem at 78% 128%,   rgb(193 8 1 / 0.34),  transparent 60%),
+    radial-gradient(11rem 7rem at 104% -22%,  rgb(241 96 1 / 0.20), transparent 58%),
+    linear-gradient(168deg, #17110d 0%, #0a0605 66%);
   color: var(--brand-white);
   color-scheme: dark;
   border: 1px solid rgb(255 255 255 / 0.09);
+  box-shadow: 0 14px 30px -18px rgb(0 0 0 / 0.50);
 }
-.tile-dark::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: linear-gradient(165deg, rgb(217 195 171 / 0.13), transparent 40%);
+
+/* ----------------------------------------------------------------------------
+   The ember tile — the reference card at full strength.
+
+   One tile in the app can afford the hero's crimson at close range: the
+   client's "Report a problem" CTA. It carries white text only, so there is no
+   orange figure to drown, and it is the one thing on that screen we actively
+   want someone to press. Everything else on a dark ground keeps `.tile-dark`.
+
+   Use it the same way — `tile-ember` in place of `tile-dark` — and re-run the
+   hot-spot script if you put it under anything smaller than 16px.
+   ---------------------------------------------------------------------------- */
+.tile-ember {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(20rem 12rem at 24% 132%, rgb(241 96 1 / 0.44), transparent 58%),
+    radial-gradient(28rem 16rem at 70% 136%, rgb(193 8 1 / 0.62),  transparent 62%),
+    linear-gradient(172deg, #1b1411 0%, #0c0706 52%, #0a0605 100%);
+  color: var(--brand-white);
+  color-scheme: dark;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  box-shadow: 0 18px 36px -20px rgb(0 0 0 / 0.55);
 }
-.tile-dark > * { position: relative; }
 
 
 /* ----------------------------------------------------------------------------
@@ -1076,8 +1151,13 @@ button:not(:disabled):not(.absolute):not(.fixed):active {
    Modern micro-interactions
    ============================================================ */
 
-/* Sheen — a soft diagonal light sweep across a surface on hover. Best on the
-   dark feature tiles / primary CTAs; needs a positioned, clipping parent. */
+/* Sheen — a soft diagonal light sweep across a surface on hover. Every one of
+   its five call sites is a dark tile, which is why the peak was lowered from
+   0.22 to 0.14: on a dark ground a 22% white wash is not a glint, it is a fog.
+   Measured with scripts/gradient-hotspot.js, at 0.22 the 30px orange KPI figure
+   drops to 2.4:1 while the sweep crosses it — under the 3:1 it clears at rest.
+   At 0.14 every piece of text on a sheened tile stays above AA for the whole
+   sweep, and the highlight still reads. */
 .sheen { position: relative; overflow: hidden; }
 .sheen::after {
   content: '';
@@ -1086,8 +1166,8 @@ button:not(:disabled):not(.absolute):not(.fixed):active {
   background: linear-gradient(
     115deg,
     transparent 30%,
-    rgba(255, 255, 255, 0.22) 48%,
-    rgba(255, 255, 255, 0.05) 56%,
+    rgba(255, 255, 255, 0.14) 48%,
+    rgba(255, 255, 255, 0.032) 56%,
     transparent 72%
   );
   transform: translateX(-130%);

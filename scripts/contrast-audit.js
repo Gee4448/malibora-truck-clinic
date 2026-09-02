@@ -17,12 +17,20 @@
 //
 
 (() => {
+  // The lightest point each dark surface reaches AT REST — the worst case for
+  // the white text sitting on it. These are DERIVED, not eyeballed: run
+  //   node scripts/gradient-hotspot.js
+  // which composites the real gradient stacks at several real card widths and
+  // prints the hot spot for each. Re-derive them whenever a .*-dark background
+  // changes, or this probe keeps scoring text against a ground the app no
+  // longer paints and hands back a pass that is not real.
   const GROUND = {
     'app-bar': [26, 17, 12],
     'drawer-dark': [24, 16, 12],
     'tab-bar': [26, 17, 12],
-    'hero-dark': [131, 73, 34],
-    'tile-dark': [105, 60, 30],
+    'hero-dark': [136, 35, 3],
+    'tile-dark': [79, 43, 23],
+    'tile-ember': [128, 36, 3],
     'auth-stage': [150, 62, 10],
   }
   const LIGHT_BASE = [244, 218, 204]

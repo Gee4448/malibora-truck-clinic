@@ -179,7 +179,7 @@ export default function ClientDashboard() {
               <Bell className="w-3.5 h-3.5 text-blue-400" />
             </span>
             <h2 className="font-bold text-sm">{t('client.dashboard.needsAttention')}</h2>
-            <span className="ml-auto text-xs font-bold text-blue-400 bg-blue-500/10 rounded-full px-2 py-0.5">
+            <span className="ml-auto text-xs font-bold text-blue-300 bg-blue-500/10 rounded-full px-2 py-0.5">
               {actions.length}
             </span>
           </div>
@@ -196,7 +196,7 @@ export default function ClientDashboard() {
                   <p className="text-xs on-dark-muted mt-0.5">
                     {a.ref}
                     {a.amount != null && (
-                      <span className="text-blue-400 font-semibold"> · {formatTZS(a.amount)}</span>
+                      <span className="text-blue-300 font-semibold"> · {formatTZS(a.amount)}</span>
                     )}
                   </p>
                 </div>
@@ -207,11 +207,15 @@ export default function ClientDashboard() {
         </Reveal>
       )}
 
-      {/* Primary CTA — dark tile, Report a problem */}
+      {/* Primary CTA — the one card on this screen that gets the reference
+          treatment at full strength (.tile-ember rather than .tile-dark).
+          It can carry the crimson because everything on it is white text; the
+          document tiles below cannot, because their orange counts would sink
+          into it. */}
       <Link
         to="/client/new-request"
         onMouseMove={onSpot}
-        className="card-lift sheen spotlight flex items-center gap-4 tile-dark rounded-3xl p-5"
+        className="card-lift sheen spotlight flex items-center gap-4 tile-ember rounded-3xl p-5"
       >
         <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center flex-shrink-0">
           <Send className="w-6 h-6 text-white" />

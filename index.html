@@ -23,11 +23,13 @@
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <!-- Inter for running text, Space Grotesk for headings and figures. One
-         request, both families, weights trimmed to the ones actually used —
-         this app is loaded over Tanzanian mobile data, so every unused weight
-         is a real cost. -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <!-- Poppins for headings and figures, Inter for running text. One request,
+         both families. Weights are trimmed to the four the app actually uses
+         (400/500/600/700 — a grep finds zero font-light and zero font-extrabold
+         call sites), so this loads eight faces where the old Space Grotesk pair
+         loaded ten. That matters: this app is opened over Tanzanian mobile
+         data, and an unused weight is a real cost on every cold load. -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
   </head>
   <body>
     <div id="root"></div>
