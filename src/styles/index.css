@@ -417,33 +417,92 @@ button:not(:disabled):not(.absolute):not(.fixed):active {
 
 /* ============================================================
    Status tracker (StatusTracker.jsx)
-   The Odoo-portal stage bar. The track draws itself left-to-right on mount so
-   the eye is led along the customer's journey instead of finding a finished bar.
+   Odoo's statusbar ribbon: chevron segments that point along the customer's
+   journey. Each segment is clipped into an arrow — a left notch and a right
+   point — except the first (flat left) and last (flat right), so the row reads
+   as one continuous ribbon rather than a set of loose buttons.
 
-   Deliberately CSS keyframes, not a JS mount flag: requestAnimationFrame is
-   paused in a backgrounded tab or a hidden preview pane, and a JS-armed bar
-   would sit there empty — which reads as "nothing has happened on my job".
-   `both` fill-mode holds the finished state, and the reduced-motion block below
+   The segments fade in one after another on mount, deliberately with CSS
+   keyframes rather than a JS mount flag: requestAnimationFrame is paused in a
+   backgrounded tab or a hidden preview pane, and a JS-armed ribbon would sit
+   there blank — which reads as "nothing has happened on my job". `both`
+   fill-mode holds the finished state, and the reduced-motion block below
    collapses the duration, so the end state is always what you land on.
    ============================================================ */
 
-@keyframes trackSegGrow {
-  from { transform: scaleX(0); }
-  to { transform: scaleX(1); }
+.chev-track {
+  --chev: 9px; /* depth of the arrow point / notch */
+  /* Positioned so the segments measure their offsetLeft against the TRACK.
+     Without this their offsetParent is whatever card happens to be positioned
+     further up, and the auto-scroll below lands short by that card's padding —
+     which cuts the first label mid-word. */
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  /* A long track on a narrow phone scrolls sideways rather than crushing the
+     labels. `overscroll-behavior-x: contain` stops that drag from turning into
+     a browser back-swipe or pulling the page behind it. */
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
-@keyframes trackDotPop {
-  from { transform: scale(0.4); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+.chev-track::-webkit-scrollbar { display: none; }
+
+/* Edge fades, applied by StatusTracker only while the ribbon actually overflows
+   and only on the side that is currently cut. A half-visible chevron then reads
+   as "there is more this way" instead of as a clipped layout. If the script
+   never runs, no class is set and nothing is faded — nothing is ever hidden. */
+.chev-track.is-scrollable {
+  --fade: linear-gradient(to right, transparent 0, #000 7%, #000 93%, transparent 100%);
+  mask-image: var(--fade);
+  -webkit-mask-image: var(--fade);
+}
+.chev-track.is-scrollable.at-start {
+  --fade: linear-gradient(to right, #000 0, #000 93%, transparent 100%);
+}
+.chev-track.is-scrollable.at-end {
+  --fade: linear-gradient(to right, transparent 0, #000 7%, #000 100%);
+}
+.chev-track.is-scrollable.at-start.at-end {
+  --fade: none;
+  mask-image: none;
+  -webkit-mask-image: none;
 }
 
-.track-seg {
-  transform-origin: left center;
-  animation: trackSegGrow var(--dur-base) var(--ease-out-expo) both;
-  animation-delay: calc(var(--seg-i, 0) * 90ms);
+.chev {
+  /* Grow to fill a wide track, but NEVER shrink below the label — a clipped
+     chevron has no ellipsis, the text would just vanish into the arrow. When the
+     labels don't fit (a phone), the track scrolls instead. */
+  flex: 1 0 auto;
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--chev)) 0,
+    100% 50%,
+    calc(100% - var(--chev)) 100%,
+    0 100%,
+    var(--chev) 50%
+  );
+  padding-left: calc(var(--chev) + 6px);
+  padding-right: calc(var(--chev) + 4px);
+  animation: chevIn var(--dur-base) var(--ease-out-expo) both;
+  animation-delay: calc(var(--seg-i, 0) * 70ms);
 }
-.track-dot {
-  animation: trackDotPop var(--dur-fast) var(--ease-spring) both;
-  animation-delay: calc(var(--seg-i, 0) * 90ms + 60ms);
+/* The ends square off so the ribbon has a clean start and finish. */
+.chev:first-child {
+  clip-path: polygon(0 0, calc(100% - var(--chev)) 0, 100% 50%, calc(100% - var(--chev)) 100%, 0 100%);
+  padding-left: 10px;
+}
+.chev:last-child {
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, var(--chev) 50%);
+  padding-right: 10px;
+}
+.chev:first-child:last-child { clip-path: none; }
+
+@keyframes chevIn {
+  from { opacity: 0; transform: translateX(-6px); }
+  to { opacity: 1; transform: none; }
 }
 
 /* ============================================================

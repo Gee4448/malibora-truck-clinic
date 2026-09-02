@@ -275,14 +275,16 @@ export default function ClientDashboard() {
                       </p>
                       <p className="text-xs text-gray-500">{job.job_number} · {formatDate(job.created_at)}</p>
                     </div>
-                    <span className="text-xs font-medium text-blue-700 bg-blue-50 rounded-full px-2.5 py-1 flex-shrink-0">
-                      {stage.cancelled
-                        ? t('client.dashboard.stages.cancelled')
-                        : t(`client.dashboard.stages.${stage.key}`)}
-                    </span>
+                    {/* A stage badge here would just repeat the ribbon below,
+                        whose highlighted chevron already names the stage. The
+                        inspection rows keep their badge because it shows the raw
+                        status ("Pending Payment"), which the track does not. */}
+                    {stage.cancelled && (
+                      <span className="text-xs font-medium text-gray-500 bg-gray-100 rounded-full px-2.5 py-1 flex-shrink-0">
+                        {t('client.dashboard.stages.cancelled')}
+                      </span>
+                    )}
                   </div>
-                  {/* The badge above already says "Cancelled" — a second pill
-                      under it would just repeat itself. */}
                   {!stage.cancelled && (
                     <StatusTracker className="mt-3" steps={jobSteps} current={stage.index} compact />
                   )}
