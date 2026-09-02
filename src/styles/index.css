@@ -307,6 +307,44 @@ button:not(:disabled):not(.absolute):not(.fixed):active {
     transform: none !important;
     transition: none !important;
   }
+  /* The entrance ANIMATIONS are the identical hazard, and were missed above.
+     Every one of them fills `backwards` or `both`, which means it holds the
+     `from` keyframe — `opacity: 0` — for as long as it has not run. `<main>`
+     carries .animate-fade-in-up, so anything that prints the page before that
+     animation has played prints a blank sheet.
+
+     This is not theoretical: a headless `chrome --print-to-pdf` of the real
+     invoice produced three blank pages, 3 text operators, 16KB. With this rule
+     the same command produces 143KB of actual invoice. Headless never runs
+     animations at all, so it is strictly the worst case — fixing it there
+     covers every real browser, including a user who hits Ctrl+P during the
+     500ms entrance or while a .stagger-children delay (up to 480ms) is still
+     pending. Verify with `node scripts/print-proof.mjs out.html --raw`. */
+  .animate-fade-in, .animate-fade-in-up, .animate-slide-in, .animate-slide-up,
+  .animate-pop-in, .animate-scale-in, .animate-float, .animate-float-delayed,
+  .stagger-children > * {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  /* The app shell is not part of the document. None of the three layouts mark
+     their nav bar `no-print`, so `.app-bar` printed as a band across the top of
+     page 1 — its text white-on-white, its ::after accent leaving a stray orange
+     rule above the invoice header. The drawer and the PWA banner are both
+     position:fixed, which prints wherever it happens to land. */
+  .app-bar, .drawer-dark, .glass-overlay, .pwa-install-banner {
+    display: none !important;
+  }
+
+  /* Keep a block off a page boundary. Nothing in this app set a break rule, so
+     fragmentation was entirely at the mercy of row count: a 50-line invoice put
+     `VAT 18%` at the bottom of page 3 and the grand TOTAL alone on page 4,
+     separated from every figure it sums. Verified across 36–60 rows with
+     `node scripts/print-sweep.mjs`. */
+  .print-keep {
+    break-inside: avoid;
+  }
 }
 
 /* ============================================================

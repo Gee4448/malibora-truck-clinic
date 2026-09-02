@@ -890,8 +890,10 @@ export default function InvoiceDetail() {
         </table>
 
         {/* Totals */}
+        {/* print-keep: the subtotals and the grand TOTAL must stay on one sheet.
+            Without it a 50-line invoice broke between VAT and TOTAL. */}
         <div className="flex justify-end">
-          <div className="w-72">
+          <div className="w-72 print-keep">
             <div className="flex justify-between py-2 border-b border-gray-200">
               <span className="text-gray-600">{t('invoices.subtotalParts')}</span>
               <span className="font-medium">{formatTZS(invoice.subtotal_parts)}</span>
