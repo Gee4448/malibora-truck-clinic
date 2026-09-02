@@ -458,8 +458,11 @@ button:not(:disabled):not(.absolute):not(.fixed):active {
    LightningCSS adds the prefixes itself from the build targets. Writing only
    the standard property yields both. Check after touching this section:
 
-     grep -c -- '-webkit-backdrop-filter' dist/assets/*.css
-     grep -cE '[;{]backdrop-filter' dist/assets/*.css
+     grep -o -- '-webkit-backdrop-filter' dist/assets/*.css | wc -l
+     grep -oE '[;{]backdrop-filter' dist/assets/*.css | wc -l
+
+   (-o, not -c: the built CSS is one single line, so -c can only ever answer
+   1 or 0 and looks passing whatever it finds. Currently 25 and 21.)
 
    Both numbers should be non-trivial. (The `-webkit-mask` pairs further down
    do NOT hit this — LightningCSS emits both there — but they are duplicated in
@@ -675,6 +678,118 @@ button:not(:disabled):not(.absolute):not(.fixed):active {
     color: #111827 !important;
     border-color: #d1d5db !important;
   }
+
+  /* ---- The tokens themselves, not just the classes ------------------------
+     The gray classes above are belt-and-braces; what actually drives them is
+     this variable block, which until now print left untouched. `--ink` stayed
+     #ffffff on paper, so every rule reading `color: var(--ink)` directly —
+     rather than going through one of the `.text-gray-*` classes listed above —
+     printed white on white. Retargeting the tokens fixes those at the root,
+     and keeps any surface added later correct on paper by default. */
+  :root {
+    --ink:        #111827;
+    --ink-strong: #374151;
+    --ink-mid:    #4b5563;
+    --ink-muted:  #5f6673;
+    --ink-faint:  #6e7480;
+    --hairline:   #e5e7eb;
+    --well:       #f9fafb;
+    --well-hover: #f3f4f6;
+    --glass-fill: #fff;
+    --glass-fill-strong: #fff;
+    --glass-fill-flat: #fff;
+    --glass-fill-flat-strong: #fff;
+    --glass-stroke: #e5e7eb;
+    --glass-edge: transparent;
+    --glass-shadow: none;
+  }
+
+  /* ---- The accent ramps ---------------------------------------------------
+     THE bug this whole block exists to prevent, and it was live. The screen
+     theme flips every accent to its 300-step so it reads on dark glass, and
+     print never flipped it back. Measured on the real invoice markup with
+     `node scripts/print-proof.mjs`: the TOTAL figure and all five column
+     headers (`text-blue-900` → #ff9a68) came out at 1.7:1 on paper, and the
+     discount line (`text-red-600` → #fca5a5) at 1.9:1. The customer would have
+     been handed an invoice whose total was the faintest thing on the page.
+
+     These must be !important — the screen remaps sit ~900 lines further down
+     at equal specificity, so an unweighted rule here loses to them.
+
+     Blue is the brand orange; its steps come from the --color-blue-* ramp at
+     the top of this file. The other hues are Tailwind literals, for the reason
+     given at that ramp block: v4 only emits `--color-<hue>-<step>` for steps
+     the markup actually uses, so most do not exist at runtime.
+
+     The 500 steps print at their 700 value on purpose. Paper has no backlight:
+     yellow-500 measures 1.9:1 on white and amber-500 2.1:1 — a highlight on a
+     screen, an absence in ink. */
+  .text-blue-600  { color: #c74301 !important; }
+  .text-blue-700  { color: #a33601 !important; }
+  .text-blue-800  { color: #832c02 !important; }
+  .text-blue-900  { color: #6b2503 !important; }
+
+  .text-green-500, .text-green-700 { color: #15803d !important; }
+  .text-green-600 { color: #16a34a !important; }
+  .text-green-800 { color: #166534 !important; }
+  .text-green-900 { color: #14532d !important; }
+
+  .text-emerald-600 { color: #059669 !important; }
+  .text-emerald-700 { color: #047857 !important; }
+  .text-emerald-800 { color: #065f46 !important; }
+
+  .text-red-600 { color: #dc2626 !important; }
+  .text-red-700 { color: #b91c1c !important; }
+  .text-red-800 { color: #991b1b !important; }
+  .text-red-900 { color: #7f1d1d !important; }
+
+  .text-orange-500, .text-orange-700 { color: #c2410c !important; }
+  .text-orange-600 { color: #ea580c !important; }
+  .text-orange-800 { color: #9a3412 !important; }
+  .text-orange-900 { color: #7c2d12 !important; }
+
+  .text-amber-500, .text-amber-700 { color: #b45309 !important; }
+  .text-amber-600 { color: #d97706 !important; }
+  .text-amber-800 { color: #92400e !important; }
+  .text-amber-900 { color: #78350f !important; }
+
+  .text-yellow-500, .text-yellow-700 { color: #a16207 !important; }
+  .text-yellow-600 { color: #ca8a04 !important; }
+  .text-yellow-800 { color: #854d0e !important; }
+
+  .text-purple-500, .text-purple-700 { color: #7e22ce !important; }
+  .text-purple-600 { color: #9333ea !important; }
+  .text-purple-800 { color: #6b21a8 !important; }
+  .text-purple-900 { color: #581c87 !important; }
+
+  .text-pink-600 { color: #db2777 !important; }
+  .text-pink-700 { color: #be185d !important; }
+  .text-pink-800 { color: #9d174d !important; }
+
+  /* Tints and their borders. Most browsers drop backgrounds from print by
+     default, so the ink above is chosen to hold up on bare white; these only
+     keep the bands sane for the ones that do not. */
+  .bg-blue-50    { background-color: #fff4ee !important; }
+  .bg-blue-100   { background-color: #ffe2d3 !important; }
+  .bg-green-50, .bg-green-100     { background-color: #f0fdf4 !important; }
+  .bg-emerald-50, .bg-emerald-100 { background-color: #ecfdf5 !important; }
+  .bg-red-50, .bg-red-100         { background-color: #fef2f2 !important; }
+  .bg-orange-50, .bg-orange-100   { background-color: #fff7ed !important; }
+  .bg-amber-50, .bg-amber-100     { background-color: #fffbeb !important; }
+  .bg-yellow-50, .bg-yellow-100   { background-color: #fefce8 !important; }
+  .bg-purple-50, .bg-purple-100   { background-color: #faf5ff !important; }
+  .bg-pink-50, .bg-pink-100       { background-color: #fdf2f8 !important; }
+  .bg-slate-50, .bg-slate-100     { background-color: #f8fafc !important; }
+
+  :is(.border-blue-200, .border-blue-300)       { border-color: #ffc0a2 !important; }
+  :is(.border-green-200, .border-green-300)     { border-color: #bbf7d0 !important; }
+  :is(.border-emerald-200, .border-emerald-300) { border-color: #a7f3d0 !important; }
+  :is(.border-red-200, .border-red-300)         { border-color: #fecaca !important; }
+  :is(.border-orange-200, .border-orange-300)   { border-color: #fed7aa !important; }
+  :is(.border-amber-200, .border-amber-300)     { border-color: #fde68a !important; }
+  :is(.border-yellow-200, .border-yellow-300)   { border-color: #fef08a !important; }
+  :is(.border-purple-200, .border-purple-300)   { border-color: #e9d5ff !important; }
+  :is(.border-pink-200, .border-pink-300)       { border-color: #fbcfe8 !important; }
 }
 
 /* 2. Reduced transparency. A real OS-level accessibility setting (iOS, macOS,
