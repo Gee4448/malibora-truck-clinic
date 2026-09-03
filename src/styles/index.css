@@ -1030,9 +1030,16 @@ button:not(:disabled):not(.absolute):not(.fixed):active {
     linear-gradient(180deg, rgb(255 255 255 / 0.18), rgb(255 255 255 / 0) 1px),
     linear-gradient(165deg, rgb(217 195 171 / 0.15), transparent 42%);
 }
-.hero-dark > *,
-.tile-dark > *,
-.tile-ember > * { position: relative; }
+/* Lifts content above the ::before wash. `:not(.absolute)` is load-bearing:
+   without it this rule OVERRODE every decorative child that asked to be
+   absolutely positioned, dropping them into the flow. Both dashboard heroes
+   carry two floating blobs that way, and in flow they added 144px + 96px of
+   dead height and sat at the left edge instead of the top right — a greeting
+   card 240px taller than its own content, which is what it looked like: an
+   empty box with the text stranded at the bottom. */
+.hero-dark > *:not(.absolute),
+.tile-dark > *:not(.absolute),
+.tile-ember > *:not(.absolute) { position: relative; }
 
 /* Muted text on any dark surface. 0.72, checked against the BRIGHTEST point of
    the bloom rather than against the black — over the hot corner of the auth stage

@@ -10,6 +10,7 @@ import {
 import CountUp from '../../components/common/CountUp'
 import Reveal from '../../components/common/Reveal'
 import StatusTracker from '../../components/common/StatusTracker'
+import TruckMark from '../../components/common/TruckMark'
 import { useSpotlight } from '../../hooks/useSpotlight'
 import { DashboardSkeleton } from '../../components/common/Skeleton'
 import {
@@ -141,9 +142,17 @@ export default function ClientDashboard() {
   return (
     <div className="space-y-4">
       {/* Greeting hero — brand orange, big rounded */}
-      <div className="sheen hero-dark rounded-3xl p-6">
-        <div className="absolute -top-10 -right-6 w-36 h-36 rounded-full bg-white/10 animate-float pointer-events-none" />
-        <div className="absolute -bottom-12 right-20 w-24 h-24 rounded-full bg-white/5 animate-float-delayed pointer-events-none" />
+      {/* The truck sits on the right and the greeting is pinned bottom-left, so
+          the two never fight for the same space. On a phone there is no room
+          beside the text, so the mark drops behind it at low alpha instead of
+          being hidden — the card would otherwise go back to looking empty. */}
+      <div className="sheen hero-dark rounded-3xl p-6 min-h-[190px] sm:min-h-[176px] flex flex-col justify-end">
+        <div className="absolute -top-16 -right-10 w-44 h-44 rounded-full bg-white/[0.07] animate-float pointer-events-none" />
+        {/* Sized by HEIGHT, not width: the art is 1.8:1, so a width that looks
+            right on a wide card is taller than the card itself and gets its
+            wheels clipped off. Height-first keeps it inside the panel at every
+            size and lets the width fall out of the aspect ratio. */}
+        <TruckMark className="absolute right-0 sm:right-4 bottom-1 h-[124px] sm:h-[142px] w-auto text-white opacity-40 sm:opacity-65 animate-float-delayed" />
         <div className="relative">
           <p className="on-dark-muted text-xs font-medium font-display tracking-wide uppercase">
             {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
