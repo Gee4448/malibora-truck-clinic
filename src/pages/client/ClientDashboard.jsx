@@ -139,6 +139,22 @@ export default function ClientDashboard() {
   const recentInspections = data.inspections.slice(0, 3)
   const openJobs = data.activeJobs.slice(0, 5)
 
+  /* Callouts annotating the truck in the hero, in the reference's style. These
+     are the SAME two figures the chip below carries — real, already fetched, and
+     shown in one place or the other, never both. Nothing here is invented: a
+     capacity or tonnage figure would have to be made up, and a made-up number on
+     a customer's own dashboard is worse than an empty corner. */
+  const calloutSpecs = [
+    data.activeJobs.length > 0 && {
+      value: data.activeJobs.length,
+      label: t('client.dashboard.activeServices'),
+    },
+    amountDue > 0 && {
+      value: formatTZS(amountDue),
+      label: t('client.dashboard.amountDue'),
+    },
+  ].filter(Boolean)
+
   return (
     <div className="space-y-4">
       {/* Greeting hero — brand orange, big rounded */}
@@ -146,13 +162,20 @@ export default function ClientDashboard() {
           the two never fight for the same space. On a phone there is no room
           beside the text, so the mark drops behind it at low alpha instead of
           being hidden — the card would otherwise go back to looking empty. */}
-      <div className="sheen hero-dark rounded-3xl p-6 min-h-[190px] sm:min-h-[176px] flex flex-col justify-end">
+      <div className="sheen hero-dark rounded-3xl p-6 min-h-[190px] sm:min-h-[176px] flex flex-col justify-end lg:flex-row lg:items-center lg:justify-between lg:gap-5">
         <div className="absolute -top-16 -right-10 w-44 h-44 rounded-full bg-white/[0.07] animate-float pointer-events-none" />
-        {/* Sized by HEIGHT, not width: the art is 1.8:1, so a width that looks
+        {/* Sized by HEIGHT, not width: the art is 3.2:1, so a width that looks
             right on a wide card is taller than the card itself and gets its
             wheels clipped off. Height-first keeps it inside the panel at every
-            size and lets the width fall out of the aspect ratio. */}
-        <TruckMark className="absolute right-0 sm:right-4 bottom-3 h-[92px] sm:h-[112px] w-auto text-white opacity-40 sm:opacity-65 animate-float-delayed" />
+            size and lets the width fall out of the aspect ratio.
+
+            `absolute` until lg, then `lg:relative` so it becomes a flex child
+            and shares the row with the callouts instead of being overlapped by
+            them. NOT `lg:static`: an unpositioned child falls below the panel's
+            ::before wash — see the note on `.hero-dark > *` in index.css. */}
+        <div className="absolute lg:relative right-0 sm:right-4 lg:right-auto bottom-3 lg:bottom-auto lg:order-2 lg:shrink-0 animate-float-delayed">
+          <TruckMark className="h-[92px] sm:h-[112px] lg:h-[124px] w-auto text-white opacity-40 sm:opacity-65" />
+        </div>
         <div className="relative">
           <p className="on-dark-muted text-xs font-medium font-display tracking-wide uppercase">
             {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
@@ -162,8 +185,10 @@ export default function ClientDashboard() {
           </h1>
           {/* Wraps as whole stats, never mid-phrase: "2 active services" is long
               in both languages and the chip is only ~330px wide on a phone. */}
+          {/* lg:hidden — above lg these same two figures are the truck callouts,
+              and showing them twice on one card reads as a bug. */}
           {(data.activeJobs.length > 0 || amountDue > 0) && (
-            <div className="glass-panel rounded-2xl px-3.5 py-2 mt-4 inline-flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-white">
+            <div className="lg:hidden glass-panel rounded-2xl px-3.5 py-2 mt-4 inline-flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-white">
               <span className="flex items-center gap-1.5 whitespace-nowrap">
                 <Wrench className="w-4 h-4 flex-shrink-0" />
                 <span className="font-bold">{data.activeJobs.length}</span> {t('client.dashboard.activeServices').toLowerCase()}
@@ -175,6 +200,34 @@ export default function ClientDashboard() {
                 </span>
               )}
             </div>
+          )}
+
+          {/* Callouts, in the reference's arrangement: labels on the LEFT, each
+              with a leader line running right into the drawing. They were first
+              built to the truck's left inside the same row, which does not fit —
+              the card is capped at max-w-3xl (736px), and greeting + callouts +
+              truck measured 570px of furniture against a 140px greeting, so
+              "Welcome, Godson" broke onto three lines. Under the greeting they
+              cost no horizontal room at all and read as annotations of the truck
+              beside them, which is what the reference does. */}
+          {calloutSpecs.length > 0 && (
+            /* Full width of the greeting column, so each leader ends hard against
+               the truck beside it rather than stopping in mid-air. The column is
+               sized by the flex row, so this tracks the truck automatically. */
+            <ul className="hidden lg:block mt-4 space-y-2.5 w-full">
+              {calloutSpecs.map(spec => (
+                <li key={spec.label} className="relative pr-12">
+                  <p className="text-base font-bold font-display leading-none tabular-nums text-white">{spec.value}</p>
+                  {/* Wraps rather than nowrap: Swahili runs ~35% longer here
+                      ("Kiasi kinachodaiwa" vs "Amount due"). */}
+                  <p className="on-dark-muted text-[10px] font-medium uppercase tracking-wide mt-1 leading-tight">
+                    {spec.label}
+                  </p>
+                  <span aria-hidden="true" className="absolute right-1.5 top-[7px] h-px w-9 bg-[var(--brand-orange)] opacity-70" />
+                  <span aria-hidden="true" className="absolute right-0 top-[5px] w-1.5 h-1.5 rounded-full bg-[var(--brand-orange)]" />
+                </li>
+              ))}
+            </ul>
           )}
         </div>
       </div>
