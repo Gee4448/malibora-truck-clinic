@@ -15,6 +15,7 @@
 import { readFileSync, writeFileSync, readdirSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import { decodePNG, lum, ratio, hex, worstIn } from './lib/png.mjs'
+import { truckSVG } from './lib/truck-svg.mjs'
 
 const W = Number(process.argv[2] || 900), H = Number(process.argv[3] || 560)
 /* Phone geometry without a phone. Headless floors its window near 500px, so to
@@ -37,14 +38,7 @@ const heroCls = pick(/<div className="(sheen hero-dark[^"]*)"/, 'hero classes')
 const blobCls = pick(/<div className="(absolute -top-16[^"]*)"/, 'blob classes')
 const truckCls = pick(/<TruckMark className="([^"]*)"/, 'TruckMark classes')
 
-// The component's <svg> element, with its className expression resolved.
-const svg = readFileSync('src/components/common/TruckMark.jsx', 'utf8')
-  .replace(/^[\s\S]*?(<svg)/, '$1')
-  .replace(/\s*\)\s*\}\s*$/, '')
-  .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
-  .replace(/className=\{`([^`]*)\$\{className\}`\}/, (_, base) => `class="${base}${truckCls}"`)
-  .replace(/strokeWidth=/g, 'stroke-width=').replace(/strokeLinecap=/g, 'stroke-linecap=')
-  .replace(/strokeLinejoin=/g, 'stroke-linejoin=').replace(/focusable=/g, 'focusable=')
+const svg = truckSVG(truckCls)
 
 const build = (inkVisible) => `<!doctype html><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">

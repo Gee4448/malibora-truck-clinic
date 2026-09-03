@@ -1,4 +1,4 @@
-/* The house truck, as line art.
+/* The house truck, drawn as a technical line study.
  *
  * Inline SVG rather than an image file, for three reasons that all matter here:
  * it costs no request on a Tanzanian phone connection, it stays sharp at any
@@ -7,71 +7,107 @@
  * this app are translucent, and a rectangular photo behind one reads as a hole
  * punched through the glass rather than as something printed on it.
  *
- * Drawn as a cab-over prime mover with a box body, which is what actually comes
- * through the yard (the seed data is a Scania R440). Everything is stroked in
- * `currentColor` at low alpha so the parent decides the ink; only the stripe and
- * the wheel hubs take brand orange, so the mark reads as one warm accent rather
- * than as a second illustration competing with the greeting.
+ * An articulated outfit: cab-over tractor on the right, tri-axle box semitrailer
+ * behind it, which is what actually comes through the yard. Proportioned 3.2:1
+ * like a real side elevation — the earlier version was 1.8:1 and read as a rigid
+ * box van, because that is the shape a short wheelbase makes.
+ *
+ * Weights are deliberate. The outline carries the silhouette, panel seams and
+ * fenders sit a step back, and only the wheel hubs and the body seam take brand
+ * orange, so the drawing stays one warm accent rather than a second illustration
+ * competing with whatever text it sits behind. Everything is stroked in
+ * `currentColor`, so the parent decides the ink and the alpha.
  *
  * Decorative: aria-hidden, and it must never intercept a tap.
  */
+/* Wheel centres are written out rather than mapped over. Five literals are no
+   harder to read than a loop, and they keep this file convertible to static SVG
+   by `scripts/lib/truck-svg.mjs`, which is how the probes render it. */
 export default function TruckMark({ className = '' }) {
   return (
     <svg
-      viewBox="0 0 360 200"
+      viewBox="0 0 600 190"
       className={`pointer-events-none select-none ${className}`}
       fill="none"
       aria-hidden="true"
       focusable="false"
     >
-      {/* Grounding shadow — without it the truck floats in the middle of the
+      {/* Grounding shadow — without it the outfit floats in the middle of the
           panel instead of standing on something. */}
-      <ellipse cx="184" cy="178" rx="150" ry="7" fill="currentColor" opacity="0.07" />
+      <ellipse cx="310" cy="176" rx="250" ry="6" fill="currentColor" opacity="0.06" />
 
-      <g stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-        <g opacity="0.34">
-          {/* Box body */}
-          <path d="M26 44 h196 a4 4 0 0 1 4 4 v86 a4 4 0 0 1-4 4 H26 a4 4 0 0 1-4-4 V48 a4 4 0 0 1 4-4 z" />
-          {/* Body ribs — a plain rectangle reads as a crate, not as a truck body */}
-          <path d="M74 50 v82 M122 50 v82 M170 50 v82" opacity="0.5" />
-          {/* Chassis rail under the body, running back from the cab */}
-          <path d="M22 141 H236" opacity="0.75" />
-
-          {/* Cab: flat-fronted, roof deflector, stepped door */}
-          <path d="M240 138 V70 a12 12 0 0 1 12-12 h62 a12 12 0 0 1 12 12 l6 30 v38 z" />
-          {/* Windscreen */}
-          <path d="M252 72 h60 a4 4 0 0 1 4 4 v22 a4 4 0 0 1-4 4 h-60 a4 4 0 0 1-4-4 V76 a4 4 0 0 1 4-4 z" opacity="0.7" />
-          {/* Door seam + handle */}
-          <path d="M266 106 v32" opacity="0.55" />
-          <path d="M256 118 h6" opacity="0.55" />
-          {/* Mirror arm */}
-          <path d="M246 76 h-10 v14" opacity="0.6" />
-          {/* Grille and step */}
-          <path d="M322 110 h10 M322 120 h10" opacity="0.55" />
-
-          {/* Mudguards */}
-          <path d="M62 140 a30 30 0 0 1 60 0" opacity="0.6" />
-          <path d="M266 140 a30 30 0 0 1 60 0" opacity="0.6" />
+      <g stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" fill="none">
+        {/* --- silhouette -------------------------------------------------- */}
+        <g strokeWidth="3.4" opacity="0.42">
+          {/* Box semitrailer */}
+          <path d="M45 22 h355 a5 5 0 0 1 5 5 v91 h-365 v-91 a5 5 0 0 1 5 -5 z" />
+          {/* Tractor: cab-over, roof a touch below the trailer line, front face
+              raked out at the bottom. The vertical before the bottom-right
+              corner must stop 8 short of the floor — run it to 128 and the arc
+              lands at 136, and `z` closes the shape with a diagonal slashed
+              across the whole cab. */}
+          <path d="M452 128 v-82 a14 14 0 0 1 14 -14 h86 a18 18 0 0 1 18 18 v28 l8 10 v32 a8 8 0 0 1 -8 8 z" />
         </g>
 
-        {/* Wheels sit at full strength: they are the silhouette cue that makes
-            the shape read as a truck at a glance. */}
-        <g opacity="0.46">
-          <circle cx="92" cy="150" r="21" />
-          <circle cx="92" cy="150" r="8" opacity="0.7" />
-          <circle cx="152" cy="150" r="21" />
-          <circle cx="152" cy="150" r="8" opacity="0.7" />
-          <circle cx="296" cy="150" r="21" />
-          <circle cx="296" cy="150" r="8" opacity="0.7" />
+        {/* --- structure --------------------------------------------------- */}
+        <g strokeWidth="2.2" opacity="0.3">
+          {/* Chassis rail running the length of both units */}
+          <path d="M40 126 h534" />
+          {/* Rear door seam and body panel joins */}
+          <path d="M58 22 v96" />
+          <path d="M128 26 v88 M212 26 v88 M296 26 v88 M368 26 v88" opacity="0.62" />
+          {/* Landing legs, and the fifth-wheel coupling the trailer sits on */}
+          <path d="M330 128 v16 M344 128 v16" />
+          <path d="M424 118 h22 M435 118 v8" />
+          {/* Cab side window */}
+          <path d="M478 50 h66 a4 4 0 0 1 4 4 v24 a4 4 0 0 1 -4 4 h-66 a4 4 0 0 1 -4 -4 v-24 a4 4 0 0 1 4 -4 z" />
+          {/* Door shut line, handle, cab steps */}
+          <path d="M474 84 v44 M480 100 h10 M466 132 h15 M466 140 h15" opacity="0.7" />
+          {/* Mirror arm */}
+          <path d="M570 54 h14 M584 48 v20" opacity="0.7" />
+          {/* Grille slats and headlamp */}
+          <path d="M566 96 h12 M566 104 h12" opacity="0.7" />
+          <path d="M560 112 h16 a4 4 0 0 1 4 4 v4 h-20 z" opacity="0.7" />
+        </g>
+
+        {/* --- fenders ------------------------------------------------------ */}
+        <g strokeWidth="2.2" opacity="0.24">
+          <path d="M66 126 q26 -26 52 0 q22 -26 48 0 q22 -26 48 0" />
+          <path d="M404 126 q26 -26 52 0" />
+          <path d="M509 126 q26 -26 52 0" />
+        </g>
+
+        {/* --- running gear -------------------------------------------------
+            Full strength: the wheels are the cue that makes the shape read as a
+            truck before any of the detail resolves. */}
+        <g opacity="0.5">
+          <g strokeWidth="3.4">
+            <circle cx="92" cy="150" r="20" />
+            <circle cx="140" cy="150" r="20" />
+            <circle cx="188" cy="150" r="20" />
+            <circle cx="430" cy="150" r="20" />
+            <circle cx="535" cy="150" r="20" />
+          </g>
+          <g strokeWidth="2.2" opacity="0.75">
+            <circle cx="92" cy="150" r="8.5" />
+            <circle cx="140" cy="150" r="8.5" />
+            <circle cx="188" cy="150" r="8.5" />
+            <circle cx="430" cy="150" r="8.5" />
+            <circle cx="535" cy="150" r="8.5" />
+          </g>
         </g>
       </g>
 
-      {/* The one warm accent. */}
+      {/* The one warm accent: the body seam, and the hubs. */}
       <g fill="var(--brand-orange, #f16001)">
-        <rect x="22" y="96" width="204" height="7" rx="3.5" opacity="0.5" />
-        <circle cx="92" cy="150" r="3.4" opacity="0.85" />
-        <circle cx="152" cy="150" r="3.4" opacity="0.85" />
-        <circle cx="296" cy="150" r="3.4" opacity="0.85" />
+        <rect x="40" y="86" width="365" height="4" rx="2" opacity="0.45" />
+        <g opacity="0.8">
+          <circle cx="92" cy="150" r="3" />
+          <circle cx="140" cy="150" r="3" />
+          <circle cx="188" cy="150" r="3" />
+          <circle cx="430" cy="150" r="3" />
+          <circle cx="535" cy="150" r="3" />
+        </g>
       </g>
     </svg>
   )

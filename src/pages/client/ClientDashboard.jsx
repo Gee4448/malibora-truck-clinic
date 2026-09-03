@@ -152,7 +152,7 @@ export default function ClientDashboard() {
             right on a wide card is taller than the card itself and gets its
             wheels clipped off. Height-first keeps it inside the panel at every
             size and lets the width fall out of the aspect ratio. */}
-        <TruckMark className="absolute right-0 sm:right-4 bottom-1 h-[124px] sm:h-[142px] w-auto text-white opacity-40 sm:opacity-65 animate-float-delayed" />
+        <TruckMark className="absolute right-0 sm:right-4 bottom-3 h-[92px] sm:h-[112px] w-auto text-white opacity-40 sm:opacity-65 animate-float-delayed" />
         <div className="relative">
           <p className="on-dark-muted text-xs font-medium font-display tracking-wide uppercase">
             {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
