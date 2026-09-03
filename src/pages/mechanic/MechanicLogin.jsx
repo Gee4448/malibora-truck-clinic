@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useReveal } from '../../hooks/useReveal'
 import { useNavigate, Link } from 'react-router-dom'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { useMechanic } from '../../contexts/MechanicAuthContext'
@@ -7,6 +8,10 @@ import { Wrench, Globe, ArrowRight, AlertCircle, WifiOff, Delete } from 'lucide-
 import toast from 'react-hot-toast'
 
 export default function MechanicLogin() {
+  // Entrance motion. `reveal` on this element, observed by the shared
+  // IntersectionObserver in useReveal — the same one every other screen uses.
+  const revealRef = useReveal()
+
   const { t, locale, switchLanguage } = useLanguage()
   const { loginWithPin } = useMechanic()
   const navigate = useNavigate()
@@ -60,7 +65,7 @@ export default function MechanicLogin() {
       </div>
 
       <div className="flex-1 flex items-center justify-center px-4 pb-12">
-        <div className="auth-card rounded-2xl p-6 sm:p-8 w-full max-w-sm">
+        <div ref={revealRef} className="reveal auth-card rounded-2xl p-6 sm:p-8 w-full max-w-sm">
           <div className="text-center mb-6">
             <div className="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <Wrench className="w-8 h-8 text-amber-600" />

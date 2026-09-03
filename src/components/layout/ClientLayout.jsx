@@ -1,6 +1,7 @@
 import { Outlet, NavLink, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { useChevTrack } from '../../hooks/useChevTrack'
+import { useScrollChrome } from '../../hooks/useScrollChrome'
 import { useClient } from '../../contexts/ClientAuthContext'
 import {
   Home, Truck, ClipboardList, FileText, ClipboardCheck, Search, User, Globe, LogOut
@@ -11,6 +12,7 @@ export default function ClientLayout() {
   const { customer, logout } = useClient()
   const navigate = useNavigate()
   const location = useLocation()
+  useScrollChrome(location.pathname)
 
   const handleLogout = () => {
     logout()
@@ -40,7 +42,7 @@ export default function ClientLayout() {
     <div className="min-h-screen">
       {/* Top Header */}
       <header className="app-bar sticky top-0 z-40">
-        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="bar-row max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             {/* The mark is the one saturated thing in the bar; everything else
                 is white at varying opacity. That is what stops a dark header

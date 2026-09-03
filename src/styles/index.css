@@ -946,7 +946,81 @@ button:not(:disabled):not(.absolute):not(.fixed):active {
   border-bottom: 1px solid rgb(255 255 255 / 0.08);
   color: var(--brand-white);
   color-scheme: dark;
+  /* Height and shadow only. The background is a gradient, and background-image
+     cannot be transitioned — the density step below is deliberately abrupt, and
+     invisible underneath 300ms of moving height. */
+  transition:
+    height var(--dur-base) var(--ease-out-expo),
+    box-shadow var(--dur-base) ease,
+    backdrop-filter var(--dur-base) ease;
 }
+
+/* ---- Chrome that answers the scroll ---------------------------------------
+   Once the page has moved off the top the bar condenses to 48px, the glass
+   thickens, and it grows a shadow — so it reads as something the content is
+   passing UNDER rather than a strip that happens to be stuck to the top.
+
+   Three shells wear this bar and they are built differently: the office header
+   sets its own height ('h-16'), while the client and mechanic headers are sized
+   by the padding of an inner row. Both routes are handled, which is why the
+   '.bar-row' class exists — a bare '.app-bar > div' would also catch the office
+   header's button wrappers and squash the wrong thing.
+
+   State arrives from useScrollChrome() as an attribute on <html>. Nothing here
+   re-renders; this is entirely a style recalc. */
+:root[data-scrolled='1'] .app-bar {
+  background: linear-gradient(180deg, rgb(8 5 3 / 0.96), rgb(12 8 6 / 0.88));
+  backdrop-filter: blur(calc(var(--glass-blur-chrome) * 1.25)) saturate(var(--glass-sat));
+  box-shadow: 0 10px 24px -18px rgb(0 0 0 / 0.9);
+}
+/* The office header, whose height is its own. */
+:root[data-scrolled='1'] .app-bar.h-16 { height: 3rem; }
+/* The client and mechanic headers, whose height is their row's padding. */
+.bar-row { transition: padding var(--dur-base) var(--ease-out-expo); }
+:root[data-scrolled='1'] .bar-row { padding-top: 0.375rem; padding-bottom: 0.375rem; }
+
+/* Reading progress, drawn along the bottom edge under the ember that is already
+   there. Hidden until the page has actually moved, so a screen shorter than the
+   viewport — most of the auth screens — never shows a bar that cannot fill.
+
+   ::before because ::after is the ember. The width is the custom property
+   straight from the hook, so this tracks the gesture with no JS per frame
+   beyond one property write. */
+.app-bar::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  height: 2px;
+  width: calc(var(--scroll-progress, 0) * 100%);
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(90deg, var(--brand-orange), #f16001);
+  transition: opacity var(--dur-base) linear;
+}
+:root[data-scrolled='1'] .app-bar::before { opacity: 1; }
+
+/* ---- Parallax in the dashboard heroes --------------------------------------
+   The greeting card is the first thing on the page, so page scroll IS the
+   card's own offset and no per-element measurement is needed. Each layer lags
+   the page by its own fraction, which is what gives the card depth instead of
+   sliding away as one flat slab: the blobs sit furthest back and lag most, the
+   truck sits between them and the text, and the greeting itself does not move.
+
+   `translate`, not `transform`. Every one of these elements already runs the
+   `float` keyframes on transform, and a second transform on the same element
+   REPLACES the animated one rather than composing with it — the truck would
+   stop breathing the moment the page moved. `translate` is its own property and
+   composes with whatever transform the animation is painting.
+
+   The drift is small on purpose: the hero is ~180px tall, so it has left the
+   screen by 300px of scroll, and at these rates the furthest layer has moved
+   about 30px by then. Enough to read as depth, not as the card coming apart. */
+.drift {
+  translate: 0 calc(var(--scroll-y, 0) * var(--drift-rate, 0.07px));
+  will-change: translate;
+}
+.drift-far { --drift-rate: 0.15px; }
 
 /* A one-pixel ember along the bottom edge, brightest under the left where the
    logo sits and fading out to the right. It is the only place the full-strength
@@ -1659,6 +1733,10 @@ button:not(:disabled):not(.absolute):not(.fixed):active {
     opacity: 1 !important;
     transform: none !important;
   }
+  /* Parallax is scroll-linked movement, which is exactly what this preference
+     is about. It also needs saying explicitly: the rule above kills animations
+     and transitions, and the drift is neither — it is a live `translate`. */
+  .drift { translate: none !important; }
 }
 
 /* ==========================================================================

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useReveal } from '../../hooks/useReveal'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { useClient } from '../../contexts/ClientAuthContext'
@@ -29,6 +30,10 @@ const SYSTEM_ICONS = {
 }
 
 export default function ClientNewRequest() {
+  // Entrance motion. `reveal` on this element, observed by the shared
+  // IntersectionObserver in useReveal — the same one every other screen uses.
+  const revealRef = useReveal()
+
   const { t, locale } = useLanguage()
   const { customer } = useClient()
   const navigate = useNavigate()
@@ -218,7 +223,7 @@ export default function ClientNewRequest() {
   }
 
   return (
-    <div className="space-y-4">
+    <div ref={revealRef} className="reveal-group space-y-4">
       <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700">
         <ArrowLeft className="w-4 h-4" /> {t('common.back')}
       </button>

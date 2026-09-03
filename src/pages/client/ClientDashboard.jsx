@@ -163,7 +163,7 @@ export default function ClientDashboard() {
           beside the text, so the mark drops behind it at low alpha instead of
           being hidden — the card would otherwise go back to looking empty. */}
       <div className="sheen hero-dark rounded-3xl p-6 min-h-[190px] sm:min-h-[176px] flex flex-col justify-end lg:flex-row lg:items-center lg:justify-between lg:gap-5">
-        <div className="absolute -top-16 -right-10 w-44 h-44 rounded-full bg-white/[0.07] animate-float pointer-events-none" />
+        <div className="drift drift-far absolute -top-16 -right-10 w-44 h-44 rounded-full bg-white/[0.07] animate-float pointer-events-none" />
         {/* Sized by HEIGHT, not width: the art is 3.2:1, so a width that looks
             right on a wide card is taller than the card itself and gets its
             wheels clipped off. Height-first keeps it inside the panel at every
@@ -173,7 +173,7 @@ export default function ClientDashboard() {
             and shares the row with the callouts instead of being overlapped by
             them. NOT `lg:static`: an unpositioned child falls below the panel's
             ::before wash — see the note on `.hero-dark > *` in index.css. */}
-        <div className="absolute lg:relative right-0 sm:right-4 lg:right-auto bottom-3 lg:bottom-auto lg:order-2 lg:shrink-0 animate-float-delayed">
+        <div className="drift absolute lg:relative right-0 sm:right-4 lg:right-auto bottom-3 lg:bottom-auto lg:order-2 lg:shrink-0 animate-float-delayed">
           <TruckMark className="h-[92px] sm:h-[112px] lg:h-[124px] w-auto text-white opacity-40 sm:opacity-65" />
         </div>
         <div className="relative">

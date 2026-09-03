@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useReveal } from '../hooks/useReveal'
 import { useNavigate } from 'react-router-dom'
 import { useLanguage } from '../contexts/LanguageContext'
 import { supabase, isNetworkError } from '../lib/supabase'
@@ -6,6 +7,10 @@ import { Shield, Eye, EyeOff, Globe, ArrowLeft, Lock } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function StaffGate() {
+  // Entrance motion. `reveal` on this element, observed by the shared
+  // IntersectionObserver in useReveal — the same one every other screen uses.
+  const revealRef = useReveal()
+
   const { t, locale, switchLanguage } = useLanguage()
   const navigate = useNavigate()
   const [code, setCode] = useState('')
@@ -100,7 +105,7 @@ export default function StaffGate() {
         </div>
 
         {/* Gate Form */}
-        <div className="auth-card rounded-2xl p-6 sm:p-8">
+        <div ref={revealRef} className="reveal auth-card rounded-2xl p-6 sm:p-8">
           <div className="flex items-center gap-3 mb-6 p-3 bg-amber-50 rounded-lg border border-amber-200">
             <Lock className="w-5 h-5 text-amber-600 flex-shrink-0" />
             <p className="text-sm text-amber-800">{t('staffGate.notice')}</p>

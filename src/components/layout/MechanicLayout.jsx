@@ -1,12 +1,15 @@
-import { Outlet, useNavigate } from 'react-router-dom'
+import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { useMechanic } from '../../contexts/MechanicAuthContext'
+import { useScrollChrome } from '../../hooks/useScrollChrome'
 import { Wrench, Globe, LogOut } from 'lucide-react'
 
 export default function MechanicLayout() {
   const { t, locale, switchLanguage } = useLanguage()
   const { mechanic, logout } = useMechanic()
   const navigate = useNavigate()
+  const location = useLocation()
+  useScrollChrome(location.pathname)
 
   const handleLogout = () => {
     logout()
@@ -19,7 +22,7 @@ export default function MechanicLayout() {
           portal used slate + amber, which read as a third brand; on one dark
           material the three portals finally look like one product. */}
       <header className="app-bar sticky top-0 z-40">
-        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="bar-row max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="bg-gradient-to-br from-blue-500 to-blue-700 ring-1 ring-white/20 rounded-xl p-2">
               <Wrench className="w-5 h-5 text-white" />

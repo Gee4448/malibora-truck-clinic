@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useReveal } from '../hooks/useReveal'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useLanguage } from '../contexts/LanguageContext'
@@ -7,6 +8,10 @@ import { Truck, Eye, EyeOff } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function Register() {
+  // Entrance motion. `reveal` on this element, observed by the shared
+  // IntersectionObserver in useReveal — the same one every other screen uses.
+  const revealRef = useReveal()
+
   const { signUp, signInWithGoogle } = useAuth()
   const { t } = useLanguage()
   const navigate = useNavigate()
@@ -69,7 +74,7 @@ export default function Register() {
         </div>
 
         {/* Register Form */}
-        <div className="auth-card rounded-2xl p-6 sm:p-8">
+        <div ref={revealRef} className="reveal auth-card rounded-2xl p-6 sm:p-8">
           <h2 className="text-xl font-bold text-gray-900 mb-6">{t('auth.register')}</h2>
 
           <button

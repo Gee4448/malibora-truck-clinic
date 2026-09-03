@@ -152,8 +152,8 @@ export default function Dashboard() {
           a greeting in it, and the truck can come out from behind the text a
           breakpoint sooner. */}
       <div className="sheen hero-dark rounded-3xl p-6 min-h-[168px] md:min-h-0 flex flex-col justify-end md:flex-row md:items-center md:justify-between md:gap-5">
-        <div className="absolute -top-10 -right-6 w-40 h-40 rounded-full bg-white/5 animate-float pointer-events-none" />
-        <div className="absolute -bottom-12 right-24 w-28 h-28 rounded-full bg-white/5 animate-float-delayed pointer-events-none" />
+        <div className="drift drift-far absolute -top-10 -right-6 w-40 h-40 rounded-full bg-white/5 animate-float pointer-events-none" />
+        <div className="drift drift-far absolute -bottom-12 right-24 w-28 h-28 rounded-full bg-white/5 animate-float-delayed pointer-events-none" />
         {/* Sized by HEIGHT: the art is 3.2:1, so a width that suits a wide card
             is taller than the card and loses its wheels. Below md there is no
             room beside the greeting, so the mark drops BEHIND it at low alpha —
@@ -161,7 +161,7 @@ export default function Dashboard() {
             was. `absolute` until md, then `md:relative` so it becomes a flex
             child; NOT `md:static`, because an unpositioned child falls below the
             panel's ::before wash — see `.hero-dark > *` in index.css. */}
-        <div className="absolute md:relative right-0 sm:right-4 md:right-auto bottom-3 md:bottom-auto md:order-2 md:shrink-0 animate-float-delayed">
+        <div className="drift absolute md:relative right-0 sm:right-4 md:right-auto bottom-3 md:bottom-auto md:order-2 md:shrink-0 animate-float-delayed">
           <TruckMark className="h-[86px] sm:h-[104px] lg:h-[118px] w-auto text-white opacity-40 sm:opacity-60" />
         </div>
         <div className="relative">

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useReveal } from '../../hooks/useReveal'
 import { Link, useNavigate } from 'react-router-dom'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { useClient } from '../../contexts/ClientAuthContext'
@@ -11,6 +12,10 @@ import { emptyVehicle } from '../../lib/vehicleOptions'
 import VehicleFormBlock from '../../components/vehicles/VehicleFormBlock'
 
 export default function ClientRegister() {
+  // Entrance motion. `reveal` on this element, observed by the shared
+  // IntersectionObserver in useReveal — the same one every other screen uses.
+  const revealRef = useReveal()
+
   const { t, locale, switchLanguage } = useLanguage()
   const { registerCustomer } = useClient()
   const navigate = useNavigate()
@@ -187,7 +192,7 @@ export default function ClientRegister() {
 
       {/* Form Card */}
       <div className="flex-1 flex items-start justify-center px-4 pb-12 pt-2">
-        <div className="auth-card rounded-2xl p-6 sm:p-8 w-full max-w-sm">
+        <div ref={revealRef} className="reveal auth-card rounded-2xl p-6 sm:p-8 w-full max-w-sm">
           {step === 1 ? (
             <>
               <div className="text-center mb-5">

@@ -56,9 +56,11 @@ const heroCls = pick(/<div className="(sheen hero-dark[^"]*)"/, 'hero classes')[
    two, so match the shape rather than a particular offset. They are what the
    `:not(.absolute)` rule in index.css exists for, and dropping them from the
    harness would hide the exact regression that rule prevents. */
-const blobs = [...page.matchAll(/<div className="(absolute -(?:top|bottom)-[^"]*rounded-full[^"]*)"/g)].map(m => m[1])
+const blobs = [...page.matchAll(/<div className="([^"]*absolute -(?:top|bottom)-[^"]*rounded-full[^"]*)"/g)].map(m => m[1])
 if (!blobs.length) throw new Error(`hero-probe: no decorative blobs found in ${SRC}`)
-const wrapCls = pick(/<div className="(absolute (?:md|lg):relative[^"]*)"/, 'truck wrapper')[1]
+/* Anchored on the TruckMark it wraps rather than on its own classes, which
+   have now changed twice. */
+const wrapCls = pick(/<div className="([^"]*)">\s*<TruckMark/, 'truck wrapper')[1]
 const truckCls = pick(/<TruckMark className="([^"]*)"/, 'TruckMark classes')[1]
 const dateCls = pick(/<p className="(on-dark-muted text-xs[^"]*)"/, 'date line')[1]
 const h1 = pick(/<h1 className="([^"]*)">([\s\S]*?)<\/h1>/, 'greeting h1')
@@ -160,9 +162,26 @@ const build = inkVisible => `<!doctype html><meta charset="utf-8">
   }).join('\\n');
   /* Machine-readable twin of the same numbers. The screenshot is for eyes; this
      is what the harness asserts on, and what places the contrast sample. */
+  /* Parallax: the drift is driven by --scroll-y, so it can be measured by
+     setting that property rather than by scrolling — which matters here,
+     because this pane pauses rAF when it is not painting and a scrolled-then-
+     read harness would be measuring whether a frame happened to run. */
+  var driftBefore = {};
+  h.querySelectorAll('.drift').forEach(function (el, i) { driftBefore[i] = el.getBoundingClientRect().top });
+  var greetBefore = g.top;
+  document.documentElement.style.setProperty('--scroll-y', '300');
+  var drift = [];
+  h.querySelectorAll('.drift').forEach(function (el, i) {
+    drift.push({ far: el.className.indexOf('drift-far') >= 0,
+                 moved: +(el.getBoundingClientRect().top - driftBefore[i]).toFixed(1) });
+  });
+  var greetMoved = +(h.querySelector('h1').getBoundingClientRect().top - greetBefore).toFixed(1);
+  document.documentElement.style.removeProperty('--scroll-y');
+
   var j = document.createElement('pre');
   j.id = 'json'; j.hidden = true;
   j.textContent = JSON.stringify({
+    drift: drift, greetMoved: greetMoved,
     vw: de.clientWidth,
     card: { x: r.left, y: r.top, w: r.width, h: r.height },
     truck: { w: s.width, h: s.height },
@@ -197,12 +216,30 @@ if (!jm) throw new Error('hero-probe: no geometry in the dumped DOM — did the 
 const geo = JSON.parse(jm[1].replace(/&quot;/g, '"').replace(/&amp;/g, '&'))
 
 const line = (label, ok, detail) =>
-  console.log(`  ${(label + '                      ').slice(0, 22)}${detail}  ${ok ? 'PASS' : 'FAIL'}`)
+  console.log(`  ${(label + '                            ').slice(0, 28)}${detail}  ${ok ? 'PASS' : 'FAIL'}`)
 console.log(`  viewport              ${geo.vw}px  (window ${W}px)`)
 console.log(`  card                  ${Math.round(geo.card.w)} x ${Math.round(geo.card.h)} at x=${Math.round(geo.card.x)}`)
 console.log(`  truck                 ${Math.round(geo.truck.w)} x ${Math.round(geo.truck.h)}`)
 line('truck inside card', geo.truckInside, geo.truckInside ? 'yes' : 'CLIPPED')
 line('no h-overflow', !geo.hOverflow, geo.hOverflow ? 'OVERFLOWS' : 'clean')
+
+/* Rates come from the stylesheet, not from this file — the whole point of the
+   drift is that one number in CSS sets every layer's depth. */
+/* The near rate is the FALLBACK inside .drift's var() — it is never declared
+   as a custom property of its own, so a regex for '--drift-rate:' finds only
+   the far layer and quietly scores both at the same depth. That is what the
+   first run of this check did: it reported the near layer failing at 21px
+   when 21px was exactly right. */
+const nearM = css.match(/--drift-rate,\s*(\.?[0-9.]+)px/)
+const farM = css.match(/--drift-rate:\s*(\.?[0-9.]+)px/)
+if (!nearM || !farM) throw new Error('hero-probe: could not read both drift rates from the built CSS')
+const near = parseFloat(nearM[1]), far = parseFloat(farM[1])
+const want = d => +((d.far ? far : near) * 300).toFixed(1)
+const driftOk = geo.drift.length > 0 && geo.drift.every(d => Math.abs(d.moved - want(d)) < 1.5)
+line('layers drift at their rate', driftOk,
+  geo.drift.map(d => (d.far ? 'far ' : 'near ') + d.moved + 'px want ' + want(d)).join('   ')
+    || '(no .drift layers)')
+line('greeting does not drift', Math.abs(geo.greetMoved) < 0.5, geo.greetMoved + 'px')
 if (!STAFF) line('callouts clear truck', !geo.calloutsOverlap, geo.calloutsOverlap ? 'OVERLAP' : 'clear')
 
 /* Where the card is narrow the greeting and the truck share space and the mark

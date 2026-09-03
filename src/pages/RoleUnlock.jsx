@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useReveal } from '../hooks/useReveal'
 import { useNavigate } from 'react-router-dom'
 import { useLanguage } from '../contexts/LanguageContext'
 import { useAuth } from '../contexts/AuthContext'
@@ -9,6 +10,10 @@ import toast from 'react-hot-toast'
 // Owner/manager access code. The caller is already signed in — redeeming a code
 // only ever changes their own role (migration 018), it is not a second login.
 export default function RoleUnlock() {
+  // Entrance motion. `reveal` on this element, observed by the shared
+  // IntersectionObserver in useReveal — the same one every other screen uses.
+  const revealRef = useReveal()
+
   const { t } = useLanguage()
   const { profile, refreshProfile, canViewInternal } = useAuth()
   const navigate = useNavigate()
@@ -45,7 +50,7 @@ export default function RoleUnlock() {
   }
 
   return (
-    <div className="max-w-md mx-auto space-y-4">
+    <div ref={revealRef} className="reveal-group max-w-md mx-auto space-y-4">
       <button onClick={() => navigate(-1)}
         className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700">
         <ArrowLeft className="w-4 h-4" /> {t('common.back')}

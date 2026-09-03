@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useReveal } from '../hooks/useReveal'
 import { useLanguage } from '../contexts/LanguageContext'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase, errorMessage, formatDate } from '../lib/supabase'
@@ -18,12 +19,16 @@ import toast from 'react-hot-toast'
 // Messages and tasks are kept apart on purpose: an instruction typed into a
 // conversation scrolls away and nobody can tell whether it was ever done.
 export default function Team() {
+  // Entrance motion. `reveal` on this element, observed by the shared
+  // IntersectionObserver in useReveal — the same one every other screen uses.
+  const revealRef = useReveal()
+
   const { t } = useLanguage()
   const { profile } = useAuth()
   const [tab, setTab] = useState('messages')
 
   return (
-    <div className="max-w-5xl mx-auto space-y-4">
+    <div ref={revealRef} className="reveal-group max-w-5xl mx-auto space-y-4">
       <h1 className="text-2xl font-bold text-gray-900">{t('team.title')}</h1>
 
       <div className="flex gap-2">
