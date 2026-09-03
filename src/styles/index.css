@@ -1757,11 +1757,41 @@ button:not(:disabled):not(.absolute):not(.fixed):active {
   }
 
   /* Thumbs are not mouse pointers. Anything clickable gets a real target,
-     without disturbing icons that sit inside a larger button. */
+     without disturbing icons that sit inside a larger button.
+
+     44px, not the 40 this started at: these phones are used one-handed in a
+     workshop, often with a glove on, and 44 is the size Apple and Google both
+     publish. `.btn-compact` is the escape hatch and nothing uses it, so this
+     rule already governs every button in the app — raising it changes their
+     height by 4px and introduces no case that was not already covered. */
   button:not(.btn-compact),
   a.btn,
   [role='button']:not(.btn-compact) {
-    min-height: 40px;
+    min-height: 44px;
+  }
+
+  /* For the controls that cannot simply grow: a link inside a sentence, whose
+     line box would break if it got a min-height, and an icon button pinned
+     inside a text field, which is 20px wide because that is how wide the icon
+     is. `.tap` leaves the visible box exactly where it is and hangs an
+     invisible 44x44 hit area off its centre.
+
+     The `:not()` chain is load-bearing. Half the elements that need this are
+     already `absolute` — the password eyes sit inside their inputs — and a
+     bare `position: relative` here has the same specificity as Tailwind's
+     `.absolute`, so source order would decide whether the eye stayed in the
+     field or jumped to the end of the form. */
+  .tap:not(.absolute):not(.fixed):not(.sticky) {
+    position: relative;
+  }
+  .tap::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    transform: translate(-50%, -50%);
   }
 
   /* Stop a scrollable panel from dragging the page behind it once it hits

@@ -317,7 +317,7 @@ export default function ClientDashboard() {
       <div>
         <SectionLabel
           action={data.activeJobs.length > 0 && (
-            <Link to="/client/services" className="text-xs text-blue-600 font-medium flex items-center gap-1">
+            <Link to="/client/services" className="tap text-xs text-blue-600 font-medium flex items-center gap-1">
               {t('client.dashboard.viewAll')} <ArrowRight className="w-3 h-3" />
             </Link>
           )}
@@ -365,7 +365,7 @@ export default function ClientDashboard() {
       <div>
         <SectionLabel
           action={data.inspections.length > 0 && (
-            <Link to="/client/inspections" className="text-xs text-blue-600 font-medium flex items-center gap-1">
+            <Link to="/client/inspections" className="tap text-xs text-blue-600 font-medium flex items-center gap-1">
               {t('client.dashboard.viewAll')} <ArrowRight className="w-3 h-3" />
             </Link>
           )}

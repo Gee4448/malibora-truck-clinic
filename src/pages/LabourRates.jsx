@@ -181,7 +181,7 @@ export default function LabourRates() {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md modal-card">
             <div className="flex items-center justify-between p-5 border-b">
               <h2 className="text-lg font-bold">{editingId ? t('labour.edit') : t('labour.addService')}</h2>
-              <button onClick={() => setShowForm(false)} className="p-1 rounded hover:bg-gray-100"><X className="w-5 h-5" /></button>
+              <button onClick={() => setShowForm(false)} className="tap p-1 rounded hover:bg-gray-100"><X className="w-5 h-5" /></button>
             </div>
             <form onSubmit={handleSubmit} className="p-5 space-y-4">
               <div>

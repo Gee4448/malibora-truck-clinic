@@ -161,7 +161,7 @@ export default function Register() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+                  className="tap absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -193,7 +193,7 @@ export default function Register() {
 
           <p className="text-center text-sm text-gray-500 mt-6">
             {t('auth.hasAccount')}{' '}
-            <Link to="/admin/login" className="text-blue-700 hover:text-blue-700 font-medium">
+            <Link to="/admin/login" className="tap text-blue-700 hover:text-blue-700 font-medium">
               {t('auth.login')}
             </Link>
           </p>

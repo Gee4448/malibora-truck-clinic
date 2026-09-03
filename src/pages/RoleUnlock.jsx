@@ -94,7 +94,7 @@ export default function RoleUnlock() {
                 placeholder="••••••••"
               />
               <button type="button" onClick={() => setShowCode(!showCode)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                className="tap absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                 {showCode ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>

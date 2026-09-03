@@ -223,7 +223,7 @@ export default function ClientServiceDetail() {
       <div className="text-center py-12">
         <XCircle className="w-12 h-12 text-red-300 mx-auto mb-3" />
         <p className="text-gray-500">{t('client.services.notFound')}</p>
-        <Link to="/client/services" className="text-blue-600 text-sm mt-2 inline-block">{t('common.back')}</Link>
+        <Link to="/client/services" className="tap text-blue-600 text-sm mt-2 inline-block">{t('common.back')}</Link>
       </div>
     )
   }
@@ -237,7 +237,7 @@ export default function ClientServiceDetail() {
   return (
     <div className="space-y-4">
       {/* Back */}
-      <Link to="/client/services" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700">
+      <Link to="/client/services" className="tap inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700">
         <ArrowLeft className="w-4 h-4" /> {t('common.back')}
       </Link>
 
@@ -494,7 +494,7 @@ export default function ClientServiceDetail() {
       {/* Contact */}
       <Reveal className="bg-white rounded-2xl border border-gray-200 p-4 text-center">
         <p className="text-xs text-gray-500 mb-2">{t('customerView.contactQuestion')}</p>
-        <a href="tel:+255123456789" className="inline-flex items-center gap-2 px-4 py-2 bg-blue-700 text-white rounded-lg text-sm font-medium hover:bg-blue-800 active:scale-95 transition">
+        <a href="tel:+255123456789" className="tap inline-flex items-center gap-2 px-4 py-2 bg-blue-700 text-white rounded-lg text-sm font-medium hover:bg-blue-800 active:scale-95 transition">
           <Phone className="w-4 h-4" /> {t('customerView.callUs')}
         </a>
       </Reveal>

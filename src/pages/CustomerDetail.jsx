@@ -153,7 +153,7 @@ export default function CustomerDetail() {
     <div className="space-y-5 max-w-4xl">
       {/* Back + header */}
       <div>
-        <Link to="/admin/customers" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-3">
+        <Link to="/admin/customers" className="tap inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-3">
           <ArrowLeft className="w-4 h-4" /> {t('customers.title')}
         </Link>
         <div className="flex items-start justify-between gap-3">
@@ -276,7 +276,7 @@ export default function CustomerDetail() {
           items={inspections}
           renderItem={(it) => (
             <Link key={it.id} to={`/admin/inspections/${it.id}`}
-              className="block px-3 py-2.5 hover:bg-gray-50 rounded-lg transition">
+              className="tap block px-3 py-2.5 hover:bg-gray-50 rounded-lg transition">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-sm font-medium text-blue-700">{it.inspection_number || '—'}</span>
                 <StatusPill status={it.status} />
@@ -296,7 +296,7 @@ export default function CustomerDetail() {
           items={jobCards}
           renderItem={(it) => (
             <Link key={it.id} to={`/admin/job-cards/${it.id}`}
-              className="block px-3 py-2.5 hover:bg-gray-50 rounded-lg transition">
+              className="tap block px-3 py-2.5 hover:bg-gray-50 rounded-lg transition">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-sm font-medium text-blue-700">{it.job_number || '—'}</span>
                 <StatusPill status={it.status} />
@@ -316,7 +316,7 @@ export default function CustomerDetail() {
           items={invoices}
           renderItem={(it) => (
             <Link key={it.id} to={`/admin/invoices/${it.id}`}
-              className="block px-3 py-2.5 hover:bg-gray-50 rounded-lg transition">
+              className="tap block px-3 py-2.5 hover:bg-gray-50 rounded-lg transition">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-sm font-medium text-blue-700">{it.invoice_number || '—'}</span>
                 <StatusPill status={it.status} />
@@ -335,7 +335,7 @@ export default function CustomerDetail() {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto modal-card">
             <div className="flex items-center justify-between p-5 border-b">
               <h2 className="text-lg font-bold">{t('customers.detail.addVehicle')}</h2>
-              <button onClick={() => setShowVehicleForm(false)} className="p-1 rounded hover:bg-gray-100">
+              <button onClick={() => setShowVehicleForm(false)} className="tap p-1 rounded hover:bg-gray-100">
                 <X className="w-5 h-5" />
               </button>
             </div>

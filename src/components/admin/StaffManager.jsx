@@ -179,7 +179,7 @@ export default function StaffManager() {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm my-8 modal-card">
             <div className="flex items-center justify-between p-5 border-b">
               <h2 className="text-lg font-bold">{editing ? t('staffAdmin.editTitle') : t('staffAdmin.addTitle')}</h2>
-              <button onClick={() => setShowForm(false)} className="p-1 rounded hover:bg-gray-100"><X className="w-5 h-5" /></button>
+              <button onClick={() => setShowForm(false)} className="tap p-1 rounded hover:bg-gray-100"><X className="w-5 h-5" /></button>
             </div>
             <form onSubmit={save} className="p-5 space-y-4">
               <div>
@@ -215,7 +215,7 @@ export default function StaffManager() {
                       onChange={e => setForm({ ...form, password: e.target.value })} autoComplete="new-password"
                       className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
                     <button type="button" onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                      className="tap absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>

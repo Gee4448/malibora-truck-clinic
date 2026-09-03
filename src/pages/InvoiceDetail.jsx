@@ -626,7 +626,7 @@ export default function InvoiceDetail() {
               <button onClick={() => updateStatus('approved')} className="flex items-center gap-1.5 px-3 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 text-sm font-medium">
                 <CheckCircle className="w-4 h-4" /> {t('invoices.approve')}
               </button>
-              <button onClick={openPayment} className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-medium">
+              <button onClick={openPayment} className="tap flex items-center gap-1.5 px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-medium">
                 <CreditCard className="w-4 h-4" /> {invoice.status === 'partial' ? t('invoices.recordPayment') : t('invoices.markPaid')}
               </button>
             </>
@@ -646,7 +646,7 @@ export default function InvoiceDetail() {
           {invoice.invoice_type === 'proforma' && invoice.status !== 'cancelled' && (
             linkedFinal ? (
               <Link to={`/admin/invoices/${linkedFinal.id}`}
-                className="flex items-center gap-1.5 px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 text-sm font-medium">
+                className="tap flex items-center gap-1.5 px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 text-sm font-medium">
                 <FileText className="w-4 h-4" /> {t('invoices.viewFinal')}: {linkedFinal.invoice_number}
               </Link>
             ) : (
@@ -746,7 +746,7 @@ export default function InvoiceDetail() {
           <div className="no-print flex justify-end mb-2">
             <Link
               to={`/admin/job-cards/${invoice.job_card_id}`}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium"
+              className="tap flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium"
             >
               <Pencil className="w-3.5 h-3.5" /> {t('invoices.editOnJobCard')}
             </Link>
@@ -758,7 +758,7 @@ export default function InvoiceDetail() {
           <div className="no-print flex justify-end mb-2">
             {!editItems ? (
               <button onClick={startEditItems}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium">
+                className="tap flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium">
                 <Pencil className="w-3.5 h-3.5" /> {t('invoices.editItems')}
               </button>
             ) : (
@@ -1132,7 +1132,7 @@ export default function InvoiceDetail() {
             <button
               onClick={handleSendStaffMessage}
               disabled={!newMessage.trim() || sendingMessage}
-              className="px-3 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800 transition disabled:opacity-40"
+              className="tap px-3 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800 transition disabled:opacity-40"
             >
               <Send className="w-4 h-4" />
             </button>

@@ -325,7 +325,7 @@ export default function CustomerView() {
         {/* Contact */}
         <Reveal className="bg-white rounded-xl border border-gray-200 p-4 text-center">
           <p className="text-xs text-gray-500 mb-2">{t('customerView.contactQuestion')}</p>
-          <a href="tel:+255123456789" className="inline-flex items-center gap-2 px-4 py-2 bg-blue-700 text-white rounded-lg text-sm font-medium hover:bg-blue-800 active:scale-95 transition">
+          <a href="tel:+255123456789" className="tap inline-flex items-center gap-2 px-4 py-2 bg-blue-700 text-white rounded-lg text-sm font-medium hover:bg-blue-800 active:scale-95 transition">
             <Phone className="w-4 h-4" /> {t('customerView.callUs')}
           </a>
         </Reveal>

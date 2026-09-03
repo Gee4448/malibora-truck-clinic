@@ -137,7 +137,7 @@ export default function ClientVehicles() {
           <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full max-w-md max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between p-5 border-b">
               <h2 className="text-lg font-bold text-gray-900">{t('client.vehicles.addVehicle')}</h2>
-              <button onClick={() => setShowForm(false)} className="p-1 rounded hover:bg-gray-100">
+              <button onClick={() => setShowForm(false)} className="tap p-1 rounded hover:bg-gray-100">
                 <X className="w-5 h-5" />
               </button>
             </div>

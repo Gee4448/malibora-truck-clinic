@@ -345,7 +345,7 @@ export default function Dashboard() {
               <p className="text-xs text-gray-500">{t('dashboard.widgets.handover.subtitle')}</p>
             </div>
           </div>
-          <Link to="/admin/handover" className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1">
+          <Link to="/admin/handover" className="tap text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1">
             {t('dashboard.viewAll')} <ArrowRight className="w-3 h-3" />
           </Link>
         </div>
@@ -396,7 +396,7 @@ function WidgetCard({ icon: Icon, iconColor, iconBg, title, subtitle, viewAllTo,
             <p className="text-xs text-gray-500">{subtitle}</p>
           </div>
         </div>
-        <Link to={viewAllTo} className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1">
+        <Link to={viewAllTo} className="tap text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1">
           {viewAllLabel} <ArrowRight className="w-3 h-3" />
         </Link>
       </div>

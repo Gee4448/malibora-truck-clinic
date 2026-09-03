@@ -43,7 +43,7 @@ export default function Header({ onMenuToggle }) {
       {/* Left: Menu toggle — always visible; the sidebar is a drawer on every viewport. */}
       <button
         onClick={onMenuToggle}
-        className="p-2 rounded-lg text-white/80 hover:text-white hover:bg-white/10 press cursor-pointer"
+        className="tap p-2 rounded-lg text-white/80 hover:text-white hover:bg-white/10 press cursor-pointer"
         aria-label="Open menu"
       >
         <Menu className="w-5 h-5" />

@@ -40,7 +40,7 @@ export default function MechanicLayout() {
               <Globe className="w-3.5 h-3.5" />
               {locale === 'en' ? 'SW' : 'EN'}
             </button>
-            <button onClick={handleLogout} className="p-1.5 rounded-lg text-white/85 bg-white/10 hover:bg-white/20 hover:text-white transition-colors">
+            <button onClick={handleLogout} className="tap p-1.5 rounded-lg text-white/85 bg-white/10 hover:bg-white/20 hover:text-white transition-colors">
               <LogOut className="w-4 h-4" />
             </button>
           </div>

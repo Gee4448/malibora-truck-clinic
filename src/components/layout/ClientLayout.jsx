@@ -60,7 +60,7 @@ export default function ClientLayout() {
             <Link
               to="/client/profile"
               aria-label={t('client.nav.profile')}
-              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors press cursor-pointer"
+              className="tap p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors press cursor-pointer"
             >
               <User className="w-4 h-4" />
             </Link>
@@ -74,7 +74,7 @@ export default function ClientLayout() {
             <button
               onClick={handleLogout}
               aria-label={t('nav.logout')}
-              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors press cursor-pointer"
+              className="tap p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors press cursor-pointer"
             >
               <LogOut className="w-4 h-4" />
             </button>

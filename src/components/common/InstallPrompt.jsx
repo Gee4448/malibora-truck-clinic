@@ -60,7 +60,7 @@ export default function InstallPrompt() {
             </button>
           </div>
         </div>
-        <button onClick={handleDismiss} className="p-1 rounded-lg hover:bg-gray-100 flex-shrink-0">
+        <button onClick={handleDismiss} className="tap p-1 rounded-lg hover:bg-gray-100 flex-shrink-0">
           <X className="w-4 h-4 text-gray-400" />
         </button>
       </div>

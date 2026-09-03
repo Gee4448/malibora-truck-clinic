@@ -129,7 +129,7 @@ export default function MechanicLogin() {
           </div>
 
           <div className="mt-6 pt-4 border-t border-gray-100 text-center">
-            <Link to="/client" className="text-xs text-gray-500 hover:text-gray-700">
+            <Link to="/client" className="tap text-xs text-gray-500 hover:text-gray-700">
               {t('mechanic.login.notMechanic')}
             </Link>
           </div>

@@ -84,7 +84,7 @@ export default function ClientInspections() {
         <h1 className="text-lg font-bold text-gray-900">{t('client.inspections.title')}</h1>
         <Link
           to="/client/new-request?type=inspection"
-          className="flex items-center gap-1.5 px-3.5 py-2 bg-blue-700 text-white rounded-xl text-sm font-medium hover:bg-blue-800 active:scale-[0.98] transition shrink-0"
+          className="tap flex items-center gap-1.5 px-3.5 py-2 bg-blue-700 text-white rounded-xl text-sm font-medium hover:bg-blue-800 active:scale-[0.98] transition shrink-0"
         >
           <Plus className="w-4 h-4" />
           {t('client.inspections.requestNew')}
@@ -113,7 +113,7 @@ export default function ClientInspections() {
           <p className="text-gray-500 text-sm">{t('client.inspections.empty')}</p>
           <Link
             to="/client/new-request?type=inspection"
-            className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-blue-700 text-white rounded-xl text-sm font-medium hover:bg-blue-800 transition"
+            className="tap mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-blue-700 text-white rounded-xl text-sm font-medium hover:bg-blue-800 transition"
           >
             <Plus className="w-4 h-4" />
             {t('client.inspections.requestNew')}

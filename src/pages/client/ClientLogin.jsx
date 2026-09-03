@@ -105,7 +105,7 @@ export default function ClientLogin() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(s => !s)}
-                  className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-gray-700"
+                  className="tap absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-gray-700"
                   tabIndex={-1}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -173,12 +173,12 @@ export default function ClientLogin() {
           <div className="mt-6 pt-4 border-t border-gray-100 text-center space-y-2">
             <div>
               <p className="text-xs text-gray-500">{t('client.login.noAccount')}</p>
-              <Link to="/client/register" className="text-sm text-blue-700 font-medium hover:text-blue-700">
+              <Link to="/client/register" className="tap text-sm text-blue-700 font-medium hover:text-blue-700">
                 {t('client.login.registerLink')}
               </Link>
             </div>
             <div>
-              <a href="tel:+255123456789" className="text-xs text-gray-500 hover:text-gray-700">
+              <a href="tel:+255123456789" className="tap text-xs text-gray-500 hover:text-gray-700">
                 {t('client.login.callSupport')}
               </a>
             </div>
@@ -188,13 +188,13 @@ export default function ClientLogin() {
 
       {/* Footer links to staff + mechanic portals */}
       <div className="relative text-center pb-6 flex items-center justify-center gap-3 animate-fade-in">
-        <Link to="/admin/login" className="on-dark-muted text-xs hover:text-white transition-colors">
+        <Link to="/admin/login" className="tap on-dark-muted text-xs hover:text-white transition-colors">
           {t('landing.staffLogin')}
         </Link>
         {/* Decorative separator only — hidden from assistive tech, which is also
             what exempts it from the contrast rule it would otherwise fail. */}
         <span aria-hidden="true" className="text-white/40 text-xs">·</span>
-        <Link to="/mechanic" className="on-dark-muted text-xs hover:text-white transition-colors">
+        <Link to="/mechanic" className="tap on-dark-muted text-xs hover:text-white transition-colors">
           {t('mechanic.login.portal')}
         </Link>
       </div>

@@ -211,7 +211,7 @@ export default function Inspections() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button className="p-2 rounded-lg hover:bg-blue-50 text-blue-600" title="View">
+                  <button className="tap p-2 rounded-lg hover:bg-blue-50 text-blue-600" title="View">
                     <Eye className="w-4 h-4" />
                   </button>
                 </div>
@@ -227,7 +227,7 @@ export default function Inspections() {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto modal-card">
             <div className="flex items-center justify-between p-5 border-b">
               <h2 className="text-lg font-bold">{t('inspection.addNew')}</h2>
-              <button onClick={() => setShowForm(false)} className="p-1 rounded hover:bg-gray-100">
+              <button onClick={() => setShowForm(false)} className="tap p-1 rounded hover:bg-gray-100">
                 <X className="w-5 h-5" />
               </button>
             </div>

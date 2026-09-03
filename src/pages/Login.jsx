@@ -121,7 +121,7 @@ export default function Login() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  className="tap absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -129,7 +129,7 @@ export default function Login() {
             </div>
 
             <div className="flex items-center justify-end">
-              <a href="#" className="text-sm text-blue-700 hover:text-blue-700">
+              <a href="#" className="tap text-sm text-blue-700 hover:text-blue-700">
                 {t('auth.forgotPassword')}
               </a>
             </div>
@@ -145,12 +145,12 @@ export default function Login() {
 
           <p className="text-center text-sm text-gray-500 mt-4">
             {t('auth.noAccount')}{' '}
-            <Link to="/admin/register" className="text-blue-700 hover:text-blue-700 font-medium">
+            <Link to="/admin/register" className="tap text-blue-700 hover:text-blue-700 font-medium">
               {t('auth.register')}
             </Link>
           </p>
           <p className="text-center mt-3">
-            <Link to="/" className="text-sm text-gray-500 hover:text-gray-700 transition">
+            <Link to="/" className="tap text-sm text-gray-500 hover:text-gray-700 transition">
               &larr; {t('common.back')}
             </Link>
           </p>

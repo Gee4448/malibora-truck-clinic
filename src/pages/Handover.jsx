@@ -41,7 +41,7 @@ function ItemListInput({ label, required, items, onChange, placeholder, addLabel
           placeholder={placeholder}
           className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
         <button type="button" onClick={add}
-          className="flex items-center gap-1 px-3 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition text-sm font-medium">
+          className="tap flex items-center gap-1 px-3 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition text-sm font-medium">
           <Plus className="w-4 h-4" /> {addLabel}
         </button>
       </div>
@@ -217,7 +217,7 @@ export default function Handover() {
                   <p className="text-xs text-gray-400 mt-0.5">Job: {h.job_cards?.job_number} | {formatDate(h.handover_date)}</p>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => setShowDetail(h)} className="p-2 rounded-lg hover:bg-blue-50 text-blue-600">
+                  <button onClick={() => setShowDetail(h)} className="tap p-2 rounded-lg hover:bg-blue-50 text-blue-600">
                     <Eye className="w-4 h-4" />
                   </button>
                   <button onClick={() => handleDownloadPDF(h)} className="p-2 rounded-lg hover:bg-green-50 text-green-600">
@@ -236,7 +236,7 @@ export default function Handover() {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto modal-card">
             <div className="flex items-center justify-between p-5 border-b">
               <h2 className="text-lg font-bold">{showDetail.handover_number}</h2>
-              <button onClick={() => setShowDetail(null)} className="p-1 rounded hover:bg-gray-100"><X className="w-5 h-5" /></button>
+              <button onClick={() => setShowDetail(null)} className="tap p-1 rounded hover:bg-gray-100"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-5 space-y-4 text-sm">
               <div className="grid grid-cols-2 gap-4">
@@ -269,7 +269,7 @@ export default function Handover() {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto modal-card">
             <div className="flex items-center justify-between p-5 border-b">
               <h2 className="text-lg font-bold">{t('handover.create')}</h2>
-              <button onClick={() => setShowForm(false)} className="p-1 rounded hover:bg-gray-100"><X className="w-5 h-5" /></button>
+              <button onClick={() => setShowForm(false)} className="tap p-1 rounded hover:bg-gray-100"><X className="w-5 h-5" /></button>
             </div>
             <form onSubmit={handleSubmit} className="p-5 space-y-4">
               <div>

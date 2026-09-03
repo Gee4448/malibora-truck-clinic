@@ -142,7 +142,7 @@ export default function ClientRegister() {
           </button>
           <div className="mt-4 text-xs text-gray-500">
             {t('client.register.contactInfo')}{' '}
-            <a href="tel:+255123456789" className="text-blue-700 font-medium">+255 123 456 789</a>
+            <a href="tel:+255123456789" className="tap text-blue-700 font-medium">+255 123 456 789</a>
           </div>
         </div>
       </div>
@@ -234,7 +234,7 @@ export default function ClientRegister() {
                     <button
                       type="button"
                       onClick={() => setShowPassword(s => !s)}
-                      className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-gray-700"
+                      className="tap absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-gray-700"
                       tabIndex={-1}
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -328,7 +328,7 @@ export default function ClientRegister() {
 
           <div className="mt-5 pt-4 border-t border-gray-100 text-center">
             <p className="text-xs text-gray-500">{t('client.register.hasAccount')}</p>
-            <Link to="/client" className="text-sm text-blue-700 font-medium hover:text-blue-700">
+            <Link to="/client" className="tap text-sm text-blue-700 font-medium hover:text-blue-700">
               {t('client.register.loginLink')}
             </Link>
           </div>

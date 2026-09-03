@@ -66,7 +66,7 @@ export default function Sidebar({ isOpen, onClose }) {
           <div className="rounded-lg overflow-hidden ring-1 ring-white/20">
             <Logo height={34} iconClassName="w-8 h-8 text-blue-400" />
           </div>
-          <button onClick={onClose} className="p-1 rounded text-white/70 hover:text-white hover:bg-white/10">
+          <button onClick={onClose} className="tap p-1 rounded text-white/70 hover:text-white hover:bg-white/10">
             <X className="w-5 h-5" />
           </button>
         </div>

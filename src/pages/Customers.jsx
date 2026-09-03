@@ -491,7 +491,7 @@ export default function Customers() {
                   </p>
                 )}
               </div>
-              <button onClick={closeForm} className="p-1 rounded hover:bg-gray-100">
+              <button onClick={closeForm} className="tap p-1 rounded hover:bg-gray-100">
                 <X className="w-5 h-5" />
               </button>
             </div>

@@ -106,7 +106,7 @@ export default function Settings() {
             {/* The role is set server-side; an access code is the only way to
                 change your own (migration 018). */}
             <Link to="/admin/unlock"
-              className="inline-flex items-center gap-1.5 mt-2 text-sm text-amber-700 hover:text-amber-800 font-medium">
+              className="tap inline-flex items-center gap-1.5 mt-2 text-sm text-amber-700 hover:text-amber-800 font-medium">
               <KeyRound className="w-3.5 h-3.5" /> {t('roleUnlock.enterCode')}
             </Link>
           </div>

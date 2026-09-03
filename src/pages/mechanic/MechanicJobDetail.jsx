@@ -269,7 +269,7 @@ export default function MechanicJobDetail() {
 
   return (
     <div className="space-y-4">
-      <Link to="/mechanic/jobs" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700">
+      <Link to="/mechanic/jobs" className="tap inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700">
         <ArrowLeft className="w-4 h-4" /> {t('common.back')}
       </Link>
 

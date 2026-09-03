@@ -1056,7 +1056,7 @@ export default function InspectionDetail() {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm modal-card">
             <div className="flex items-center justify-between p-5 border-b">
               <h2 className="text-lg font-bold">{t('inspection.setFee')}</h2>
-              <button onClick={() => setShowFee(false)} className="p-1 rounded hover:bg-gray-100">
+              <button onClick={() => setShowFee(false)} className="tap p-1 rounded hover:bg-gray-100">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1092,7 +1092,7 @@ export default function InspectionDetail() {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm modal-card">
             <div className="flex items-center justify-between p-5 border-b">
               <h2 className="text-lg font-bold">{t('inspection.confirmPayment')}</h2>
-              <button onClick={() => setShowPayment(false)} className="p-1 rounded hover:bg-gray-100">
+              <button onClick={() => setShowPayment(false)} className="tap p-1 rounded hover:bg-gray-100">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1140,7 +1140,7 @@ export default function InspectionDetail() {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md modal-card">
             <div className="flex items-center justify-between p-5 border-b">
               <h2 className="text-lg font-bold">{t('inspection.addProblem')}</h2>
-              <button onClick={() => setShowAddProblem(false)} className="p-1 rounded hover:bg-gray-100">
+              <button onClick={() => setShowAddProblem(false)} className="tap p-1 rounded hover:bg-gray-100">
                 <X className="w-5 h-5" />
               </button>
             </div>
