@@ -637,7 +637,7 @@ export default function InspectionDetail() {
           ].map((step, idx) => (
             <div key={idx} className="flex items-center gap-2 flex-1">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
-                step.done ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'
+                step.done ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-500'
               }`}>{idx + 1}</div>
               <span className={`text-sm font-medium ${step.done ? 'text-green-700' : 'text-gray-400'}`}>{step.label}</span>
               {idx < 3 && <div className={`flex-1 h-0.5 mx-2 ${step.done ? 'bg-green-400' : 'bg-gray-200'}`} />}
@@ -963,7 +963,7 @@ export default function InspectionDetail() {
                         className={`text-xs px-2.5 py-1 rounded-full font-medium transition ${
                           (item.repair_status || 'pending') === s
                             ? s === 'done' ? 'bg-green-600 text-white'
-                              : s === 'in_progress' ? 'bg-yellow-500 text-white'
+                              : s === 'in_progress' ? 'bg-amber-600 text-white'
                               : 'bg-gray-500 text-white'
                             : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
                         }`}

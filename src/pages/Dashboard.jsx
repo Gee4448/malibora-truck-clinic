@@ -259,7 +259,7 @@ export default function Dashboard() {
                   <span className="text-xs text-gray-400 flex-shrink-0 hidden sm:block">
                     {formatDateTime(n.created_at)}
                   </span>
-                  {!n.is_read && <span className="w-2 h-2 bg-red-500 rounded-full flex-shrink-0" />}
+                  {!n.is_read && <span className="w-2 h-2 bg-red-400 rounded-full flex-shrink-0" />}
                 </button>
               )
             })

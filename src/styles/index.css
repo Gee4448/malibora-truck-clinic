@@ -52,6 +52,40 @@
   --color-blue-700: #a33601; /* hover / headers */
   --color-blue-800: #832c02;
   --color-blue-900: #6b2503;
+
+  /* ---- Status fills ----------------------------------------------------
+     The hues that survive as themselves — green for confirm, red for
+     destructive and unread counts, amber for caution — used as SOLID fills
+     under white text. Tailwind's own steps do not carry white: green-600 is
+     3.22:1, amber-600 3.20:1, red-500 3.81:1, orange-500 2.89:1. Every one of
+     those is a label a user has to read, on a button they have to press, and
+     none of them reached AA.
+
+     So each fill drops one step down its own ramp, and its hover partner drops
+     with it — otherwise `bg-green-600` and `hover:bg-green-700` land on the
+     same colour and the button stops responding to the pointer. Values are the
+     ramp's own literals, not references: v4 only emits `--color-<hue>-<step>`
+     for steps the markup uses, so pointing one token at another silently
+     resolves to nothing. Measured against white with
+     `node scripts/button-contrast.mjs`.
+
+     Text keeps its own path: `.text-green-600` and friends are remapped to the
+     300 steps further down this file, so darkening these fills does not touch
+     any ink. */
+  --color-green-600:   #008236;  /* was #00a63e — 3.22:1  ->  4.95:1 */
+  --color-green-700:   #016630;  /* hover for the above */
+  --color-emerald-600: #007a55;  /* was #009966 — 3.65:1  ->  5.36:1 */
+  --color-emerald-700: #006045;  /* hover */
+  --color-amber-600:   #bb4d00;  /* was #e17100 — 3.20:1  ->  5.03:1 */
+  --color-amber-700:   #973c00;  /* hover */
+  /* Notification badges. 500 takes the 600 value rather than the 700: a count
+     badge has to stay unmistakably red, and this is the lightest red on the
+     ramp that clears AA. 600 moves down in step so the two stay distinguishable
+     where both appear, and so `hover:bg-red-600` still darkens a red-500. */
+  --color-red-500:     #e7000b;  /* was #fb2c36 — 3.81:1  ->  4.77:1 */
+  --color-red-600:     #c10007;  /* was #e7000b — 4.77:1  ->  6.42:1 */
+  --color-red-700:     #9f0712;  /* hover */
+  --color-orange-500:  #ca3500;  /* was #ff6900 — 2.89:1  ->  5.22:1 */
 }
 
 :root {

@@ -313,7 +313,7 @@ export default function CustomerView() {
               ].map((step, idx) => (
                 <div key={idx} className="flex flex-col items-center gap-1 flex-1">
                   <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
-                    step.done ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-400'
+                    step.done ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-400'
                   }`}>{idx + 1}</div>
                   <span className={`text-xs text-center ${step.done ? 'text-green-700 font-medium' : 'text-gray-400'}`}>{step.label}</span>
                 </div>
