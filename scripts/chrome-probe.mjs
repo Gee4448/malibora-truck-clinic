@@ -3,6 +3,12 @@
  * tracks --scroll-progress.
  *
  *   node scripts/chrome-probe.mjs            # office + client bars
+ *   node scripts/chrome-probe.mjs 520 812 375   # at phone width
+ *
+ * The third argument pins the bar's own width. Headless floors its window near
+ * 500px, so `--window-size=375` still lays the bar out at 500 — the first run
+ * of this probe reported "of 500px" for a 375px window and was measuring a
+ * viewport no phone has.
  *
  * Why the state is set rather than scrolled to: this pane pauses rAF and
  * IntersectionObserver when it is not painting, so a harness that scrolls and
@@ -19,6 +25,8 @@
 import { readFileSync, writeFileSync, readdirSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 
+const W = Number(process.argv[2] || 1200), H = Number(process.argv[3] || 700)
+const CONTAINER = Number(process.argv[4] || 0)
 const repo = process.cwd().replace(/\\/g, '/')
 const css = readFileSync('dist/assets/' + readdirSync('dist/assets').find(f => f.endsWith('.css')), 'utf8')
 
@@ -53,6 +61,7 @@ const page = `<!doctype html><meta charset="utf-8"><title>chrome probe</title>
      transition-property. */
   *, *::before, *::after { transition: none !important; animation: none !important; }
 </style>
+<div style="${CONTAINER ? `width:${CONTAINER}px;overflow:hidden` : ''}">
 <header id="office" class="${officeBar}">
   <button class="p-2 rounded-lg text-white/80">MENU</button>
   <div class="flex items-center gap-3 ml-auto">
@@ -70,6 +79,7 @@ const page = `<!doctype html><meta charset="utf-8"><title>chrome probe</title>
     <span class="px-3 py-1.5 rounded-lg text-sm text-white/85 bg-white/10">EN</span>
   </div>
 </header>
+</div>
 <div style="height:2400px"></div>
 <script>
   var root = document.documentElement;
@@ -104,7 +114,7 @@ writeFileSync('dist/chrome-probe.html', page)
 
 const chrome = 'C:/Program Files/Google/Chrome/Application/chrome.exe'
 const flags = ['--headless', '--disable-gpu', '--hide-scrollbars', '--force-device-scale-factor=1',
-               '--window-size=1200,700']
+               `--window-size=${W},${H}`]
 const dom = execFileSync(chrome, [...flags, '--dump-dom', `file:///${repo}/dist/chrome-probe.html`],
   { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
 const jm = dom.match(/<pre id="json" hidden="">([\s\S]*?)<\/pre>/)
@@ -116,6 +126,7 @@ const g = JSON.parse(jm[1].replace(/&quot;/g, '"').replace(/&amp;/g, '&'))
 const line = (label, ok, detail) =>
   console.log(`  ${(label + '                          ').slice(0, 26)}${detail}  ${ok ? 'PASS' : 'FAIL'}`)
 
+console.log(`viewport     ${W}px window${CONTAINER ? `, bar pinned to ${CONTAINER}px` : ''}`)
 console.log(`office bar   ${g.rest.officeH}px at rest  ->  ${g.end.officeH}px scrolled`)
 console.log(`client bar   ${g.rest.clientH}px at rest  ->  ${g.end.clientH}px scrolled`)
 console.log(`row padding  ${g.rest.rowPadTop} at rest  ->  ${g.end.rowPadTop} scrolled\n`)
