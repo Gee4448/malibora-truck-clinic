@@ -1,5 +1,6 @@
 import { Outlet, NavLink, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useLanguage } from '../../contexts/LanguageContext'
+import { useChevTrack } from '../../hooks/useChevTrack'
 import { useClient } from '../../contexts/ClientAuthContext'
 import {
   Home, Truck, ClipboardList, FileText, ClipboardCheck, Search, User, Globe, LogOut
@@ -27,8 +28,16 @@ export default function ClientLayout() {
     { to: '/client/handovers', icon: ClipboardCheck, label: t('client.nav.handovers') },
   ]
 
+  // Longest match wins: /client/invoices/42 is still the Invoices tab, and the
+  // `end` tab (home) must not swallow every path below it.
+  const activeIndex = tabs.reduce((best, tab, i) => {
+    const hit = tab.end ? location.pathname === tab.to : location.pathname.startsWith(tab.to)
+    return hit && (best < 0 || tab.to.length > tabs[best].to.length) ? i : best
+  }, -1)
+  const trackRef = useChevTrack(activeIndex)
+
   return (
-    <div className="min-h-screen pb-20 lg:pb-0">
+    <div className="min-h-screen">
       {/* Top Header */}
       <header className="app-bar sticky top-0 z-40">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -70,17 +79,23 @@ export default function ClientLayout() {
           </div>
         </div>
 
-        {/* Desktop navigation — the same chevron ribbon as the stage tracker
+        {/* Navigation — the same chevron ribbon as the stage tracker
             (`.chev-track` in index.css), so the portal's two horizontal bars
             share one language.
+
+            ONE ribbon at every breakpoint, in the sticky header. It used to be
+            desktop-only, with a separate bottom tab bar below `lg` — two
+            different navs in two different styles for the same six
+            destinations. The phone now gets the same control the desktop has,
+            pinned to the top where it stays put while the page scrolls.
 
             It gets its own full-width row rather than sitting beside the logo:
             squeezed into the header row, six labels wrapped onto two lines
             ("My / Vehicles", "Job / Cards"). Here they never wrap, and if a
             translation is long the ribbon scrolls instead of breaking. */}
-        <nav className="hidden lg:block border-t border-white/10">
+        <nav className="border-t border-white/10">
           <div className="max-w-3xl mx-auto px-4 py-2">
-            <div className="chev-track">
+            <div ref={trackRef} className="chev-track">
               {tabs.map((tab, i) => (
                 <NavLink
                   key={tab.to}
@@ -88,7 +103,12 @@ export default function ClientLayout() {
                   end={tab.end}
                   style={{ '--seg-i': i }}
                   className={({ isActive }) =>
-                    `chev flex items-center justify-center gap-1.5 py-2 text-xs font-semibold whitespace-nowrap transition-colors ${
+                    // py-3.5 under lg: the label's line box is 16px, so 14px of
+                    // padding each side is exactly the 44px a thumb needs.
+                    // Measured at 390px — py-2 gives 32px and py-2.5 gives 36.
+                    // The desktop row keeps its tighter rhythm, where the
+                    // pointer is precise and vertical space is worth more.
+                    `chev flex items-center justify-center gap-1.5 py-3.5 lg:py-2 text-xs font-semibold whitespace-nowrap transition-colors ${
                       isActive
                         // blue-600 (#c74301), not the brand 500: these labels are
                         // 12px bold, which is not "large text", so 500's 3.8:1
@@ -112,32 +132,6 @@ export default function ClientLayout() {
         <Outlet />
       </main>
 
-      {/* Bottom Tab Navigation (mobile) */}
-      <nav className="tab-bar fixed bottom-0 left-0 right-0 z-40 lg:hidden safe-area-bottom shadow-[0_-8px_28px_-10px_rgb(0_0_0/0.45)]">
-        <div className="max-w-3xl mx-auto flex">
-          {tabs.map((tab) => (
-            <NavLink
-              key={tab.to}
-              to={tab.to}
-              end={tab.end}
-              className={({ isActive }) =>
-                // min-w-0 + a truncating label: with six tabs each cell is ~62px
-                // on a 375px phone, and a long translation would otherwise push
-                // the bar into a horizontal scroll.
-                `flex-1 min-w-0 flex flex-col items-center gap-0.5 py-2 pt-2.5 text-[10px] font-medium transition-colors duration-200 ${
-                  // On the dark bar the ramp flips: blue-400 (#fa6f28) is 6.9:1
-                  // here, where blue-700 would sink into the background.
-                  isActive ? 'text-blue-400 nav-tab-active' : 'text-white/55 hover:text-white/85'
-                }`
-              }
-            >
-              <tab.icon className="w-5 h-5 flex-shrink-0" />
-              <span className="max-w-full truncate px-0.5">{tab.label}</span>
-              <span className="nav-dot" />
-            </NavLink>
-          ))}
-        </div>
-      </nav>
     </div>
   )
 }

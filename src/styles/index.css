@@ -960,26 +960,11 @@ button:not(:disabled):not(.absolute):not(.fixed):active {
   background: var(--brand-orange);
 }
 
-/* Bottom tab bar (client portal, phones). Same material as the app bar, flipped
-   so the denser edge is at the bottom against the home indicator. */
-.tab-bar {
-  position: relative;
-  background: linear-gradient(0deg, rgb(10 6 4 / 0.92), rgb(14 9 7 / 0.78));
-  backdrop-filter: blur(var(--glass-blur-chrome)) saturate(var(--glass-sat));
-  border-top: 1px solid rgb(255 255 255 / 0.10);
-  color: var(--brand-white);
-  color-scheme: dark;
-}
-.tab-bar::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: -1px;
-  height: 1px;
-  pointer-events: none;
-  background: linear-gradient(90deg, transparent, rgb(232 80 2 / 0.55) 50%, transparent);
-}
+/* The bottom tab bar that used to live here is gone. The client portal had two
+   navs for the same six destinations — a chevron ribbon on desktop, a bottom
+   bar of icon-over-label tabs on phones — in two different styles. There is now
+   one ribbon in the sticky header at every width, so `.tab-bar`, `.nav-dot`,
+   `.nav-tab-active` and `.safe-area-bottom` all went with it. */
 /* ----------------------------------------------------------------------------
    Hero panel — the dark card that opens a dashboard, and the one surface in
    the app built directly on the glass-card reference.
@@ -1003,14 +988,18 @@ button:not(:disabled):not(.absolute):not(.fixed):active {
    sized in rem but positioned in %, so tightening one number changes the
    contrast on a phone and not on a desktop, or the other way round.
    ---------------------------------------------------------------------------- */
+/* The hero can afford to be thinner than the KPI tiles: it carries white text
+   only, so there is no orange figure to drown, and white over this bloom stays
+   far above AA even where the ground is hottest. */
 .hero-dark {
   position: relative;
   overflow: hidden;
   background:
-    radial-gradient(26rem 17rem at 30% 126%,  rgb(241 96 1 / 0.42),  transparent 58%),
-    radial-gradient(40rem 26rem at 66% 132%,  rgb(193 8 1 / 0.60),   transparent 64%),
-    radial-gradient(22rem 15rem at 98% -34%,  rgb(241 96 1 / 0.20),  transparent 56%),
-    linear-gradient(176deg, #1b1411 0%, #0e0908 44%, #0a0605 100%);
+    radial-gradient(26rem 17rem at 30% 126%,  rgb(241 96 1 / 0.40),  transparent 58%),
+    radial-gradient(40rem 26rem at 66% 132%,  rgb(193 8 1 / 0.56),   transparent 64%),
+    radial-gradient(22rem 15rem at 98% -34%,  rgb(241 96 1 / 0.18),  transparent 56%),
+    linear-gradient(176deg, rgb(30 22 18 / 0.58), rgb(14 9 8 / 0.74) 44%, rgb(10 6 5 / 0.80) 100%);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
   color: var(--brand-white);
   color-scheme: dark;
   border: 1px solid rgb(255 255 255 / 0.10);
@@ -1249,11 +1238,19 @@ button:not(:disabled):not(.absolute):not(.fixed):active {
 /* ----------------------------------------------------------------------------
    Dark tiles — the KPI bento, and the client's document tiles.
 
-   These are NOT glass, and that is deliberate. A dark translucent panel sitting
-   on a light page lets the page through and turns muddy brown; the physics only
-   work the other way round. So the app runs two materials: glass for the light
-   surfaces, obsidian for the dark ones. What ties them together is that both
-   carry the same rim and the same single overhead light source.
+   These ARE glass now. They were opaque, on the reasoning that "a dark
+   translucent panel sitting on a light page lets the page through and turns
+   muddy brown" — true, and irrelevant since a0116a0 put the brand gradient
+   behind everything. The page is no longer light. That left the dashboard as
+   the one place still running a second, solid material while every card around
+   it refracted the ground, which is precisely why it did not read as glass.
+
+   One material now, same as `.glass`: a translucent dark fill over a blur, with
+   the ember bloom kept on top so the tile kaeeps its own identity.
+
+   The fill is DENSER than `--glass-fill` (0.62→0.80 against its 0.34→0.52) and
+   that is not taste. These tiles carry a 30px orange figure, and orange ink is
+   the one thing in this palette that cannot survive a lit ground — see below.
 
    Same light direction as `.hero-dark` — colour rising from the bottom — but
    deliberately dimmer, and that restraint is load-bearing rather than taste.
@@ -1267,13 +1264,28 @@ button:not(:disabled):not(.absolute):not(.fixed):active {
   position: relative;
   overflow: hidden;
   background:
-    radial-gradient(14rem 9rem at 78% 128%,   rgb(193 8 1 / 0.34),  transparent 60%),
-    radial-gradient(11rem 7rem at 104% -22%,  rgb(241 96 1 / 0.20), transparent 58%),
-    linear-gradient(168deg, #17110d 0%, #0a0605 66%);
+    radial-gradient(14rem 9rem at 78% 128%,   rgb(193 8 1 / 0.30),  transparent 60%),
+    radial-gradient(11rem 7rem at 104% -22%,  rgb(241 96 1 / 0.16), transparent 58%),
+    linear-gradient(168deg, rgb(28 20 16 / 0.62), rgb(8 5 4 / 0.80) 66%);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
   color: var(--brand-white);
   color-scheme: dark;
   border: 1px solid rgb(255 255 255 / 0.09);
   box-shadow: 0 14px 30px -18px rgb(0 0 0 / 0.50);
+}
+
+/* Both surfaces are translucent now, so both need the same two escapes every
+   other glass surface has. Falling back to a LIGHT panel here would put the
+   orange figure on near-white — the exact failure this material is tuned to
+   avoid — so both fall back dark, keeping their bloom and dropping only the
+   transparency. */
+@media (prefers-reduced-transparency: reduce) {
+  .hero-dark { background: linear-gradient(176deg, #1b1411 0%, #0e0908 44%, #0a0605 100%); backdrop-filter: none; }
+  .tile-dark { background: linear-gradient(168deg, #17110d 0%, #0a0605 66%); backdrop-filter: none; }
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .hero-dark { background: linear-gradient(176deg, rgb(27 20 17 / 0.97), rgb(10 6 5 / 0.98) 44%); }
+  .tile-dark { background: linear-gradient(168deg, rgb(23 17 13 / 0.97), rgb(10 6 5 / 0.98) 66%); }
 }
 
 /* ----------------------------------------------------------------------------
@@ -1332,31 +1344,6 @@ button:not(:disabled):not(.absolute):not(.fixed):active {
 }
 
 /* Bottom-nav icon spring on activation */
-@keyframes navBounce {
-  0% { transform: translateY(0) scale(1); }
-  40% { transform: translateY(-3px) scale(1.15); }
-  100% { transform: translateY(0) scale(1); }
-}
-
-.nav-tab-active svg {
-  animation: navBounce 0.45s var(--ease-spring);
-}
-
-/* Animated dot under the active bottom tab */
-.nav-dot {
-  width: 4px;
-  height: 4px;
-  border-radius: 9999px;
-  background: currentColor;
-  opacity: 0;
-  transform: scale(0);
-  transition: opacity var(--dur-base) ease, transform var(--dur-base) var(--ease-spring);
-}
-.nav-tab-active .nav-dot {
-  opacity: 1;
-  transform: scale(1);
-}
-
 /* Spinner with softer look */
 @keyframes spinnerPulse {
   0%, 100% { opacity: 1; }
@@ -1508,9 +1495,21 @@ button:not(:disabled):not(.absolute):not(.fixed):active {
 }
 .chev:first-child:last-child { clip-path: none; }
 
+/* Slides only — it deliberately does NOT animate opacity.
+
+   `.chev` fills `both` with a stagger of up to 350ms, so any keyframe starting
+   at `opacity: 0` leaves every chevron invisible until the animation actually
+   plays. That was a cosmetic risk while phones also had a bottom tab bar to
+   fall back on. It is not any more: this ribbon is now the client portal's only
+   navigation, so an animation that does not run would leave a customer with no
+   way out of the page. A headless render shows exactly that — the measurements
+   report six correctly-sized segments and the screenshot shows none of them.
+
+   Animating transform alone means an unplayed animation is simply a chevron
+   sitting where it belongs. Same ripple when it does play. */
 @keyframes chevIn {
-  from { opacity: 0; transform: translateX(-6px); }
-  to { opacity: 1; transform: none; }
+  from { transform: translateX(-6px); }
+  to { transform: none; }
 }
 
 /* ============================================================
@@ -1608,11 +1607,6 @@ button:not(:disabled):not(.absolute):not(.fixed):active {
     opacity: 1 !important;
     transform: none !important;
   }
-}
-
-/* Safe area for bottom navigation (mobile) */
-.safe-area-bottom {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 /* ==========================================================================
