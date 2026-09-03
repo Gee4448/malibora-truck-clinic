@@ -889,164 +889,179 @@ export default function InvoiceDetail() {
           </tbody>
         </table>
 
-        {/* Totals */}
-        {/* print-keep: the subtotals and the grand TOTAL must stay on one sheet.
-            Without it a 50-line invoice broke between VAT and TOTAL. */}
-        <div className="flex justify-end">
-          <div className="w-72 print-keep">
-            <div className="flex justify-between py-2 border-b border-gray-200">
-              <span className="text-gray-600">{t('invoices.subtotalParts')}</span>
-              <span className="font-medium">{formatTZS(invoice.subtotal_parts)}</span>
-            </div>
-            <div className="flex justify-between py-2 border-b border-gray-200">
-              <span className="text-gray-600">{t('invoices.subtotalLabour')}</span>
-              <span className="font-medium">{formatTZS(invoice.subtotal_labour)}</span>
-            </div>
-            {Number(invoice.subtotal_additional) > 0 && (
+        {/* The closing block of the document — totals, payment status, and
+            the footer — kept on one sheet. `.print-keep` already held the
+            subtotals to their grand total, but that stopped one line short:
+            at 49 and 50 rows the totals filled the bottom of page 3 and the
+            footer went over alone, so the invoice ended on a sheet carrying
+            nothing but "Thank you for choosing Malibora Truck Clinic".
+
+            It has to be one wrapper rather than a rule on the footer itself:
+            Chrome implements `break-inside: avoid` but not `break-before:
+            avoid`, so the only way to say "these travel together" is to make
+            them one unbreakable box. Taller than a page and Chrome breaks it
+            anyway, which is the right way to fail. Verified 36-60 rows with
+            `node scripts/print-sweep.mjs`. */}
+        <div className="print-tail">
+          {/* Totals */}
+          {/* print-keep: the subtotals and the grand TOTAL must stay on one sheet.
+              Without it a 50-line invoice broke between VAT and TOTAL. */}
+          <div className="flex justify-end">
+            <div className="w-72 print-keep">
               <div className="flex justify-between py-2 border-b border-gray-200">
-                <span className="text-gray-600">{t('invoices.subtotalAdditional')}</span>
-                <span className="font-medium">{formatTZS(invoice.subtotal_additional)}</span>
+                <span className="text-gray-600">{t('invoices.subtotalParts')}</span>
+                <span className="font-medium">{formatTZS(invoice.subtotal_parts)}</span>
               </div>
-            )}
-            {Number(invoice.discount_amount) > 0 && (
-              <div className="flex justify-between py-2 border-b border-gray-200 text-red-600">
-                <span>{t('invoices.discount')}</span>
-                <span>-{formatTZS(invoice.discount_amount)}</span>
+              <div className="flex justify-between py-2 border-b border-gray-200">
+                <span className="text-gray-600">{t('invoices.subtotalLabour')}</span>
+                <span className="font-medium">{formatTZS(invoice.subtotal_labour)}</span>
               </div>
-            )}
-            <div className="flex justify-between items-center py-2 border-b border-gray-200">
-              <span className="text-gray-600 flex items-center gap-1.5">
-                {t('invoices.vat')} ({vatRate}%)
-                {docEditable && !editingVat && (
-                  <button onClick={() => { setVatInput(String(vatRate)); setEditingVat(true) }}
-                    className="no-print text-blue-600 hover:text-blue-800" title={t('invoices.editVat')}>
-                    <Pencil className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </span>
-              {editingVat ? (
-                <span className="no-print flex items-center gap-1.5">
-                  <input type="number" min="0" max="100" step="any" value={vatInput}
-                    onChange={e => setVatInput(e.target.value)}
-                    className="w-16 px-2 py-1 border border-gray-300 rounded text-right text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-                  <span className="text-gray-400 text-sm">%</span>
-                  <button onClick={saveVatRate} disabled={savingVat}
-                    className="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 disabled:opacity-40">{t('common.save')}</button>
-                  <button onClick={() => setEditingVat(false)}
-                    className="px-2 py-1 border border-gray-300 rounded text-xs hover:bg-gray-50">{t('common.cancel')}</button>
-                </span>
-              ) : (
-                <span className="font-medium">{formatTZS(invoice.vat_amount)}</span>
-              )}
-            </div>
-            <div className="flex justify-between py-3 border-b-2 border-blue-700 bg-blue-50 px-3 -mx-3 mt-1 rounded">
-              <span className="text-lg font-bold text-blue-900">{t('invoices.total')}</span>
-              <span className="text-lg font-bold text-blue-900">{formatTZS(invoice.total_amount)}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Internal Cost Breakdown (Management only) */}
-        {canViewInternal && invoice.invoice_type !== 'proforma' && (
-          <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg no-print">
-            <h3 className="font-semibold text-yellow-800 mb-3">{t('invoices.internalBreakdown')}</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
-              <div>
-                <p className="text-yellow-700">{t('invoices.partsCost')}</p>
-                <p className="font-bold text-gray-900">{formatTZS(invoice.internal_cost_parts)}</p>
-              </div>
-              <div>
-                <p className="text-yellow-700">{t('invoices.partsProfit')}</p>
-                <p className="font-bold text-green-600">{formatTZS(invoice.profit_parts)}</p>
-              </div>
-              <div>
-                <p className="text-yellow-700">{t('invoices.labourCost')}</p>
-                <p className="font-bold text-gray-900">{formatTZS(invoice.internal_cost_labour)}</p>
-              </div>
-              <div>
-                <p className="text-yellow-700">{t('invoices.labourProfit')}</p>
-                <p className="font-bold text-green-600">{formatTZS(invoice.profit_labour)}</p>
-              </div>
-              <div className="col-span-2">
-                <p className="text-yellow-700">{t('invoices.totalProfit')}</p>
-                <p className="text-xl font-bold text-green-600">{formatTZS(invoice.profit_total)}</p>
-              </div>
-              <div className="col-span-2">
-                <p className="text-yellow-700">{t('invoices.profitMargin')}</p>
-                <p className="text-xl font-bold text-green-600">{Number(invoice.profit_margin).toFixed(1)}%</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Payment info */}
-        {/* More was collected than the job now costs — only reachable since
-            paid proformas became re-priceable (Antony, 4 Aug 2026). There is no
-            refund ledger, so the document says it plainly rather than showing
-            "paid, balance 0" and letting the customer's money vanish. */}
-        {overpaid > 0 && (
-          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm">
-            <p className="font-semibold text-red-800">{t('invoices.overpaid')}</p>
-            <div className="flex justify-between mt-1 text-red-700">
-              <span>{t('invoices.amountPaid')}</span><span className="font-medium">{formatTZS(amountPaid)}</span>
-            </div>
-            <div className="flex justify-between text-red-700">
-              <span>{t('invoices.total')}</span><span className="font-medium">{formatTZS(invoiceTotal)}</span>
-            </div>
-            <div className="flex justify-between text-red-900 font-semibold">
-              <span>{t('invoices.refundDue')}</span><span>{formatTZS(overpaid)}</span>
-            </div>
-          </div>
-        )}
-        {invoice.status === 'paid' && overpaid === 0 && (
-          <div className="mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-sm">
-            <p className="font-semibold text-emerald-800">{t('invoices.paidOn')} {formatDate(invoice.paid_at)}</p>
-            {invoice.payment_method && <p className="text-emerald-700 capitalize">{t('invoices.method')}: {invoice.payment_method.replace('_', ' ')}</p>}
-            {invoice.payment_reference && <p className="text-emerald-700">{t('invoices.ref')}: {invoice.payment_reference}</p>}
-          </div>
-        )}
-        {invoice.status === 'partial' && (
-          <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-lg text-sm">
-            <p className="font-semibold text-orange-800">{t('invoices.partiallyPaid')}</p>
-            <div className="flex justify-between mt-1 text-orange-700">
-              <span>{t('invoices.amountPaid')}</span><span className="font-medium">{formatTZS(amountPaid)}</span>
-            </div>
-            <div className="flex justify-between text-orange-900 font-semibold">
-              <span>{t('invoices.balanceOwed')}</span><span>{formatTZS(balanceOwed)}</span>
-            </div>
-            {invoice.payment_method && <p className="text-orange-700 capitalize mt-1">{t('invoices.method')}: {invoice.payment_method.replace('_', ' ')}</p>}
-            {invoice.payment_reference && <p className="text-orange-700">{t('invoices.ref')}: {invoice.payment_reference}</p>}
-          </div>
-        )}
-
-        {/* Refunds actually handed back — part of the document, so it prints. */}
-        {refunds.length > 0 && (
-          <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg text-sm">
-            <p className="font-semibold text-gray-800 mb-1.5">{t('invoices.refundsMade')}</p>
-            <div className="space-y-1">
-              {refunds.map(r => (
-                <div key={r.id} className="flex justify-between text-gray-600">
-                  <span>
-                    {formatDate(r.created_at)}
-                    {r.method && <span className="capitalize"> · {r.method.replace('_', ' ')}</span>}
-                    {r.reference && <span> · {r.reference}</span>}
-                    {r.reason && <span className="text-gray-400"> — {r.reason}</span>}
-                  </span>
-                  <span className="font-medium text-gray-900 whitespace-nowrap ml-3">−{formatTZS(r.amount)}</span>
+              {Number(invoice.subtotal_additional) > 0 && (
+                <div className="flex justify-between py-2 border-b border-gray-200">
+                  <span className="text-gray-600">{t('invoices.subtotalAdditional')}</span>
+                  <span className="font-medium">{formatTZS(invoice.subtotal_additional)}</span>
                 </div>
-              ))}
-            </div>
-            <div className="flex justify-between border-t border-gray-200 mt-1.5 pt-1.5 font-semibold text-gray-900">
-              <span>{t('invoices.totalRefunded')}</span>
-              <span>{formatTZS(refunds.reduce((s, r) => s + Number(r.amount || 0), 0))}</span>
+              )}
+              {Number(invoice.discount_amount) > 0 && (
+                <div className="flex justify-between py-2 border-b border-gray-200 text-red-600">
+                  <span>{t('invoices.discount')}</span>
+                  <span>-{formatTZS(invoice.discount_amount)}</span>
+                </div>
+              )}
+              <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                <span className="text-gray-600 flex items-center gap-1.5">
+                  {t('invoices.vat')} ({vatRate}%)
+                  {docEditable && !editingVat && (
+                    <button onClick={() => { setVatInput(String(vatRate)); setEditingVat(true) }}
+                      className="no-print text-blue-600 hover:text-blue-800" title={t('invoices.editVat')}>
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </span>
+                {editingVat ? (
+                  <span className="no-print flex items-center gap-1.5">
+                    <input type="number" min="0" max="100" step="any" value={vatInput}
+                      onChange={e => setVatInput(e.target.value)}
+                      className="w-16 px-2 py-1 border border-gray-300 rounded text-right text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                    <span className="text-gray-400 text-sm">%</span>
+                    <button onClick={saveVatRate} disabled={savingVat}
+                      className="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 disabled:opacity-40">{t('common.save')}</button>
+                    <button onClick={() => setEditingVat(false)}
+                      className="px-2 py-1 border border-gray-300 rounded text-xs hover:bg-gray-50">{t('common.cancel')}</button>
+                  </span>
+                ) : (
+                  <span className="font-medium">{formatTZS(invoice.vat_amount)}</span>
+                )}
+              </div>
+              <div className="flex justify-between py-3 border-b-2 border-blue-700 bg-blue-50 px-3 -mx-3 mt-1 rounded">
+                <span className="text-lg font-bold text-blue-900">{t('invoices.total')}</span>
+                <span className="text-lg font-bold text-blue-900">{formatTZS(invoice.total_amount)}</span>
+              </div>
             </div>
           </div>
-        )}
 
-        {/* Footer */}
-        <div className="mt-8 pt-4 border-t border-gray-200 text-center text-xs text-gray-400">
-          <p>Thank you for choosing Malibora Truck Clinic</p>
-          <p className="mt-1">Asante kwa kuchagua Malibora Truck Clinic</p>
+          {/* Internal Cost Breakdown (Management only) */}
+          {canViewInternal && invoice.invoice_type !== 'proforma' && (
+            <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg no-print">
+              <h3 className="font-semibold text-yellow-800 mb-3">{t('invoices.internalBreakdown')}</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+                <div>
+                  <p className="text-yellow-700">{t('invoices.partsCost')}</p>
+                  <p className="font-bold text-gray-900">{formatTZS(invoice.internal_cost_parts)}</p>
+                </div>
+                <div>
+                  <p className="text-yellow-700">{t('invoices.partsProfit')}</p>
+                  <p className="font-bold text-green-600">{formatTZS(invoice.profit_parts)}</p>
+                </div>
+                <div>
+                  <p className="text-yellow-700">{t('invoices.labourCost')}</p>
+                  <p className="font-bold text-gray-900">{formatTZS(invoice.internal_cost_labour)}</p>
+                </div>
+                <div>
+                  <p className="text-yellow-700">{t('invoices.labourProfit')}</p>
+                  <p className="font-bold text-green-600">{formatTZS(invoice.profit_labour)}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-yellow-700">{t('invoices.totalProfit')}</p>
+                  <p className="text-xl font-bold text-green-600">{formatTZS(invoice.profit_total)}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-yellow-700">{t('invoices.profitMargin')}</p>
+                  <p className="text-xl font-bold text-green-600">{Number(invoice.profit_margin).toFixed(1)}%</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Payment info */}
+          {/* More was collected than the job now costs — only reachable since
+              paid proformas became re-priceable (Antony, 4 Aug 2026). There is no
+              refund ledger, so the document says it plainly rather than showing
+              "paid, balance 0" and letting the customer's money vanish. */}
+          {overpaid > 0 && (
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm">
+              <p className="font-semibold text-red-800">{t('invoices.overpaid')}</p>
+              <div className="flex justify-between mt-1 text-red-700">
+                <span>{t('invoices.amountPaid')}</span><span className="font-medium">{formatTZS(amountPaid)}</span>
+              </div>
+              <div className="flex justify-between text-red-700">
+                <span>{t('invoices.total')}</span><span className="font-medium">{formatTZS(invoiceTotal)}</span>
+              </div>
+              <div className="flex justify-between text-red-900 font-semibold">
+                <span>{t('invoices.refundDue')}</span><span>{formatTZS(overpaid)}</span>
+              </div>
+            </div>
+          )}
+          {invoice.status === 'paid' && overpaid === 0 && (
+            <div className="mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-sm">
+              <p className="font-semibold text-emerald-800">{t('invoices.paidOn')} {formatDate(invoice.paid_at)}</p>
+              {invoice.payment_method && <p className="text-emerald-700 capitalize">{t('invoices.method')}: {invoice.payment_method.replace('_', ' ')}</p>}
+              {invoice.payment_reference && <p className="text-emerald-700">{t('invoices.ref')}: {invoice.payment_reference}</p>}
+            </div>
+          )}
+          {invoice.status === 'partial' && (
+            <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-lg text-sm">
+              <p className="font-semibold text-orange-800">{t('invoices.partiallyPaid')}</p>
+              <div className="flex justify-between mt-1 text-orange-700">
+                <span>{t('invoices.amountPaid')}</span><span className="font-medium">{formatTZS(amountPaid)}</span>
+              </div>
+              <div className="flex justify-between text-orange-900 font-semibold">
+                <span>{t('invoices.balanceOwed')}</span><span>{formatTZS(balanceOwed)}</span>
+              </div>
+              {invoice.payment_method && <p className="text-orange-700 capitalize mt-1">{t('invoices.method')}: {invoice.payment_method.replace('_', ' ')}</p>}
+              {invoice.payment_reference && <p className="text-orange-700">{t('invoices.ref')}: {invoice.payment_reference}</p>}
+            </div>
+          )}
+
+          {/* Refunds actually handed back — part of the document, so it prints. */}
+          {refunds.length > 0 && (
+            <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg text-sm">
+              <p className="font-semibold text-gray-800 mb-1.5">{t('invoices.refundsMade')}</p>
+              <div className="space-y-1">
+                {refunds.map(r => (
+                  <div key={r.id} className="flex justify-between text-gray-600">
+                    <span>
+                      {formatDate(r.created_at)}
+                      {r.method && <span className="capitalize"> · {r.method.replace('_', ' ')}</span>}
+                      {r.reference && <span> · {r.reference}</span>}
+                      {r.reason && <span className="text-gray-400"> — {r.reason}</span>}
+                    </span>
+                    <span className="font-medium text-gray-900 whitespace-nowrap ml-3">−{formatTZS(r.amount)}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-between border-t border-gray-200 mt-1.5 pt-1.5 font-semibold text-gray-900">
+                <span>{t('invoices.totalRefunded')}</span>
+                <span>{formatTZS(refunds.reduce((s, r) => s + Number(r.amount || 0), 0))}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Footer */}
+          <div className="mt-8 pt-4 border-t border-gray-200 text-center text-xs text-gray-400">
+            <p>Thank you for choosing Malibora Truck Clinic</p>
+            <p className="mt-1">Asante kwa kuchagua Malibora Truck Clinic</p>
+          </div>
         </div>
       </Reveal>
 

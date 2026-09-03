@@ -345,6 +345,17 @@ button:not(:disabled):not(.absolute):not(.fixed):active {
   .print-keep {
     break-inside: avoid;
   }
+
+  /* The same rule, one level out. `.print-keep` holds the subtotals to their
+     grand total; `.print-tail` holds that whole closing block — totals, payment
+     status, footer — together, because keeping TOTAL with its subtotals still
+     left the footer going over alone at 49 and 50 rows, ending the invoice on a
+     sheet carrying one line of thanks. Two rules rather than one because they
+     fail differently: a tail taller than a page has to break somewhere, and when
+     it does the inner rule still keeps TOTAL with the figures it sums. */
+  .print-tail {
+    break-inside: avoid;
+  }
 }
 
 /* ============================================================

@@ -37,6 +37,15 @@ if (!raw) {
   css = css.replace(/@media print\{/g, '@media all{')
 }
 
+/* Labels come from the shipped translations, not from this file. They used to
+   be typed out here as "Subtotal (Parts)" and "TOTAL" while the invoice renders
+   "Parts Subtotal" and "Total Amount" — so print-sweep's anchor for the parts
+   subtotal silently matched nothing for its whole life, and its verdict was
+   really only watching VAT and the grand total. A harness that retypes what it
+   is testing is testing the copy. */
+const inv = JSON.parse(readFileSync('src/i18n/en.json', 'utf8')).invoices
+const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+
 const money = n => n.toLocaleString('en-US')
 const line = (i, desc, qty, unit) => `
         <tr class="border-b border-gray-100">
@@ -109,50 +118,58 @@ const body = `
             <thead id="s-thead">
               <tr class="bg-blue-50 border-b-2 border-blue-200" id="t-headrow">
                 <th class="text-left p-2.5 font-semibold text-blue-900" id="t-th">#</th>
-                <th class="text-left p-2.5 font-semibold text-blue-900">Description</th>
-                <th class="text-right p-2.5 font-semibold text-blue-900">Qty</th>
-                <th class="text-right p-2.5 font-semibold text-blue-900">Unit Price</th>
-                <th class="text-right p-2.5 font-semibold text-blue-900">Amount</th>
+                <th class="text-left p-2.5 font-semibold text-blue-900">${esc(inv.description)}</th>
+                <th class="text-right p-2.5 font-semibold text-blue-900">${esc(inv.qty)}</th>
+                <th class="text-right p-2.5 font-semibold text-blue-900">${esc(inv.unitPrice)}</th>
+                <th class="text-right p-2.5 font-semibold text-blue-900">${esc(inv.amount)}</th>
               </tr>
             </thead>
             <tbody>
-              <tr><td colspan="5" class="p-2 font-semibold text-gray-700 bg-gray-50 border-b" id="t-section">Parts &amp; Materials</td></tr>
+              <tr><td colspan="5" class="p-2 font-semibold text-gray-700 bg-gray-50 border-b" id="t-section">${esc(inv.partsMaterials)}</td></tr>
 ${Array.from({ length: rows }, (_, i) =>
     line(i + 1, parts[i % parts.length] + (rows > 12 ? ` (batch ${Math.floor(i / 12) + 1})` : ''), (i % 3) + 1, 45000 + (i % 7) * 12500)
   ).join('')}
-              <tr><td colspan="5" class="p-2 font-semibold text-gray-700 bg-gray-50 border-b">Labour &amp; Services</td></tr>
+              <tr><td colspan="5" class="p-2 font-semibold text-gray-700 bg-gray-50 border-b">${esc(inv.labourServices)}</td></tr>
 ${line(1, 'Full brake overhaul, both axles', 6, 35000)}
 ${line(2, 'Diagnostic and road test', 2, 40000)}
             </tbody>
           </table>
 
+          <div class="print-tail" id="s-tail">
           <div class="flex justify-end" id="s-totals">
             <div class="w-72 print-keep">
               <div class="flex justify-between py-2 border-b border-gray-200">
-                <span class="text-gray-600" id="t-sublabel">Subtotal (Parts)</span>
+                <span class="text-gray-600" id="t-sublabel">${esc(inv.subtotalParts)}</span>
                 <span class="font-medium" id="t-subval">${money(rows * 92500)}</span>
               </div>
               <div class="flex justify-between py-2 border-b border-gray-200">
-                <span class="text-gray-600">Subtotal (Labour)</span>
+                <span class="text-gray-600">${esc(inv.subtotalLabour)}</span>
                 <span class="font-medium">290,000</span>
               </div>
               <div class="flex justify-between py-2 border-b border-gray-200 text-red-600" id="t-discount">
-                <span>Discount</span><span>-20,000</span>
+                <span>${esc(inv.discount)}</span><span>-20,000</span>
               </div>
               <div class="flex justify-between items-center py-2 border-b border-gray-200">
-                <span class="text-gray-600">VAT (18%)</span>
+                <span class="text-gray-600">${esc(inv.vat)} (18%)</span>
                 <span class="font-medium">${money(Math.round(rows * 92500 * 0.18))}</span>
               </div>
               <div class="flex justify-between py-3 border-b-2 border-blue-700 bg-blue-50 px-3 -mx-3 mt-1 rounded" id="t-totalrow">
-                <span class="text-lg font-bold text-blue-900" id="t-totallabel">TOTAL</span>
+                <span class="text-lg font-bold text-blue-900" id="t-totallabel">${esc(inv.total)}</span>
                 <span class="text-lg font-bold text-blue-900" id="t-totalval">TZS ${money(Math.round(rows * 92500 * 1.18) + 270000)}</span>
               </div>
             </div>
           </div>
 
-          <div class="mt-8 pt-6 border-t border-gray-200" id="s-footer">
-            <p class="text-sm text-gray-600">Payment due within 30 days. Bank: CRDB 0150-XXXX-XXX.</p>
-            <p class="text-xs text-gray-400 mt-2">Thank you for your business.</p>
+          <div class="mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-sm" id="s-paid">
+            <p class="font-semibold text-emerald-800">${esc(inv.paidOn)} 2 Sep 2026</p>
+            <p class="text-emerald-700">${esc(inv.method)}: bank transfer</p>
+            <p class="text-emerald-700">${esc(inv.ref)}: CRDB/2026/0042</p>
+          </div>
+
+          <div class="mt-8 pt-4 border-t border-gray-200 text-center text-xs text-gray-400" id="s-footer">
+            <p>Thank you for choosing Malibora Truck Clinic</p>
+            <p class="mt-1">Asante kwa kuchagua Malibora Truck Clinic</p>
+          </div>
           </div>
         </div>
       </div>
@@ -195,6 +212,7 @@ window.__auditStructure=function(){
     rowBreakInside: g('tbody tr','breakInside'),
     totalsOuterBreakInside: g('#s-totals','breakInside'),
     totalsKeepBreakInside: g('.print-keep','breakInside'),
+    tailBreakInside: g('.print-tail','breakInside'),
     docBreakInside: g('#doc','breakInside'),
     headerPosition: g('#s-header','position'),
     headerDisplay: g('#s-header','display'),

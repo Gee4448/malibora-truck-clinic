@@ -13,11 +13,22 @@ const CHROME = 'C:/Program Files/Google/Chrome/Application/chrome.exe'
 const from = Number(process.argv[2] || 36), to = Number(process.argv[3] || 64)
 const repo = process.cwd().replace(/\\/g, '/')
 
+/* Anchors come from the shipped translations. Hand-written ones drifted: this
+   swept for "Subtotal Parts" and "Payment due" against a document that says
+   "Parts Subtotal" and thanks you for your business, so two of the four columns
+   were reporting p? and 'ok' on strings that were never on the page. Anything
+   that fails to match now throws instead of printing a question mark. */
+const inv = JSON.parse(readFileSync('src/i18n/en.json', 'utf8')).invoices
+const rx = t => new RegExp(String(t).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+
 const WANT = [
-  ['subtotalParts', /Subtotal Parts/],
-  ['vat', /VAT /],
-  ['TOTAL', /TOTAL/],
-  ['footer', /Payment due/],
+  ['parts sub', rx(inv.subtotalParts)],
+  /* No parenthesis: the extractor drops '(18%)' into its own run, so the
+     line reads 'VAT 18%'. */
+  ['vat', rx(inv.vat)],
+  ['total', rx(inv.total)],
+  ['paid', rx(inv.paidOn)],
+  ['footer', /Asante kwa kuchagua/],
 ]
 
 console.log('rows  pages | ' + WANT.map(w => w[0]).join('  ') + '   verdict')
@@ -35,8 +46,11 @@ for (let n = from; n <= to; n++) {
     if (!/^\s*y=/.test(l)) continue
     for (const [name, re] of WANT) if (at[name] === undefined && re.test(l)) at[name] = page
   }
-  const totalsPages = new Set([at.subtotalParts, at.vat, at.TOTAL].filter(Boolean))
-  const verdict = totalsPages.size > 1 ? 'TOTALS SPLIT' : at.footer > at.TOTAL ? 'footer widowed' : 'ok'
+  const missing = WANT.map(w => w[0]).filter(n => at[n] === undefined)
+  if (missing.length) throw new Error(`print-sweep: never found ${missing.join(', ')} in the PDF — the document moved`)
+  const tailPages = new Set(WANT.map(w => at[w[0]]))
+  tailPages.delete(undefined)
+  const verdict = tailPages.size > 1 ? 'TAIL SPLIT' : 'ok'
   console.log(
     String(n).padStart(4), String(total).padStart(5), '  |  ' +
     WANT.map(w => `p${at[w[0]] ?? '?'}`).join('    ') + '    ' + verdict)
