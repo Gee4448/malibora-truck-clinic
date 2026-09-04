@@ -942,42 +942,6 @@
     "button": "Sakinisha",
     "dismiss": "Si sasa"
   },
-  "landing": {
-    "clientPortal": "Mlango wa Mteja",
-    "staffLogin": "Ingia kwa Wafanyakazi",
-    "hero": {
-      "title": "Matengenezo ya Malori ya Kitaalamu",
-      "subtitle": "Kliniki ya malori inayoaminika Tanzania. Tunaweka msafara wako ukiendelea kwa huduma za uchunguzi, matengenezo, na ukarabati wa kitaalamu."
-    },
-    "services": {
-      "title": "Huduma Zetu",
-      "subtitle": "Huduma kamili ya malori kutoka ukaguzi hadi kabidhiano",
-      "inspection": "Ukaguzi wa Gari",
-      "inspectionDesc": "Ukaguzi wa kina wa nukta nyingi kutambua matatizo yote ya lori lako.",
-      "repair": "Matengenezo & Ukarabati",
-      "repairDesc": "Injini, gia, breki, suspension — tunatengeneza yote kwa vipuri halisi.",
-      "diagnostics": "Uchunguzi",
-      "diagnosticsDesc": "Vifaa vya kisasa vya uchunguzi kutambua hitilafu za umeme na mitambo.",
-      "maintenance": "Matengenezo ya Kuzuia",
-      "maintenanceDesc": "Huduma za ratiba ili kuweka msafara wako barabarani na kuepuka uharibifu wa gharama kubwa."
-    },
-    "why": {
-      "title": "Kwa Nini Malibora?",
-      "experienced": "Mafundi Wenye Uzoefu",
-      "experiencedDesc": "Timu yetu ya mafundi wenye ujuzi wanabobea katika matengenezo ya malori mazito.",
-      "transparent": "Bei za Uwazi",
-      "transparentDesc": "Hakuna gharama zilizofichwa. Unaidhinisha kila matengenezo kabla hatujaanza, na mgawanyo wa gharama wa kina.",
-      "fast": "Huduma ya Haraka",
-      "fastDesc": "Tunaelewa muda wa kusimama unagharimu pesa. Tunafanya kazi kwa ufanisi kurudisha lori lako barabarani."
-    },
-    "footer": {
-      "description": "Huduma za kitaalamu za matengenezo ya malori Dar es Salaam, Tanzania.",
-      "contact": "Wasiliana Nasi",
-      "hours": "Jumatatu - Jumamosi: 7:00 AM - 6:00 PM",
-      "quickLinks": "Viungo vya Haraka",
-      "copyright": "© 2025 Malibora Truck Clinic. Haki zote zimehifadhiwa."
-    }
-  },
   "fuelLevels": {
     "empty": "Tupu",
     "quarter": "1/4",
@@ -1105,6 +1069,7 @@
     },
     "login": {
       "portal": "Mlango wa Mteja",
+      "staffLogin": "Ingia kwa Wafanyakazi",
       "title": "Karibu Tena",
       "subtitle": "Weka nambari yako ya simu kuingia kwenye mfumo wa huduma za gari lako",
       "subtitleWithPassword": "Ingia kwa nambari yako ya simu na nywila",

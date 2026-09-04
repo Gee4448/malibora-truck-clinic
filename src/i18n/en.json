@@ -36,7 +36,7 @@
     "googleRegister": "Sign up with Google",
     "orEmail": "or use email",
     "emailOrUsername": "Email or username",
-    "emailOrUsernamePlaceholder": "jina@example.com or your username"
+    "emailOrUsernamePlaceholder": "name@example.com or your username"
   },
   "dashboard": {
     "welcome": "Welcome back",
@@ -942,42 +942,6 @@
     "button": "Install",
     "dismiss": "Not now"
   },
-  "landing": {
-    "clientPortal": "Customer Portal",
-    "staffLogin": "Staff Login",
-    "hero": {
-      "title": "Expert Truck Repair & Maintenance",
-      "subtitle": "Tanzania's trusted truck clinic. We keep your fleet running with professional diagnostics, repairs, and maintenance services."
-    },
-    "services": {
-      "title": "Our Services",
-      "subtitle": "Complete truck care from inspection to handover",
-      "inspection": "Vehicle Inspection",
-      "inspectionDesc": "Thorough multi-point inspection to identify all issues with your truck.",
-      "repair": "Repairs & Overhaul",
-      "repairDesc": "Engine, transmission, brakes, suspension — we fix it all with genuine parts.",
-      "diagnostics": "Diagnostics",
-      "diagnosticsDesc": "Advanced diagnostic tools to pinpoint electrical and mechanical faults.",
-      "maintenance": "Preventive Maintenance",
-      "maintenanceDesc": "Scheduled servicing to keep your fleet on the road and avoid costly breakdowns."
-    },
-    "why": {
-      "title": "Why Choose Malibora?",
-      "experienced": "Experienced Technicians",
-      "experiencedDesc": "Our team of skilled mechanics specializes in heavy-duty truck repair and maintenance.",
-      "transparent": "Transparent Pricing",
-      "transparentDesc": "No hidden costs. You approve every repair before we start, with detailed cost breakdowns.",
-      "fast": "Fast Turnaround",
-      "fastDesc": "We understand downtime costs money. We work efficiently to get your truck back on the road."
-    },
-    "footer": {
-      "description": "Professional truck repair and maintenance services in Dar es Salaam, Tanzania.",
-      "contact": "Contact Us",
-      "hours": "Mon - Sat: 7:00 AM - 6:00 PM",
-      "quickLinks": "Quick Links",
-      "copyright": "© 2025 Malibora Truck Clinic. All rights reserved."
-    }
-  },
   "fuelLevels": {
     "empty": "Empty",
     "quarter": "1/4",
@@ -1105,6 +1069,7 @@
     },
     "login": {
       "portal": "Customer Portal",
+      "staffLogin": "Staff Login",
       "title": "Welcome Back",
       "subtitle": "Enter your phone number to access your vehicle service portal",
       "subtitleWithPassword": "Sign in with your phone number and password",

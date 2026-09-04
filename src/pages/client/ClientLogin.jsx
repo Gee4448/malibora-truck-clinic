@@ -189,7 +189,7 @@ export default function ClientLogin() {
       {/* Footer links to staff + mechanic portals */}
       <div className="relative text-center pb-6 flex items-center justify-center gap-3 animate-fade-in">
         <Link to="/admin/login" className="tap on-dark-muted text-xs hover:text-white transition-colors">
-          {t('landing.staffLogin')}
+          {t('client.login.staffLogin')}
         </Link>
         {/* Decorative separator only — hidden from assistive tech, which is also
             what exempts it from the contrast rule it would otherwise fail. */}
