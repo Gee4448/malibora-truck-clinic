@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useLanguage } from '../contexts/LanguageContext'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase, formatTZS, formatDate } from '../lib/supabase'
+import { COMPANY, documentAddressLines } from '../lib/company'
 import { ArrowLeft, Printer, Download, MessageCircle, CheckCircle, CreditCard, Send, MessageSquare, Save, Pencil, Trash2, Plus, FileText, Undo2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { generateInvoicePDF } from '../lib/pdf'
@@ -696,9 +697,13 @@ export default function InvoiceDetail() {
         {/* Header */}
         <div className="flex justify-between items-start border-b-2 border-blue-700 pb-4 mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-blue-800">MALIBORA TRUCK CLINIC</h1>
-            <p className="text-sm text-gray-500 mt-1">Professional Vehicle Service & Repair</p>
-            <p className="text-xs text-gray-400 mt-1">Arusha, Tanzania</p>
+            <h1 className="text-2xl font-bold text-blue-800">{COMPANY.name.toUpperCase()}</h1>
+            <p className="text-sm text-gray-500 mt-1">{COMPANY.tagline}</p>
+            {/* Where to send the paperwork and where to bring the truck. Both,
+                because they are on opposite sides of Dar. */}
+            {documentAddressLines.map(line => (
+              <p key={line} className="text-xs text-gray-400 mt-1">{line}</p>
+            ))}
           </div>
           <div className="text-right">
             <h2 className="text-xl font-bold text-gray-900 uppercase">{typeLabels[invoice.invoice_type]}</h2>

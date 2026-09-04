@@ -1469,5 +1469,11 @@
     },
     "pickPerson": "Choose who to message",
     "allChats": "Chats"
+  },
+  "company": {
+    "mainOffice": "Main office",
+    "garage": "Garage",
+    "branchOffice": "Branch office",
+    "branch": "Branch"
   }
 }

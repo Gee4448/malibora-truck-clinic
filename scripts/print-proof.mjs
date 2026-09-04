@@ -22,6 +22,7 @@
  * the chrome is tested too -- a nav bar with no `no-print` still prints.
  */
 import { readFileSync, writeFileSync, readdirSync } from 'node:fs'
+import { COMPANY, documentAddressLines } from '../src/lib/company.js'
 
 const out = process.argv[2]
 if (!out) throw new Error('usage: print-proof.mjs <out.html> [--raw] [--rows=N]')
@@ -86,9 +87,9 @@ const body = `
         <div class="reveal bg-white rounded-2xl border border-gray-200 p-4 sm:p-8 print:border-0 print:shadow-none print:p-0" id="doc">
           <div class="flex justify-between items-start border-b-2 border-blue-700 pb-4 mb-6">
             <div>
-              <h1 class="text-2xl font-bold text-blue-800">MALIBORA TRUCK CLINIC</h1>
-              <p class="text-sm text-gray-500 mt-1">Professional Vehicle Service &amp; Repair</p>
-              <p class="text-xs text-gray-400 mt-1">Arusha, Tanzania</p>
+              <h1 class="text-2xl font-bold text-blue-800">${esc(COMPANY.name.toUpperCase())}</h1>
+              <p class="text-sm text-gray-500 mt-1">${esc(COMPANY.tagline)}</p>
+${documentAddressLines.map(l => `              <p class="text-xs text-gray-400 mt-1">${esc(l)}</p>`).join('\n')}
             </div>
             <div class="text-right">
               <h2 class="text-xl font-bold text-gray-900 uppercase" id="t-type">TAX INVOICE</h2>

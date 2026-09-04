@@ -1469,5 +1469,11 @@
     },
     "pickPerson": "Chagua wa kumtumia ujumbe",
     "allChats": "Mazungumzo"
+  },
+  "company": {
+    "mainOffice": "Ofisi kuu",
+    "garage": "Karakana",
+    "branchOffice": "Ofisi ya tawi",
+    "branch": "Tawi"
   }
 }

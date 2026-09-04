@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { COMPANY } from '../lib/company'
 import { Link } from 'react-router-dom'
 import { useLanguage } from '../contexts/LanguageContext'
 import { useAuth } from '../contexts/AuthContext'
@@ -162,8 +163,14 @@ export default function Settings() {
           <Building className="w-5 h-5 text-blue-600" /> {t('settings.businessInfo')}
         </h2>
         <div className="space-y-2 text-sm text-gray-600">
-          <p><strong>{t('settings.business')}:</strong> Malibora Truck Clinic</p>
-          <p><strong>{t('settings.location')}:</strong> Arusha, Tanzania</p>
+          <p><strong>{t('settings.business')}:</strong> {COMPANY.name}</p>
+          {/* Every location, not just one. This panel said "Arusha, Tanzania"
+              while the business ran out of Dar with two branches up-country. */}
+          {COMPANY.locations.map(loc => (
+            <p key={loc.roleKey + loc.address}>
+              <strong>{t(loc.roleKey)} — {loc.city}:</strong> {loc.address}
+            </p>
+          ))}
           <p><strong>{t('settings.vatRate')}:</strong> 18%</p>
           <p><strong>{t('common.currency')}:</strong> TZS (Tanzania Shilling)</p>
         </div>

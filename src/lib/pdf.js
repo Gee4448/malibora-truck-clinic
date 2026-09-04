@@ -1,4 +1,5 @@
 import jsPDF from 'jspdf'
+import { pdfSubtitle } from './company'
 import autoTable from 'jspdf-autotable'
 
 const formatTZS = (amount) => {
@@ -78,7 +79,7 @@ export async function generateInvoicePDF(invoice, items, showInternal = false) {
   const lightGray = [156, 163, 175]
 
   // Header (real logo, with orange-band text fallback)
-  await drawPdfHeader(doc, pageWidth, 'Professional Vehicle Service & Repair | Arusha, Tanzania')
+  await drawPdfHeader(doc, pageWidth, pdfSubtitle)
 
   // Invoice type & number
   const typeLabel = invoice.invoice_type === 'proforma' ? 'PROFORMA INVOICE' :
