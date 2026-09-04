@@ -117,8 +117,8 @@ export default function ClientRegister() {
   // back to the login screen where they can sign in once approved.
   if (success) {
     return (
-      <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center px-4 animate-in fade-in duration-200">
-        <div className="auth-card rounded-2xl p-6 sm:p-8 w-full max-w-sm text-center">
+      <div className="fixed inset-0 z-50 glass-overlay flex items-center justify-center px-4 animate-fade-in">
+        <div className="auth-card rounded-2xl p-6 sm:p-8 w-full max-w-sm text-center animate-fade-in-up">
           <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <CheckCircle2 className="w-8 h-8 text-green-600" />
           </div>
