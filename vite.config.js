@@ -9,7 +9,14 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'icons/icon-192.png', 'icons/icon-512.png'],
+      includeAssets: [
+        'favicon.svg',
+        'icons/icon-192.png',
+        'icons/icon-512.png',
+        'icons/icon-maskable-192.png',
+        'icons/icon-maskable-512.png',
+        'icons/apple-touch-icon.png',
+      ],
       manifest: false,
       // Serve the generated SW in dev too, so the install prompt is testable
       // and dev behaves the same as production.
