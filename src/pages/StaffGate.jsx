@@ -116,14 +116,18 @@ export default function StaffGate() {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 {t('staffGate.codeLabel')}
               </label>
+              {/* Sent exactly as typed — see the note in RoleUnlock.jsx.
+                  Migration 038 also tries the upper-cased form, so the current
+                  all-caps code still works for anyone typing it lower case,
+                  which this input has been doing for them silently. */}
               <div className="relative">
                 <input
                   type={showCode ? 'text' : 'password'}
                   value={code}
-                  onChange={(e) => setCode(e.target.value.toUpperCase())}
+                  onChange={(e) => setCode(e.target.value)}
                   disabled={locked}
                   required
-                  maxLength={30}
+                  maxLength={64}
                   autoComplete="off"
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition pr-10 text-lg tracking-widest font-mono disabled:bg-gray-100 disabled:cursor-not-allowed"
                   placeholder="••••••••"

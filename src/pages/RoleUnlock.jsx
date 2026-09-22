@@ -95,13 +95,18 @@ export default function RoleUnlock() {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               {t('roleUnlock.codeLabel')}
             </label>
+            {/* The code is sent exactly as typed. This input used to
+                .toUpperCase(), which made any code holding a lowercase letter
+                impossible to enter at all — the server compares a hash, and a
+                hash is exact. Migration 038 tries the upper-cased form as a
+                fallback, so an all-caps code typed in lower case still works. */}
             <div className="relative">
               <input
                 type={showCode ? 'text' : 'password'}
                 value={code}
-                onChange={(e) => setCode(e.target.value.toUpperCase())}
+                onChange={(e) => setCode(e.target.value)}
                 required
-                maxLength={40}
+                maxLength={64}
                 autoComplete="off"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition pr-10 text-lg tracking-widest font-mono"
                 placeholder="••••••••"
