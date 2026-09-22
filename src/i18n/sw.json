@@ -957,6 +957,7 @@
     "enterCode": "Una msimbo wa ufikiaji?",
     "success": "Ufikiaji umefunguliwa. Sasa wewe ni:",
     "invalid": "Msimbo si sahihi",
+    "notDeployed": "Tovuti hii bado haijawekewa misimbo ya idhini. Mjulishe anayesimamia hifadhidata — mabadiliko namba 018 hayajatekelezwa.",
     "tooManyAttempts": "Majaribio mengi mno. Jaribu tena baada ya dakika 15.",
     "notAuthenticated": "Tafadhali ingia kwanza",
     "alreadyUnlocked": "Imefunguliwa",

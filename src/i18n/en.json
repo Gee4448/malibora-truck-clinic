@@ -957,6 +957,7 @@
     "enterCode": "Have an access code?",
     "success": "Access unlocked. You are now:",
     "invalid": "Incorrect access code",
+    "notDeployed": "This site is not set up for access codes yet. Tell whoever manages the database — migration 018 has not been applied.",
     "tooManyAttempts": "Too many attempts. Try again in 15 minutes.",
     "notAuthenticated": "Please sign in first",
     "alreadyUnlocked": "Unlocked",

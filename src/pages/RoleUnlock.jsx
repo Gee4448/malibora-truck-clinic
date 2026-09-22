@@ -40,10 +40,23 @@ export default function RoleUnlock() {
     } catch (err) {
       setCode('')
       const reason = err?.message || ''
+      // Anything that is not one of the tags redeem_role_code raises used to
+      // fall through to "incorrect code". So a function that was never
+      // deployed, a revoked grant and a genuinely wrong code all said the same
+      // thing, and there was no way to tell from the screen which one you had.
+      // PGRST202 = no such function; 42501 = permission denied.
+      const notDeployed =
+        err?.code === 'PGRST202' ||
+        err?.code === '42501' ||
+        /could not find the function|permission denied/i.test(reason)
+
       if (isNetworkError(err)) toast.error(t('staffGate.networkError'))
       else if (reason.includes('too_many_attempts')) toast.error(t('roleUnlock.tooManyAttempts'))
       else if (reason.includes('not_authenticated')) toast.error(t('roleUnlock.notAuthenticated'))
-      else toast.error(t('roleUnlock.invalid'))
+      else if (notDeployed) {
+        console.error('redeem_role_code unavailable:', err)
+        toast.error(t('roleUnlock.notDeployed'))
+      } else toast.error(t('roleUnlock.invalid'))
     } finally {
       setLoading(false)
     }
