@@ -41,6 +41,10 @@ export default function InvoiceDetail() {
   const [refunds, setRefunds] = useState([])                   // money handed back (migration 027)
   const [showRefund, setShowRefund] = useState(false)
   const [savingRefund, setSavingRefund] = useState(false)
+  // Every other money button in this file had one of these; the payment
+  // Confirm button did not, so it could be pressed again while its own write
+  // was still in flight.
+  const [savingPayment, setSavingPayment] = useState(false)
   const [refundForm, setRefundForm] = useState({ amount: '', method: 'cash', reference: '', reason: '' })
 
   useEffect(() => { fetchInvoice() }, [id])
@@ -397,11 +401,13 @@ export default function InvoiceDetail() {
   }
 
   const recordPayment = async () => {
+    if (savingPayment) return
     const thisPayment = Number(paymentForm.amount)
     if (!thisPayment || thisPayment <= 0) {
       toast.error(t('invoices.enterAmount'))
       return
     }
+    setSavingPayment(true)
     const newPaid = amountPaid + thisPayment
     const fullyPaid = newPaid >= invoiceTotal - 0.005 // rounding tolerance
     try {
@@ -421,6 +427,8 @@ export default function InvoiceDetail() {
       fetchInvoice()
     } catch (err) {
       toast.error(err.message)
+    } finally {
+      setSavingPayment(false)
     }
   }
 
@@ -1204,8 +1212,9 @@ export default function InvoiceDetail() {
                   placeholder={t('invoices.refPlaceholder')} />
               </div>
               <div className="flex gap-3">
-                <button onClick={recordPayment} className="flex-1 py-2.5 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700">
-                  {t('common.confirm')}
+                <button onClick={recordPayment} disabled={savingPayment}
+                  className="flex-1 py-2.5 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 disabled:opacity-50">
+                  {savingPayment ? t('common.loading') : t('common.confirm')}
                 </button>
                 <button onClick={() => setShowPayment(false)} className="px-6 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50">
                   {t('common.cancel')}

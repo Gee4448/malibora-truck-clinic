@@ -269,6 +269,7 @@
     "change": "Badilisha",
     "itemAdded": "Kipengele kimeongezwa",
     "itemRemoved": "Kipengele kimeondolewa",
+    "itemRemoveBlocked": "Kipengele hakikuondolewa — akaunti yako haina ruhusa. Hakuna kilichobadilika.",
     "allApproved": "Vipengele vyote vimeidhinishwa",
     "mustApproveOne": "Angalau kipengele kimoja lazima kiidhinishwe",
     "jobCardGenerated": "Kadi ya Kazi imetengenezwa! Tayari kwa kazi.",

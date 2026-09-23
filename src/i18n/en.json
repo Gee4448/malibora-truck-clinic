@@ -269,6 +269,7 @@
     "change": "Change",
     "itemAdded": "Item added",
     "itemRemoved": "Item removed",
+    "itemRemoveBlocked": "The item was not removed — your account doesn't have permission. Nothing was changed.",
     "allApproved": "All items approved",
     "mustApproveOne": "At least one item must be approved",
     "jobCardGenerated": "Job Card generated! Ready for work.",

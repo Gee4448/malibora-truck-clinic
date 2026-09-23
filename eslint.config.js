@@ -5,7 +5,13 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  // `dev-dist` is the service worker vite-plugin-pwa generates in dev. Linting
+  // generated workbox output added 42 errors nobody can act on — importScripts,
+  // FetchEvent and friends are undefined only because eslint is reading a
+  // service worker with browser globals. It buried the real findings: 155
+  // problems, of which 42 were noise from a folder that is rebuilt on every
+  // `npm run dev` and is already in .gitignore.
+  globalIgnores(['dist', 'dev-dist']),
   {
     // The dev tools in scripts/ run under node, not in a page. gradient-hotspot
     // and harvest-classes are node scripts; contrast-audit is the odd one out —

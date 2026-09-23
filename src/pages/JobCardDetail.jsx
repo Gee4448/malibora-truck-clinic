@@ -357,7 +357,19 @@ export default function JobCardDetail() {
 
   const handleDeleteItem = async (itemId) => {
     try {
-      await supabase.from('job_card_items').delete().eq('id', itemId)
+      // A postgrest call RESOLVES with { data, error }; it does not reject. So
+      // discarding the result here meant the catch below could never fire and
+      // every failure — RLS, a foreign key, a dropped connection — was reported
+      // to the user as "item removed" while the line stayed on the job card.
+      // `.select('id')` is what makes a blocked delete visible: RLS returns no
+      // error for one, just zero rows. Same shape as Customers.jsx:181.
+      const { data, error } = await supabase
+        .from('job_card_items').delete().eq('id', itemId).select('id')
+      if (error) throw error
+      if (!data || data.length === 0) {
+        toast.error(t('jobs.itemRemoveBlocked'))
+        return
+      }
       toast.success(t('jobs.itemRemoved'))
       await syncProformaTotals(id)
       fetchJob()
