@@ -36,6 +36,7 @@ DECLARE
   v_caller_role text;
   v_target_role text;
   fk            record;
+  v_blocked     boolean;
 BEGIN
   SELECT profiles.role INTO v_caller_role FROM profiles WHERE profiles.id = auth.uid();
   IF v_caller_role IS NULL OR v_caller_role NOT IN ('owner', 'manager') THEN
@@ -55,24 +56,31 @@ BEGIN
     RAISE EXCEPTION 'owner_only';
   END IF;
 
-  -- Unhook every single-column foreign key in public that points at this
-  -- person and would otherwise block the delete ('a' = NO ACTION, 'r' =
-  -- RESTRICT). CASCADE / SET NULL keys are left for Postgres to handle.  FOR fk IN
-    SELECT c.conrelid::regclass AS tbl, a.attname AS col, a.attnotnull AS notnull
+  -- Unhook every single-column foreign key outside the auth schema that points
+  -- at this person and would otherwise block the delete ('a' = NO ACTION,
+  -- 'r' = RESTRICT). CASCADE / SET NULL keys are left for Postgres to handle.
+  FOR fk IN
+    SELECT c.conrelid::regclass AS tbl, a.attname AS col, a.attnotnull AS is_required
     FROM pg_constraint c
+    JOIN pg_class t     ON t.oid = c.conrelid
+    JOIN pg_namespace n ON n.oid = t.relnamespace
     JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = c.conkey[1]
     WHERE c.contype = 'f'
       AND c.confrelid IN ('public.profiles'::regclass, 'auth.users'::regclass)
-      AND c.conrelid::regclass::text NOT LIKE 'auth.%'
-      AND c.conrelid <> 'public.profiles'::regclass
+      AND n.nspname <> 'auth'
+      AND NOT (c.conrelid = 'public.profiles'::regclass AND a.attname = 'id')
       AND array_length(c.conkey, 1) = 1
       AND c.confdeltype IN ('a', 'r')
   LOOP
     -- A required link can't be cleared, and deleting a business record to make
-    -- room is not ours to decide. No such column exists today; refuse loudly
-    -- if one ever appears rather than lose data.
-    IF fk.notnull THEN
-      RAISE EXCEPTION 'staff_has_records: %.%', fk.tbl, fk.col;
+    -- room is not ours to decide. Refuse — but only if this person actually
+    -- has such a record, or one required column would block every delete.
+    IF fk.is_required THEN
+      EXECUTE format('SELECT EXISTS (SELECT 1 FROM %s WHERE %I = $1)', fk.tbl, fk.col)
+        INTO v_blocked USING p_user_id;
+      IF v_blocked THEN
+        RAISE EXCEPTION 'staff_has_records: %.%', fk.tbl, fk.col;
+      END IF;
     ELSE
       EXECUTE format('UPDATE %s SET %I = NULL WHERE %I = $1', fk.tbl, fk.col, fk.col) USING p_user_id;
     END IF;

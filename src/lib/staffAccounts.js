@@ -90,7 +90,13 @@ export async function createStaffAccount({ username, password, fullName, phone, 
     p_branch_id: branchId || null,
     p_is_active: true,
   })
-  if (profileError) throw profileError
+  if (profileError) {
+    // Don't leave a login with no profile behind: it never shows in the staff
+    // list, so nobody could delete it, and the username would stay taken.
+    // rpc() reports failure in its result rather than throwing; ignore it.
+    await supabase.rpc('admin_delete_staff', { p_user_id: userId })
+    throw profileError
+  }
 
   return profile
 }
