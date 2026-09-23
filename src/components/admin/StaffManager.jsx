@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { supabase, errorMessage } from '../../lib/supabase'
-import { createStaffAccount, updateStaffProfile, fromLoginEmail, ROLES } from '../../lib/staffAccounts'
-import { Users, Plus, X, Power, Pencil, Eye, EyeOff, AtSign } from 'lucide-react'
+import { createStaffAccount, updateStaffProfile, deleteStaffAccount, fromLoginEmail, ROLES } from '../../lib/staffAccounts'
+import { Users, Plus, X, Power, Pencil, Eye, EyeOff, AtSign, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 // Owner/manager tool to open staff accounts outright — username, password,
@@ -122,6 +122,19 @@ export default function StaffManager() {
     }
   }
 
+  // Deactivate keeps the login (the username stays taken); this removes it so
+  // the same username can be opened again.
+  const remove = async (s) => {
+    if (!confirm(t('staffAdmin.deleteConfirm', { name: s.full_name }))) return
+    try {
+      await deleteStaffAccount(s.id)
+      toast.success(t('staffAdmin.deleted'))
+      fetchAll()
+    } catch (err) {
+      toast.error(translateError(err, t))
+    }
+  }
+
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-5">
       <div className="flex items-center justify-between mb-4">
@@ -167,6 +180,13 @@ export default function StaffManager() {
                   className={`p-1.5 rounded hover:bg-gray-100 ${s.is_active ? 'text-red-500' : 'text-green-600'}`}
                   title={s.is_active ? t('staffAdmin.deactivate') : t('staffAdmin.activate')}>
                   <Power className="w-4 h-4" />
+                </button>
+              )}
+              {s.id !== profile?.id && (s.role !== 'owner' || isOwner) && (
+                <button onClick={() => remove(s)}
+                  className="p-1.5 rounded hover:bg-gray-100 text-red-600"
+                  title={t('staffAdmin.delete')}>
+                  <Trash2 className="w-4 h-4" />
                 </button>
               )}
             </div>
@@ -268,6 +288,8 @@ function translateError(err, t) {
   if (msg.includes('forbidden')) return t('staffAdmin.errors.forbidden')
   if (msg.includes('owner_only')) return t('staffAdmin.errors.ownerOnly')
   if (msg.includes('cannot_edit_self')) return t('staffAdmin.errors.cannotEditSelf')
+  if (msg.includes('staff_has_records')) return t('staffAdmin.errors.hasRecords')
+  if (msg.includes('admin_delete_staff')) return t('staffAdmin.errors.deleteNotInstalled')
   if (msg.includes('bad_role')) return t('staffAdmin.errors.badRole')
   if (msg.includes('name_required')) return t('staffAdmin.nameRequired')
   if (msg.includes('password_too_short')) return t('staffAdmin.passwordTooShort')

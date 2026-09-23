@@ -110,3 +110,11 @@ export async function updateStaffProfile({ userId, fullName, phone, role, branch
   if (error) throw error
   return data
 }
+
+// Deleting someone for good: their login, their profile, their chat. Frees the
+// username so it can be given out again. Business records they worked on stay
+// (migration 039).
+export async function deleteStaffAccount(userId) {
+  const { error } = await supabase.rpc('admin_delete_staff', { p_user_id: userId })
+  if (error) throw error
+}

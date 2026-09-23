@@ -1381,6 +1381,9 @@
     "passwordTooShort": "Nenosiri liwe na angalau herufi 6",
     "deactivate": "Zima",
     "activate": "Rudisha",
+    "delete": "Futa",
+    "deleteConfirm": "Futa {name} kabisa? Akaunti yake na taarifa zake binafsi zitafutwa, na jina la mtumiaji litaweza kutumika tena. Kadi za kazi na ankara alizoshughulikia zitabaki.",
+    "deleted": "Mfanyakazi amefutwa",
     "roles": {
       "owner": "Mmiliki",
       "manager": "Meneja",
@@ -1399,7 +1402,9 @@
       "badRole": "Cheo hicho hakiruhusiwi.",
       "usernameTaken": "Jina hilo la mtumiaji limeshatumika.",
       "signupsDisabled": "Akaunti haikuweza kufunguliwa. Kwenye Supabase, hakikisha usajili umeruhusiwa na \"Confirm email\" imezimwa.",
-      "generic": "Imeshindwa kuhifadhi. Tafadhali jaribu tena."
+      "generic": "Imeshindwa kuhifadhi. Tafadhali jaribu tena.",
+      "hasRecords": "Mtu huyu ameunganishwa na kumbukumbu zisizoweza kuondolewa, hivyo hawezi kufutwa. Mzime badala yake.",
+      "deleteNotInstalled": "Kufuta bado hakujawekwa kwenye seva (migration 039)."
     }
   },
   "team": {

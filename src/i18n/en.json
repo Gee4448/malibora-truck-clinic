@@ -1381,6 +1381,9 @@
     "passwordTooShort": "Password must be at least 6 characters",
     "deactivate": "Deactivate",
     "activate": "Reactivate",
+    "delete": "Delete",
+    "deleteConfirm": "Delete {name} for good? Their login and personal details are removed and the username can be used again. Job cards and invoices they worked on are kept.",
+    "deleted": "Staff member deleted",
     "roles": {
       "owner": "Owner",
       "manager": "Manager",
@@ -1399,7 +1402,9 @@
       "badRole": "That role is not allowed.",
       "usernameTaken": "That username is already taken.",
       "signupsDisabled": "The account could not be created. In Supabase, check that sign-ups are enabled and \"Confirm email\" is off.",
-      "generic": "Couldn't save. Please try again."
+      "generic": "Couldn't save. Please try again.",
+      "hasRecords": "This person is linked to records that can't be cleared, so they can't be deleted. Deactivate them instead.",
+      "deleteNotInstalled": "Delete isn't set up on the server yet (migration 039)."
     }
   },
   "team": {
