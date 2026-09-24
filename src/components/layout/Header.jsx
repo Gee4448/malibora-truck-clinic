@@ -1,14 +1,13 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLanguage } from '../../contexts/LanguageContext'
-import { useAuth } from '../../contexts/AuthContext'
 import { useNotifications } from '../../hooks/useNotifications'
 import { formatDateTime } from '../../lib/supabase'
 import { Menu, Bell, Globe, FileText, CreditCard, CheckCheck } from 'lucide-react'
+import AccountMenu from './AccountMenu'
 
 export default function Header({ onMenuToggle }) {
   const { locale, switchLanguage, t } = useLanguage()
-  const { profile } = useAuth()
   const { items, unreadCount, markAllRead, markRead } = useNotifications()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
@@ -80,7 +79,12 @@ export default function Header({ onMenuToggle }) {
             // Light frosted, not dark: this panel is a list of things to read,
             // so it belongs to the work area rather than to the chrome it hangs
             // off. `glass-strong` keeps the small timestamps above 4.5:1.
-            <div className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] glass-strong rounded-2xl shadow-xl z-50 overflow-hidden">
+            // Positioning and material on separate elements: `.glass-strong`
+            // sets position: relative for its lit edge, and being plain CSS it
+            // beats Tailwind's layered `absolute` — on one box the panel
+            // pushed into the header instead of floating over the page.
+            <div className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] z-50">
+            <div className="glass-strong rounded-2xl shadow-xl overflow-hidden">
               <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
                 <p className="text-sm font-semibold text-gray-900">{t('notifications.title')}</p>
                 {unreadCount > 0 && (
@@ -116,19 +120,12 @@ export default function Header({ onMenuToggle }) {
                 )}
               </div>
             </div>
+            </div>
           )}
         </div>
 
-        {/* User info */}
-        <div className="flex items-center gap-2 pl-3 border-l border-white/15">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 ring-1 ring-white/25 flex items-center justify-center text-white text-sm font-bold font-display">
-            {profile?.full_name?.charAt(0) || 'U'}
-          </div>
-          <div className="hidden sm:block">
-            <p className="text-sm font-medium text-white">{profile?.full_name || 'User'}</p>
-            <p className="text-xs on-dark-muted capitalize">{profile?.role || 'staff'}</p>
-          </div>
-        </div>
+        {/* Who this tab is signed in as; opens the account switcher. */}
+        <AccountMenu />
       </div>
     </header>
   )

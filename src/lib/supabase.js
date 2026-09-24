@@ -1,14 +1,27 @@
 import { createClient } from '@supabase/supabase-js'
+import { createSlotStore } from './accountSlots'
 
 export const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://your-project.supabase.co'
 export const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-anon-key'
+
+// One staff login per TAB, not per browser (see accountSlots.js). The slot
+// has to be known before the client exists, because the storage key is fixed
+// at creation; changing account means changing slot and reloading.
+export const accountSlots = createSlotStore({
+  projectRef: new URL(supabaseUrl).hostname.split('.')[0],
+})
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
+    storageKey: accountSlots.storageKeyFor(accountSlots.currentSlot()),
   },
 })
+
+// Marks this tab's account as open for the switcher in other tabs, and
+// clears logins that earlier tabs left behind.
+accountSlots.startHeartbeat()
 
 // Helper: Detect a connectivity failure (server unreachable / offline / paused project)
 // vs. a real database error. Supabase/PostgREST errors carry a `code`; a bare fetch

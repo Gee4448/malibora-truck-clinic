@@ -4,7 +4,8 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useLanguage } from '../contexts/LanguageContext'
 import { Eye, EyeOff, Globe } from 'lucide-react'
-import { toLoginEmail } from '../lib/staffAccounts'
+import { toLoginEmail, fromLoginEmail } from '../lib/staffAccounts'
+import { accountSlots } from '../lib/supabase'
 import Logo from '../components/common/Logo'
 import toast from 'react-hot-toast'
 
@@ -21,6 +22,11 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
+  // Read once: this list only changes through actions that reload the tab.
+  const [others] = useState(() => {
+    const mine = accountSlots.currentSlot()
+    return accountSlots.listAccounts().filter(a => a.slot !== mine)
+  })
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -63,6 +69,34 @@ export default function Login() {
         {/* Login Form */}
         <div ref={revealRef} className="reveal auth-card rounded-2xl p-6 sm:p-8">
           <h2 className="text-xl font-bold text-gray-900 mb-6">{t('auth.login')}</h2>
+
+          {/* Other accounts already signed in on this browser (other tabs, or
+              a login this tab dropped when it signed out). One click moves
+              this tab onto one of them; no password needed. */}
+          {others.length > 0 && (
+            <div className="mb-5 space-y-2">
+              <p className="text-xs uppercase tracking-wide text-gray-400">{t('accounts.alsoOnThisBrowser')}</p>
+              {others.map((a) => {
+                const label = a.name || fromLoginEmail(a.email)
+                return (
+                  <button
+                    key={a.slot}
+                    type="button"
+                    onClick={() => accountSlots.switchTo(a.slot)}
+                    className="w-full flex items-center gap-3 px-3 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition text-left"
+                  >
+                    <span className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-bold flex-shrink-0">
+                      {label.trim().charAt(0).toUpperCase() || '?'}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-sm font-medium text-gray-900 truncate">{t('accounts.continueAs', { name: label })}</span>
+                      <span className="block text-xs text-gray-500 truncate">{fromLoginEmail(a.email)}</span>
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          )}
 
           <button
             type="button"

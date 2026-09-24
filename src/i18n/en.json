@@ -1407,6 +1407,16 @@
       "deleteNotInstalled": "Delete isn't set up on the server yet (migration 039)."
     }
   },
+  "accounts": {
+    "menu": "Account menu",
+    "signedInAs": "Signed in as",
+    "switch": "Switch account",
+    "add": "Add another account",
+    "addHint": "Log in as someone else in this tab. Your other tabs keep their own login.",
+    "alsoOnThisBrowser": "Also signed in on this browser",
+    "continueAs": "Continue as {name}",
+    "unknownRole": "Staff"
+  },
   "team": {
     "title": "Team",
     "messages": "Messages",

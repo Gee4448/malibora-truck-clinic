@@ -1407,6 +1407,16 @@
       "deleteNotInstalled": "Kufuta bado hakujawekwa kwenye seva (migration 039)."
     }
   },
+  "accounts": {
+    "menu": "Menyu ya akaunti",
+    "signedInAs": "Umeingia kama",
+    "switch": "Badilisha akaunti",
+    "add": "Ongeza akaunti nyingine",
+    "addHint": "Ingia kama mtu mwingine kwenye kichupo hiki. Vichupo vyako vingine vinabaki na akaunti zake.",
+    "alsoOnThisBrowser": "Pia zimeingia kwenye kivinjari hiki",
+    "continueAs": "Endelea kama {name}",
+    "unknownRole": "Mfanyakazi"
+  },
   "team": {
     "title": "Timu",
     "messages": "Ujumbe",

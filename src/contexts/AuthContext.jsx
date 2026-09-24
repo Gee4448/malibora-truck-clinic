@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabase, accountSlots } from '../lib/supabase'
 import toast from 'react-hot-toast'
 
 const AuthContext = createContext()
@@ -73,9 +73,13 @@ export function AuthProvider({ children }) {
     }
   }
 
+  // The account someone just logged in as is the one a new tab should open
+  // with. Done here, on the actual login, and not from the SIGNED_IN auth
+  // event, which supabase-js also fires whenever a tab regains focus.
   const signIn = async (email, password) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw error
+    accountSlots.rememberAsDefault()
     return data
   }
 
@@ -94,9 +98,16 @@ export function AuthProvider({ children }) {
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}/admin`,
+        // Always show Google's account chooser. Without it, "Add another
+        // account" in a browser with one Google login silently signs the
+        // same person in twice.
+        queryParams: { prompt: 'select_account' },
       },
     })
     if (error) throw error
+    // Google brings the tab back to this same slot. If the login is
+    // abandoned the slot stays empty and a new tab ignores the default.
+    accountSlots.rememberAsDefault()
     return data
   }
 
