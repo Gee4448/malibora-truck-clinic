@@ -1,16 +1,16 @@
 import { useState } from 'react'
 import { useLanguage } from '../../contexts/LanguageContext'
-import { accountSlots } from '../../lib/supabase'
+import { supabase, accountSlots } from '../../lib/supabase'
 import { fromLoginEmail, verifyStaffPassword } from '../../lib/staffAccounts'
 import { Lock } from 'lucide-react'
 
-// One account that is open in another tab of this browser. Clicking moves
-// this tab onto it — straight away, or after that account's password when
-// `needsPassword` (see switchNeedsPassword in src/lib/accountSlots.js).
-// Used by the header account menu and by the login page.
-export default function AccountSwitchRow({ account, needsPassword, roleLabel, onLoginPage = false }) {
+// The device account of this browser, offered to a tab that is on some other
+// account (or on the login page). Clicking moves this tab onto it — straight
+// away, or after that account's password when `needsPassword` (see
+// switchNeedsPassword in src/lib/accountSlots.js).
+export default function AccountSwitchRow({ account, needsPassword, roleLabel, onLoginPage = false, startOpen = false }) {
   const { t } = useLanguage()
-  const [asking, setAsking] = useState(false)
+  const [asking, setAsking] = useState(startOpen && needsPassword)
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
   const [wrong, setWrong] = useState(false)
@@ -18,8 +18,17 @@ export default function AccountSwitchRow({ account, needsPassword, roleLabel, on
   const name = account.name || fromLoginEmail(account.email)
   const detail = `${fromLoginEmail(account.email)}${roleLabel ? ` · ${roleLabel}` : ''}`
 
+  // Leaving an added account in this tab: end its session here first, so it
+  // is not left behind in the tab's storage.
+  const moveOver = async () => {
+    if (!accountSlots.isDeviceTab()) {
+      await supabase.auth.signOut({ scope: 'local' }).catch(() => {})
+    }
+    accountSlots.switchToDevice()
+  }
+
   const pick = () => {
-    if (!needsPassword) return accountSlots.switchTo(account.slot)
+    if (!needsPassword) return moveOver()
     setAsking(true)
   }
 
@@ -29,17 +38,12 @@ export default function AccountSwitchRow({ account, needsPassword, roleLabel, on
     setBusy(true)
     setWrong(false)
     const ok = await verifyStaffPassword(account.email, password)
-    if (ok) {
-      accountSlots.switchTo(account.slot)
-      return
-    }
+    if (ok) return moveOver()
     setBusy(false)
     setWrong(true)
   }
 
-  const shell = onLoginPage
-    ? 'border border-gray-200 rounded-lg'
-    : ''
+  const shell = onLoginPage ? 'border border-gray-200 rounded-lg' : ''
 
   return (
     <div className={shell}>
@@ -55,7 +59,7 @@ export default function AccountSwitchRow({ account, needsPassword, roleLabel, on
         </span>
         <span className="min-w-0 flex-1">
           <span className="block text-sm font-medium text-gray-900 truncate">
-            {onLoginPage ? t('accounts.continueAs', { name }) : name}
+            {onLoginPage ? t('accounts.continueAs', { name }) : t('accounts.backTo', { name })}
           </span>
           <span className="block text-xs text-gray-500 truncate">{detail}</span>
         </span>

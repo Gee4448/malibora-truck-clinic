@@ -23,11 +23,12 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
-  // Read once: this list only changes through actions that reload the tab.
-  const [others] = useState(() => {
-    const mine = accountSlots.currentSlot()
-    return accountSlots.listAccounts().filter(a => a.slot !== mine)
-  })
+  // This browser's own account, when this tab is not on it: a tab opened
+  // with "Add another account", or one that opened here because someone
+  // else signed in on this browser since (src/lib/accountSlots.js). Read
+  // once; it only changes through actions that reload the tab.
+  const [device] = useState(() => (accountSlots.isDeviceTab() ? null : accountSlots.deviceAccount()))
+  const [locked] = useState(() => accountSlots.isLocked())
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -71,17 +72,15 @@ export default function Login() {
         <div ref={revealRef} className="reveal auth-card rounded-2xl p-6 sm:p-8">
           <h2 className="text-xl font-bold text-gray-900 mb-6">{t('auth.login')}</h2>
 
-          {/* Other accounts already signed in on this browser (other tabs, or
-              a login this tab dropped when it signed out). One click moves
-              this tab onto one of them; no password needed. */}
-          {others.length > 0 && (
+          {/* Nobody is signed in on this page, so the browser's own account
+              is offered behind its password. When it is locked this is the
+              likeliest thing the person wants, so the password box is open. */}
+          {device && (
             <div className="mb-5 space-y-2">
-              <p className="text-xs uppercase tracking-wide text-gray-400">{t('accounts.alsoOnThisBrowser')}</p>
-              {/* Nobody is signed in on this page, so every account here
-                  asks for its own password before the tab moves onto it. */}
-              {others.map((a) => (
-                <AccountSwitchRow key={a.slot} account={a} needsPassword onLoginPage />
-              ))}
+              <p className="text-xs uppercase tracking-wide text-gray-400">
+                {locked ? t('accounts.lockedHint') : t('accounts.alsoOnThisBrowser')}
+              </p>
+              <AccountSwitchRow account={device} needsPassword onLoginPage startOpen={locked} />
             </div>
           )}
 

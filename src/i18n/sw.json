@@ -1412,14 +1412,16 @@
     "signedInAs": "Umeingia kama",
     "switch": "Badilisha akaunti",
     "add": "Ongeza akaunti nyingine",
-    "addHint": "Ingia kama mtu mwingine kwenye kichupo hiki. Vichupo vyako vingine vinabaki na akaunti zake.",
+    "addHint": "Inafungua kichupo kipya ambapo mtu mwingine anaweza kuingia. Kichupo hiki kinabaki kama kilivyo.",
     "alsoOnThisBrowser": "Pia zimeingia kwenye kivinjari hiki",
     "continueAs": "Endelea kama {name}",
     "unknownRole": "Mfanyakazi",
     "needsPassword": "Inahitaji nywila ya akaunti hii",
     "passwordFor": "Andika nywila ya {name} ili kubadilisha",
-    "wrongPassword": "Nywila si sahihi. Kama akaunti hii huingia kwa Google, tumia \"Ongeza akaunti nyingine\".",
-    "continue": "Endelea"
+    "wrongPassword": "Nywila si sahihi. Kama akaunti hii inatumia Google, ingia kwa Google badala yake.",
+    "continue": "Endelea",
+    "backTo": "Rudi kwa {name}",
+    "lockedHint": "Mtu mwingine ameingia kwenye kivinjari hiki, kwa hiyo akaunti hii inahitaji nywila yake tena"
   },
   "team": {
     "title": "Timu",

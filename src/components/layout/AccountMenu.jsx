@@ -8,15 +8,14 @@ import AccountSwitchRow from '../common/AccountSwitchRow'
 import { ChevronDown, LogOut, UserPlus, ArrowLeftRight } from 'lucide-react'
 
 // The avatar in the app bar, and the menu it opens: who this tab is signed in
-// as, every other account signed in on this browser (one click switches this
-// tab to it), add another account, sign out. Tabs keep their own account, so
-// the owner can have a receptionist's screen and his own open side by side
-// (see src/lib/accountSlots.js).
+// as, "Add another account" (a new tab, where someone else logs in while this
+// tab stays as it is), the way back to this browser's own account when this
+// tab is on an added one, and sign out. See src/lib/accountSlots.js.
 export default function AccountMenu() {
   const { t } = useLanguage()
   const { user, profile, signOut } = useAuth()
   const [open, setOpen] = useState(false)
-  const [others, setOthers] = useState([])
+  const [device, setDevice] = useState(null)
   const panelRef = useRef(null)
 
   useEffect(() => {
@@ -26,47 +25,34 @@ export default function AccountMenu() {
     return () => document.removeEventListener('mousedown', onClick)
   }, [open])
 
-  // The other logins on this browser. Read when the menu opens, not on every
-  // render: they only change through this menu or the login page, both of
-  // which reload the tab.
-  const otherLogins = () => {
-    const mine = accountSlots.currentSlot()
-    return accountSlots.listAccounts().filter(a => a.slot !== mine)
+  // This browser's own account, offered only in a tab that is on an added
+  // one — and not when that is the same person.
+  const deviceToOffer = () => {
+    if (accountSlots.isDeviceTab()) return null
+    const d = accountSlots.deviceAccount()
+    return d && d.userId !== user?.id ? d : null
   }
 
   const toggle = () => {
-    if (!open) setOthers(otherLogins())
+    if (!open) setDevice(deviceToOffer())
     setOpen(!open)
   }
 
   // The stored session only knows what sign-up recorded; the roster has the
-  // current name and role. profiles is readable by any signed-in staff.
+  // current name and role, and the role decides whether a password is asked.
   useEffect(() => {
     if (!open) return
-    const stored = otherLogins()
-    if (stored.length === 0) return
+    const d = deviceToOffer()
+    if (!d) return
     let cancelled = false
-    supabase.from('profiles').select('id, full_name, role')
-      .in('id', stored.map(a => a.userId))
+    supabase.from('profiles').select('id, full_name, role').eq('id', d.userId).maybeSingle()
       .then(({ data }) => {
         if (cancelled || !data) return
-        const byId = Object.fromEntries(data.map(p => [p.id, p]))
-        setOthers(stored.map(a => ({
-          ...a,
-          name: byId[a.userId]?.full_name || a.name,
-          role: byId[a.userId]?.role || null,
-        })))
+        setDevice({ ...d, name: data.full_name || d.name, role: data.role || null })
       })
     return () => { cancelled = true }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
-
-  const addAccount = () => {
-    // Someone already signed in as staff has proven they are staff, so the
-    // access-code gate (StaffGate.jsx) need not be passed again in this tab.
-    sessionStorage.setItem('malibora_staff_verified', 'true')
-    sessionStorage.setItem('malibora_staff_verified_at', Date.now().toString())
-    accountSlots.addAccount()
-  }
 
   const roleLabel = (role) => (role ? t(`staffAdmin.roles.${role}`) : t('accounts.unknownRole'))
   const initial = (name) => (name || '?').trim().charAt(0).toUpperCase()
@@ -105,25 +91,22 @@ export default function AccountMenu() {
             </p>
           </div>
 
-          {others.length > 0 && (
+          {device && (
             <div className="border-b border-gray-100">
               <p className="px-4 pt-3 pb-1 text-[11px] uppercase tracking-wide text-gray-400 flex items-center gap-1.5">
                 <ArrowLeftRight className="w-3 h-3" /> {t('accounts.switch')}
               </p>
-              {others.map((a) => (
-                <AccountSwitchRow
-                  key={a.slot}
-                  account={a}
-                  roleLabel={a.role ? roleLabel(a.role) : ''}
-                  needsPassword={switchNeedsPassword(profile?.role, a.role)}
-                />
-              ))}
+              <AccountSwitchRow
+                account={device}
+                roleLabel={device.role ? roleLabel(device.role) : ''}
+                needsPassword={switchNeedsPassword(profile?.role, device.role)}
+              />
             </div>
           )}
 
           <button
             role="menuitem"
-            onClick={addAccount}
+            onClick={() => { setOpen(false); accountSlots.addAccount() }}
             className="w-full text-left px-4 py-3 hover:bg-gray-50 transition flex items-start gap-3"
           >
             <UserPlus className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />

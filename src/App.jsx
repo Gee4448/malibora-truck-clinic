@@ -4,6 +4,7 @@ import { LanguageProvider } from './contexts/LanguageContext'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ClientAuthProvider, useClient } from './contexts/ClientAuthContext'
 import { MechanicAuthProvider, useMechanic } from './contexts/MechanicAuthContext'
+import { accountSlots } from './lib/supabase'
 import Layout from './components/layout/Layout'
 import ClientLayout from './components/layout/ClientLayout'
 import MechanicLayout from './components/layout/MechanicLayout'
@@ -200,6 +201,10 @@ function RootRedirect() {
   }
 
   if (user) return <Navigate to="/admin" replace />
+  // A staff tab opened to log someone in (the device account is locked, or
+  // "Add another account") belongs on the staff login, not the customer
+  // portal — this is where the installed app lands.
+  if (accountSlots.isLanding()) return <Navigate to="/admin/login" replace />
   if (customer && customer.status === 'approved') return <Navigate to="/client/dashboard" replace />
   return <Navigate to="/client" replace />
 }

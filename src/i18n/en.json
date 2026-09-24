@@ -1412,14 +1412,16 @@
     "signedInAs": "Signed in as",
     "switch": "Switch account",
     "add": "Add another account",
-    "addHint": "Log in as someone else in this tab. Your other tabs keep their own login.",
+    "addHint": "Opens a new tab where someone else can log in. This tab stays as it is.",
     "alsoOnThisBrowser": "Also signed in on this browser",
     "continueAs": "Continue as {name}",
     "unknownRole": "Staff",
     "needsPassword": "Needs this account's password",
     "passwordFor": "Type {name}'s password to switch",
-    "wrongPassword": "Wrong password. If this account signs in with Google, use \"Add another account\" instead.",
-    "continue": "Continue"
+    "wrongPassword": "Wrong password. If this account uses Google, sign in with Google instead.",
+    "continue": "Continue",
+    "backTo": "Back to {name}",
+    "lockedHint": "Someone else has signed in on this browser, so this account needs its password again"
   },
   "team": {
     "title": "Team",

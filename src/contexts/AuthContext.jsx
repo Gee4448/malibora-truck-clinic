@@ -21,7 +21,30 @@ export function AuthProvider({ children }) {
     })
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      // An added account signing in locks the device account for new tabs;
+      // the device account signing out lifts that (src/lib/accountSlots.js).
+      // INITIAL_SESSION too: a session found on page load — including the
+      // one Google hands back, whose SIGNED_IN can fire before this listener
+      // exists — arrives only as that.
+      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
+        // Whoever signs in here AS this browser's own account — typing the
+        // password in the main form, or with Google, which has no password
+        // for the lock to ask — has just proved it: take this tab onto the
+        // device account and lift the lock, rather than keep a second copy.
+        // (Deferred: supabase-js must not be called back from inside its own
+        // auth listener, or the two wait on each other's lock.)
+        const device = accountSlots.deviceAccount()
+        if (!accountSlots.isDeviceTab() && device?.userId === session.user.id) {
+          setTimeout(() => {
+            supabase.auth.signOut({ scope: 'local' }).catch(() => {})
+              .finally(() => accountSlots.switchToDevice())
+          }, 0)
+          return
+        }
+        accountSlots.signedIn()
+      }
+      if (event === 'SIGNED_OUT') accountSlots.signedOut()
       setUser(session?.user ?? null)
       if (session?.user) {
         fetchProfile(session.user.id)
@@ -73,13 +96,13 @@ export function AuthProvider({ children }) {
     }
   }
 
-  // The account someone just logged in as is the one a new tab should open
-  // with. Done here, on the actual login, and not from the SIGNED_IN auth
-  // event, which supabase-js also fires whenever a tab regains focus.
+  // A password typed on the device tab is a real device login, so it lifts
+  // the lock; the SIGNED_IN event alone cannot tell, because supabase-js
+  // also fires it whenever a tab regains focus.
   const signIn = async (email, password) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw error
-    accountSlots.rememberAsDefault()
+    accountSlots.signedIn({ fresh: true })
     return data
   }
 
@@ -94,6 +117,9 @@ export function AuthProvider({ children }) {
   }
 
   const signInWithGoogle = async () => {
+    // Google sends the browser away and back into this same tab; mark it so
+    // the tab keeps its account slot however long the chooser took.
+    accountSlots.oauthStarted()
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -105,9 +131,6 @@ export function AuthProvider({ children }) {
       },
     })
     if (error) throw error
-    // Google brings the tab back to this same slot. If the login is
-    // abandoned the slot stays empty and a new tab ignores the default.
-    accountSlots.rememberAsDefault()
     return data
   }
 
@@ -120,19 +143,16 @@ export function AuthProvider({ children }) {
     return data
   }
 
+  // An account added in a tab signs out of this browser only: the owner
+  // leaving the reception PC must not also be signed out of his phone.
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut()
+    const { error } = await supabase.auth.signOut(
+      accountSlots.isDeviceTab() ? undefined : { scope: 'local' }
+    )
     if (error) throw error
     setUser(null)
     setProfile(null)
   }
-
-  // Note who this tab is, so a later tab never falls back into an account
-  // that outranks the last person here (src/lib/accountSlots.js). Kept on
-  // sign-out on purpose: "who was here last" is exactly what it answers.
-  useEffect(() => {
-    if (profile?.role) accountSlots.recordRole(profile.role)
-  }, [profile?.role])
 
   const isOwner = profile?.role === 'owner'
   const isManager = profile?.role === 'manager' || isOwner

@@ -4,24 +4,53 @@ import { createSlotStore } from './accountSlots'
 export const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://your-project.supabase.co'
 export const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-anon-key'
 
+// How this page load happened: a reload keeps the tab's own account, a
+// restored closed tab does not (see accountSlots.js).
+const navType = (() => {
+  try { return globalThis.performance?.getEntriesByType?.('navigation')?.[0]?.type || 'navigate' }
+  catch { return 'navigate' }
+})()
+
 // One staff login per TAB, not per browser (see accountSlots.js). The slot
-// has to be known before the client exists, because the storage key is fixed
-// at creation; changing account means changing slot and reloading.
+// has to be known before the client exists, because the storage key and the
+// storage are fixed at creation; changing account means changing slot and
+// reloading.
 export const accountSlots = createSlotStore({
   projectRef: new URL(supabaseUrl).hostname.split('.')[0],
+  navType,
+  search: globalThis.location?.search || '',
 })
+
+const slot = accountSlots.currentSlot()
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    storageKey: accountSlots.storageKeyFor(accountSlots.currentSlot()),
+    storageKey: accountSlots.storageKeyFor(slot),
+    storage: accountSlots.storageFor(slot),
   },
 })
 
-// Marks this tab's account as open for the switcher in other tabs, and
-// clears logins that earlier tabs left behind.
-accountSlots.startHeartbeat()
+accountSlots.startTabClock()
+
+// A tab opened to log someone in (Add another account, or the device account
+// is locked) skips the staff access-code gate when a staff login already
+// exists on this device: whoever is here has passed it before. Drop the
+// "add-account" marker from the address so a reload does not start over.
+if (accountSlots.isLanding() && accountSlots.deviceAccount()) {
+  try {
+    sessionStorage.setItem('malibora_staff_verified', 'true')
+    sessionStorage.setItem('malibora_staff_verified_at', Date.now().toString())
+  } catch { /* storage blocked: the gate will simply ask */ }
+}
+try {
+  const url = new URL(globalThis.location.href)
+  if (url.searchParams.has('add-account')) {
+    url.searchParams.delete('add-account')
+    globalThis.history.replaceState(globalThis.history.state, '', url.pathname + url.search + url.hash)
+  }
+} catch { /* not in a browser */ }
 
 // Helper: Detect a connectivity failure (server unreachable / offline / paused project)
 // vs. a real database error. Supabase/PostgREST errors carry a `code`; a bare fetch

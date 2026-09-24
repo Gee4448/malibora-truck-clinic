@@ -1,44 +1,64 @@
 // Several staff accounts open in one browser, one per tab (owner request
 // 24 Sep 2026: "open the accounts of different staffs in one browser").
 //
-// supabase-js keeps the session in localStorage under one key, and every tab
-// of the site shares localStorage, so logging in on a second tab used to
-// replace the first tab's login. The fix is a "slot": each tab remembers in
-// sessionStorage (which is per tab) which slot it belongs to, and the Supabase
-// client is created with a storage key that carries that slot. Tabs on the
-// same slot share one session and refresh it together, exactly as before;
-// tabs on different slots never see each other.
+// supabase-js keeps the session under one localStorage key that every tab of
+// the site shares, so a second login used to replace the first everywhere.
+// Each tab now has a "slot" (in sessionStorage, which is per tab) and the
+// Supabase client is created with a storage key and a storage that go with
+// that slot.
 //
-// Slot '' is the plain key supabase-js would have used on its own, so every
-// login that existed before this shipped keeps working. It is the device's
-// own account: it stays signed in for as long as it always has.
+// Two kinds of slot, and nothing in between:
 //
-// Switching into another open account is one click only for an owner or
-// manager going to their level or below; anyone else, and anyone on the
-// login page, must type that account's password (switchNeedsPassword).
-// Otherwise the receptionist on a PC where the owner logged in first could
-// become the owner by clicking his name.
+//   ''  the DEVICE account. Kept in localStorage under the exact key
+//       supabase-js used before, so every existing login survived the
+//       deploy and phones stay signed in as always. It is the only account
+//       a new tab can open.
 //
-// Every other slot is a visitor. It counts only while a tab with it is open:
-// tabs write a heartbeat, and a slot whose heartbeat has gone quiet is neither
-// offered in the switcher nor joined by a new tab, and its stored login is
-// removed. So the owner who checks something as himself on the reception
-// computer and closes the tab leaves nothing behind for the next person to
-// click into.
+//   any other: an ADDED account ("Add another account", which opens a new
+//       tab). Kept in that tab's sessionStorage, so no other tab can see it,
+//       open it or fall into it, and it goes when the tab goes.
+//
+// An earlier version shared added accounts between tabs and guessed which
+// one a new tab should open; review found nine ways for that guess to put a
+// receptionist into the owner's account or to lock the everyday user out.
+// Now there is no guess.
+//
+// What remains to protect is the device account itself: on a reception PC
+// where the owner logged in first, the receptionist's new tabs would be the
+// owner. So once anyone signs in to an added account, the device account is
+// LOCKED: a new tab opens on the login page, where the device account is
+// offered behind its own password. Proving that password (or a fresh device
+// login) unlocks it; so does the device account signing out.
+//
+// Switching this tab to the device account is one click only for an owner or
+// manager going to their level or below (switchNeedsPassword); anyone else
+// types the password.
+//
+// A closed tab brought back (Ctrl+Shift+T, session restore) has its old
+// sessionStorage, so a tab only trusts its own slot on a reload or within
+// seconds of last being seen; otherwise it starts again as a new tab and an
+// added account in it is forgotten.
 //
 // Import-free on purpose, like billing.js, so it runs under `npm test` with
 // fake storages.
 
-const SLOT_KEY = 'malibora_staff_slot'          // sessionStorage: this tab's slot
-const LAST_SLOT_KEY = 'malibora_staff_last_slot' // localStorage: what a new tab joins
-const ALIVE_PREFIX = 'malibora_staff_alive--'    // localStorage: last heartbeat per slot
-const ROLE_PREFIX = 'malibora_staff_role--'      // localStorage: role signed in per slot
+const SLOT_KEY = 'malibora_staff_slot'        // sessionStorage: this tab's slot
+const SEEN_KEY = 'malibora_staff_seen'        // sessionStorage: this tab last alive
+const LANDING_KEY = 'malibora_staff_landing'  // sessionStorage: tab opened to log someone in
+const OAUTH_KEY = 'malibora_staff_oauth'      // sessionStorage: Google round trip under way
+const LOCK_KEY = 'malibora_staff_device_lock' // localStorage: device account needs its password
 const SLOT_SEP = '--'
 
-export const HEARTBEAT_MS = 30 * 1000
-// Wide enough that a phone throttling a background tab's timers does not make
-// a live account look dead.
-export const LIVE_MS = 3 * 60 * 1000
+export const ADD_ACCOUNT_PARAM = 'add-account'
+// A reload is recognised by the browser; anything else only keeps its slot
+// if the tab was alive this recently.
+export const RESTORE_MS = 10 * 1000
+export const OAUTH_MS = 10 * 60 * 1000
+const SEEN_EVERY_MS = 3 * 1000
+
+// Keys left by the version that shared added accounts between tabs.
+const LEGACY_PREFIXES = ['malibora_staff_alive--', 'malibora_staff_role--']
+const LEGACY_KEYS = ['malibora_staff_last_slot']
 
 // Only owner and manager carry powers the rest do not (costs, reports, staff
 // admin), so every other role ranks the same.
@@ -54,10 +74,6 @@ export function switchNeedsPassword(currentRole, targetRole) {
   return !(mine >= ELEVATED.manager && mine >= theirs)
 }
 
-// Would handing `role`'s account to whoever last used `otherRole` give them
-// more power? Unknown `role` counts as the highest, for the same reason.
-const outranks = (role, otherRole) => (role ? rankOf(role) : ELEVATED.owner) > rankOf(otherRole)
-
 const memoryStorage = () => {
   const m = new Map()
   return {
@@ -70,9 +86,9 @@ const memoryStorage = () => {
 }
 
 // Storage can throw on read (blocked site data) or on write (private mode,
-// quota). currentSlot() runs while the app is still booting, so a throw
-// there would blank the whole screen; every call is guarded and a failure
-// simply reads as "nothing stored".
+// quota). This runs while the app is still booting, so a throw would blank
+// the whole screen; every call is guarded and a failure reads as "nothing
+// stored".
 const guarded = (get) => {
   const probe = () => { const s = get() || null; if (s) s.getItem('__probe__'); return s }
   let t
@@ -97,153 +113,150 @@ const randomId = () => {
 
 // projectRef is what supabase-js puts in its default key: the first label of
 // the project hostname ("sb-<ref>-auth-token").
-export function createSlotStore({ projectRef, session, local, navigate, newId, now } = {}) {
+//   navType: how this page load happened ('reload', 'navigate', ...).
+//   search:  location.search at boot.
+export function createSlotStore({
+  projectRef, session, local, navigate, openTab, newId, now, navType = 'navigate', search = '',
+} = {}) {
   const ss = guarded(() => session || globalThis.sessionStorage)
   const ls = guarded(() => local || globalThis.localStorage)
   const go = navigate || ((path) => { globalThis.location.assign(path) })
+  const open = openTab || ((path) => { globalThis.open(path, '_blank', 'noopener') })
   const makeId = newId || randomId
   const clock = now || (() => Date.now())
   const baseKey = `sb-${projectRef}-auth-token`
 
   const storageKeyFor = (slot) => (slot ? `${baseKey}${SLOT_SEP}${slot}` : baseKey)
+  // Where that slot's session lives: shared for the device, this tab only
+  // for an added account.
+  const storageFor = (slot) => (slot ? ss : ls)
 
-  const parseSession = (slot) => {
+  const deviceAccount = () => {
     try {
-      const s = JSON.parse(ls.getItem(storageKeyFor(slot)))
-      return s?.user?.id ? s : null
-    } catch { return null }
-  }
-
-  const lastBeat = (slot) => Number(ls.getItem(ALIVE_PREFIX + slot)) || 0
-  // The device's own slot is always live; a visitor slot needs a recent beat.
-  const isAlive = (slot) => slot === '' || clock() - lastBeat(slot) < LIVE_MS
-  const touch = (slot) => { if (slot !== '') ls.setItem(ALIVE_PREFIX + slot, String(clock())) }
-
-  // Forget visitor slots nobody has open any more: the session, the PKCE
-  // side file supabase-js keeps next to it, and the heartbeat itself.
-  // The role of the slot a new tab would otherwise have joined is kept: it
-  // is what currentSlot() needs to decide whether falling back to the device
-  // account would hand someone more power than they had.
-  const dropSlot = (slot) => {
-    ls.removeItem(storageKeyFor(slot))
-    ls.removeItem(`${storageKeyFor(slot)}-code-verifier`)
-    ls.removeItem(ALIVE_PREFIX + slot)
-    if (slot !== ls.getItem(LAST_SLOT_KEY)) ls.removeItem(ROLE_PREFIX + slot)
-  }
-  const slotOfKey = (key) => {
-    if (!key.startsWith(baseKey)) return null
-    const rest = key.slice(baseKey.length)
-    if (rest === '') return ''
-    // "-code-verifier" and anything else supabase-js hangs off the key
-    if (!rest.startsWith(SLOT_SEP) || rest.includes('-', SLOT_SEP.length)) return null
-    return rest.slice(SLOT_SEP.length)
-  }
-  const pruneStale = () => {
-    const stale = []
-    for (let i = 0; i < ls.length; i++) {
-      const key = ls.key(i) || ''
-      let slot = slotOfKey(key)
-      if (slot === null && key.startsWith(ALIVE_PREFIX)) slot = key.slice(ALIVE_PREFIX.length)
-      if (slot === null && key.startsWith(ROLE_PREFIX)) slot = key.slice(ROLE_PREFIX.length)
-      if (slot && !isAlive(slot) && !stale.includes(slot)) stale.push(slot)
-    }
-    stale.forEach(dropSlot)
-    return stale
-  }
-
-  // The slot this tab lives in. A tab that has none yet joins the slot used
-  // most recently on this browser while some tab still has it open — even
-  // if whoever used it has just signed out, so a new tab opens on the login
-  // page rather than dropping into the device's own account.
-  //
-  // Once that slot's tabs are closed, a new tab falls back to the device's
-  // own account — unless that account outranks whoever was here last. The
-  // receptionist who closes her tab on a PC where the owner logged in first
-  // must get a login page, not the owner. The reverse (the owner visited and
-  // left) falls back as normal, so the receptionist is never stranded.
-  // The tab keeps its slot from then on.
-  const currentSlot = () => {
-    const own = ss.getItem(SLOT_KEY)
-    if (own !== null) return own
-    let slot = ls.getItem(LAST_SLOT_KEY) || ''
-    if (slot !== '' && !isAlive(slot)) {
-      const deviceRole = ls.getItem(ROLE_PREFIX)
-      const lastRole = ls.getItem(ROLE_PREFIX + slot)
-      slot = parseSession('') && outranks(deviceRole, lastRole) ? makeId() : ''
-    }
-    ss.setItem(SLOT_KEY, slot)
-    return slot
-  }
-
-  // What this tab is signed in as, for the decision above. Only the role
-  // name, never a token.
-  const recordRole = (role) => {
-    if (role) ls.setItem(ROLE_PREFIX + currentSlot(), role)
-    else ls.removeItem(ROLE_PREFIX + currentSlot())
-  }
-
-  const rememberAsDefault = (slot = currentSlot()) => { ls.setItem(LAST_SLOT_KEY, slot) }
-
-  // Keep this tab's slot counted as open. Call once the client exists; it
-  // also clears out whatever earlier tabs left behind.
-  const startHeartbeat = () => {
-    const slot = currentSlot()
-    touch(slot)
-    pruneStale()
-    const beat = () => touch(slot)
-    const timer = globalThis.setInterval?.(beat, HEARTBEAT_MS)
-    const onVisible = () => { if (globalThis.document?.visibilityState === 'visible') beat() }
-    globalThis.document?.addEventListener?.('visibilitychange', onVisible)
-    return () => {
-      if (timer) globalThis.clearInterval(timer)
-      globalThis.document?.removeEventListener?.('visibilitychange', onVisible)
-    }
-  }
-
-  // Every account open on this browser: the device's own (if signed in) and
-  // each visitor slot some tab still has open. Read straight from what
-  // supabase-js writes; a broken entry is skipped rather than allowed to
-  // break the menu.
-  const listAccounts = () => {
-    pruneStale()
-    const out = []
-    for (let i = 0; i < ls.length; i++) {
-      const slot = slotOfKey(ls.key(i) || '')
-      if (slot === null || !isAlive(slot)) continue
-      const s = parseSession(slot)
-      if (!s) continue
+      const s = JSON.parse(ls.getItem(baseKey))
+      if (!s?.user?.id) return null
       const meta = s.user.user_metadata || {}
-      out.push({
-        slot,
+      return {
+        slot: '',
         userId: s.user.id,
         email: s.user.email || '',
         name: meta.full_name || meta.name || '',
-      })
+      }
+    } catch { return null }
+  }
+
+  const isLocked = () => ls.getItem(LOCK_KEY) === '1'
+  const lock = () => ls.setItem(LOCK_KEY, '1')
+  const unlock = () => ls.removeItem(LOCK_KEY)
+
+  const markSeen = () => ss.setItem(SEEN_KEY, String(clock()))
+
+  // Keys the earlier version left in localStorage. Its added-account logins
+  // were stored there too; they are dropped, so those users sign in again.
+  const migrateLegacy = () => {
+    const doomed = []
+    for (let i = 0; i < ls.length; i++) {
+      const key = ls.key(i) || ''
+      if (key.startsWith(`${baseKey}${SLOT_SEP}`)) doomed.push(key)
+      else if (LEGACY_PREFIXES.some(p => key.startsWith(p))) doomed.push(key)
+      else if (LEGACY_KEYS.includes(key)) doomed.push(key)
     }
-    return out
+    doomed.forEach(k => ls.removeItem(k))
   }
 
-  // Take this tab to another account's slot.
-  const switchTo = (slot, path = '/admin') => {
-    ss.setItem(SLOT_KEY, slot)
-    touch(slot)
-    rememberAsDefault(slot)
+  let resolved = null
+  let backFromOAuth = false
+
+  // The slot this tab lives in, decided once per page load.
+  const currentSlot = () => {
+    if (resolved !== null) return resolved
+    migrateLegacy()
+
+    const own = ss.getItem(SLOT_KEY)
+    const seen = Number(ss.getItem(SEEN_KEY)) || 0
+    const oauth = Number(ss.getItem(OAUTH_KEY)) || 0
+    ss.removeItem(OAUTH_KEY)
+    backFromOAuth = oauth > 0 && clock() - oauth < OAUTH_MS
+    // "Add another account" always starts a fresh login, even if it arrives
+    // in this same tab (a browser or installed app that will not open a new
+    // one): the device account stays stored, this tab just moves off it.
+    const adding = new URLSearchParams(search).has(ADD_ACCOUNT_PARAM)
+    const trusted = !adding && own !== null && (
+      navType === 'reload'
+      || clock() - seen < RESTORE_MS
+      || backFromOAuth // back from Google, however long it took
+    )
+
+    if (trusted) {
+      resolved = own
+    } else {
+      // A new tab, or a closed one brought back. An added account in it is
+      // forgotten: it belonged to whoever closed that tab.
+      if (own) ss.removeItem(storageKeyFor(own))
+      ss.removeItem(LANDING_KEY)
+      if (adding || (isLocked() && deviceAccount())) {
+        resolved = makeId()
+        ss.setItem(LANDING_KEY, '1')
+      } else {
+        resolved = ''
+      }
+      ss.setItem(SLOT_KEY, resolved)
+    }
+    markSeen()
+    return resolved
+  }
+
+  const isDeviceTab = () => currentSlot() === ''
+  // This tab was opened to log someone in (Add another account, or the
+  // device account is locked). The staff gate need not be passed again when
+  // a staff login already exists on this device.
+  const isLanding = () => ss.getItem(LANDING_KEY) === '1'
+
+  // Keep the "last seen" stamp fresh so a reload keeps its slot and a tab
+  // restored long after it was closed does not.
+  const startTabClock = () => {
+    currentSlot()
+    markSeen()
+    const timer = globalThis.setInterval?.(markSeen, SEEN_EVERY_MS)
+    const onHide = () => markSeen()
+    globalThis.addEventListener?.('pagehide', onHide)
+    globalThis.document?.addEventListener?.('visibilitychange', onHide)
+    return () => {
+      if (timer) globalThis.clearInterval(timer)
+      globalThis.removeEventListener?.('pagehide', onHide)
+      globalThis.document?.removeEventListener?.('visibilitychange', onHide)
+    }
+  }
+
+  // Someone signed in on this tab. An added account locks the device
+  // account; a real device login unlocks it — a password typed here, or a
+  // Google round trip this tab started — but not a session merely recovered
+  // on page load or tab focus, which supabase-js also reports as a sign-in.
+  const signedIn = ({ fresh = false } = {}) => {
+    if (!isDeviceTab()) lock()
+    else if (fresh || backFromOAuth) unlock()
+  }
+  // The device account signed out: nothing left to protect.
+  const signedOut = () => { if (isDeviceTab()) unlock() }
+
+  // Mark a Google round trip so the tab keeps its slot when it comes back.
+  const oauthStarted = () => ss.setItem(OAUTH_KEY, String(clock()))
+
+  // Move this tab onto the device account. Callers have already checked the
+  // password, or that this tab outranks it; either way it is unlocked.
+  const switchToDevice = (path = '/admin') => {
+    ss.setItem(SLOT_KEY, '')
+    ss.removeItem(LANDING_KEY)
+    unlock()
+    markSeen()
     go(path)
   }
 
-  // A fresh slot with no session: the login page, without touching any other
-  // tab's login. Not made the default — nothing is signed in there yet; the
-  // login itself does that. Returns the slot so a caller can label it.
-  const addAccount = (path = '/admin/login') => {
-    const slot = makeId()
-    ss.setItem(SLOT_KEY, slot)
-    touch(slot)
-    go(path)
-    return slot
-  }
+  // A new tab with a fresh slot on the login page. This tab stays as it is.
+  const addAccount = () => open(`/admin/login?${ADD_ACCOUNT_PARAM}=1`)
 
   return {
-    storageKeyFor, currentSlot, rememberAsDefault, recordRole, startHeartbeat,
-    listAccounts, pruneStale, switchTo, addAccount,
+    storageKeyFor, storageFor, deviceAccount, currentSlot, isDeviceTab, isLanding, isLocked,
+    startTabClock, signedIn, signedOut, oauthStarted, switchToDevice, addAccount,
   }
 }
