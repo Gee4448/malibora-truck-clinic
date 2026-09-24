@@ -1415,7 +1415,11 @@
     "addHint": "Ingia kama mtu mwingine kwenye kichupo hiki. Vichupo vyako vingine vinabaki na akaunti zake.",
     "alsoOnThisBrowser": "Pia zimeingia kwenye kivinjari hiki",
     "continueAs": "Endelea kama {name}",
-    "unknownRole": "Mfanyakazi"
+    "unknownRole": "Mfanyakazi",
+    "needsPassword": "Inahitaji nywila ya akaunti hii",
+    "passwordFor": "Andika nywila ya {name} ili kubadilisha",
+    "wrongPassword": "Nywila si sahihi. Kama akaunti hii huingia kwa Google, tumia \"Ongeza akaunti nyingine\".",
+    "continue": "Endelea"
   },
   "team": {
     "title": "Timu",

@@ -6,7 +6,7 @@
 
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { createSlotStore, LIVE_MS } from './accountSlots.js'
+import { createSlotStore, switchNeedsPassword, LIVE_MS } from './accountSlots.js'
 
 const fakeStorage = () => {
   const m = new Map()
@@ -68,12 +68,15 @@ test('a new tab joins the most recent slot only while that account is open somew
   const gone = build({ local })
   gone.clock.t = T0 + LIVE_MS + 1
   assert.equal(gone.store.currentSlot(), '')
+})
 
-  // A default pointing at a slot with no login at all is ignored too.
-  const empty = fakeStorage()
-  empty.setItem('malibora_staff_last_slot', 's9')
-  empty.setItem('malibora_staff_alive--s9', String(T0))
-  assert.equal(build({ local: empty }).store.currentSlot(), '')
+test('someone just signed out in a still-open tab: a new tab joins that login page, not the device account', () => {
+  const local = fakeStorage()
+  local.setItem(BASE, session('u1', 'antony@x', 'Antony'))   // the owner, device account
+  local.setItem('malibora_staff_last_slot', 's9')            // receptionist logged in here...
+  local.setItem('malibora_staff_alive--s9', String(T0))      // ...her tab is still open...
+  // ...and she signed out, so there is no session under s9 any more.
+  assert.equal(build({ local }).store.currentSlot(), 's9')
 })
 
 test('an existing tab keeps its own slot whatever the default says', () => {
@@ -179,4 +182,96 @@ test('storage that throws on read or write degrades to "nothing stored" instead 
   const ro = createSlotStore({ projectRef: REF, session: readOnly, local: readOnly, navigate: () => {} })
   assert.equal(ro.currentSlot(), '')
   assert.doesNotThrow(() => ro.startHeartbeat()())
+})
+
+test('switching: one click only for owner/manager going to their level or below', () => {
+  const cases = [
+    // [this tab, target, needs password?]
+    ['owner', 'owner', false],
+    ['owner', 'manager', false],
+    ['owner', 'receptionist', false],
+    ['manager', 'manager', false],
+    ['manager', 'mechanic', false],
+    ['manager', 'owner', true],          // no climbing
+    ['receptionist', 'owner', true],     // the reviewed hole
+    ['receptionist', 'manager', true],
+    ['receptionist', 'secretary', true], // peers still type the password
+    ['accountant', 'receptionist', true],
+    [null, 'receptionist', true],        // the login page: nobody signed in
+    [null, 'owner', true],
+    ['owner', null, false],              // role unreadable: owner may still go
+    ['manager', null, true],             // ...but it counts as an owner for anyone else
+    ['receptionist', null, true],
+  ]
+  for (const [mine, theirs, want] of cases) {
+    assert.equal(switchNeedsPassword(mine, theirs), want, `${mine} -> ${theirs}`)
+  }
+})
+
+test('the reviewed zero-click hole: receptionist closes her tab on the owner\'s PC, a new tab gets a LOGIN page', () => {
+  const local = fakeStorage()
+  local.setItem(BASE, session('u1', 'antony@x', 'Antony'))       // owner logged in first
+  local.setItem('malibora_staff_role--', 'owner')
+  openVisitor(local, 's1', 'u2', 'Asha')                         // receptionist added herself
+  local.setItem('malibora_staff_role--s1', 'receptionist')
+  local.setItem('malibora_staff_last_slot', 's1')
+  const { store, clock } = build({ local, ids: ['fresh'] })
+
+  clock.t = T0 + LIVE_MS + 1                                      // she closed it a while ago
+  assert.equal(store.currentSlot(), 'fresh')                      // a new, empty slot: login page
+  assert.notEqual(store.currentSlot(), '')
+})
+
+test('the reverse: the owner visited the receptionist\'s PC and left, a new tab is hers as normal', () => {
+  const local = fakeStorage()
+  local.setItem(BASE, session('u2', 'asha@x', 'Asha'))
+  local.setItem('malibora_staff_role--', 'receptionist')
+  openVisitor(local, 's1', 'u1', 'Antony')
+  local.setItem('malibora_staff_role--s1', 'owner')
+  local.setItem('malibora_staff_last_slot', 's1')
+  const { store, clock } = build({ local, ids: ['fresh'] })
+
+  clock.t = T0 + LIVE_MS + 1
+  assert.equal(store.currentSlot(), '')
+})
+
+test('unknown roles fall on the safe side: a login page, never someone else\'s account', () => {
+  const local = fakeStorage()
+  local.setItem(BASE, session('u1', 'antony@x', 'Antony'))       // device role never recorded
+  openVisitor(local, 's1', 'u2', 'Asha')                         // visitor role never recorded
+  local.setItem('malibora_staff_last_slot', 's1')
+  const { store, clock } = build({ local, ids: ['fresh'] })
+  clock.t = T0 + LIVE_MS + 1
+  assert.equal(store.currentSlot(), 'fresh')
+
+  // With no device login at all there is nothing to protect: plain fallback.
+  const bare = fakeStorage()
+  bare.setItem('malibora_staff_last_slot', 's1')
+  bare.setItem('malibora_staff_alive--s1', String(T0))
+  const b = build({ local: bare })
+  b.clock.t = T0 + LIVE_MS + 1
+  assert.equal(b.store.currentSlot(), '')
+})
+
+test('pruning keeps the role of the last-used slot (the fallback needs it) and drops the others', () => {
+  const local = fakeStorage()
+  openVisitor(local, 's1', 'u2', 'Asha')
+  local.setItem('malibora_staff_role--s1', 'receptionist')
+  openVisitor(local, 's2', 'u3', 'Juma')
+  local.setItem('malibora_staff_role--s2', 'mechanic')
+  local.setItem('malibora_staff_last_slot', 's1')
+  const { store, clock } = build({ local })
+
+  clock.t = T0 + LIVE_MS + 1
+  store.pruneStale()
+  assert.equal(local.getItem('malibora_staff_role--s1'), 'receptionist')
+  assert.equal(local.getItem('malibora_staff_role--s2'), null)
+  assert.equal(local.getItem(`${BASE}--s1`), null)                // the login itself is still gone
+})
+
+test('recordRole writes this tab\'s role and never a token', () => {
+  const { store, local, sess } = build()
+  sess.setItem('malibora_staff_slot', 's1')
+  store.recordRole('manager')
+  assert.equal(local.getItem('malibora_staff_role--s1'), 'manager')
 })

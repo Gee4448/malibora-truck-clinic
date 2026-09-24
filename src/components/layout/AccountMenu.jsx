@@ -3,6 +3,8 @@ import { useLanguage } from '../../contexts/LanguageContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { supabase, accountSlots } from '../../lib/supabase'
 import { fromLoginEmail } from '../../lib/staffAccounts'
+import { switchNeedsPassword } from '../../lib/accountSlots'
+import AccountSwitchRow from '../common/AccountSwitchRow'
 import { ChevronDown, LogOut, UserPlus, ArrowLeftRight } from 'lucide-react'
 
 // The avatar in the app bar, and the menu it opens: who this tab is signed in
@@ -109,22 +111,12 @@ export default function AccountMenu() {
                 <ArrowLeftRight className="w-3 h-3" /> {t('accounts.switch')}
               </p>
               {others.map((a) => (
-                <button
+                <AccountSwitchRow
                   key={a.slot}
-                  role="menuitem"
-                  onClick={() => accountSlots.switchTo(a.slot)}
-                  className="w-full text-left px-4 py-2.5 hover:bg-gray-50 transition flex items-center gap-3"
-                >
-                  <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-bold flex-shrink-0">
-                    {initial(a.name || fromLoginEmail(a.email))}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-gray-900 truncate">{a.name || fromLoginEmail(a.email)}</p>
-                    <p className="text-xs text-gray-500 truncate">
-                      {fromLoginEmail(a.email)}{a.role ? ` · ${roleLabel(a.role)}` : ''}
-                    </p>
-                  </div>
-                </button>
+                  account={a}
+                  roleLabel={a.role ? roleLabel(a.role) : ''}
+                  needsPassword={switchNeedsPassword(profile?.role, a.role)}
+                />
               ))}
             </div>
           )}

@@ -1415,7 +1415,11 @@
     "addHint": "Log in as someone else in this tab. Your other tabs keep their own login.",
     "alsoOnThisBrowser": "Also signed in on this browser",
     "continueAs": "Continue as {name}",
-    "unknownRole": "Staff"
+    "unknownRole": "Staff",
+    "needsPassword": "Needs this account's password",
+    "passwordFor": "Type {name}'s password to switch",
+    "wrongPassword": "Wrong password. If this account signs in with Google, use \"Add another account\" instead.",
+    "continue": "Continue"
   },
   "team": {
     "title": "Team",

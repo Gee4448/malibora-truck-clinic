@@ -13,6 +13,12 @@
 // login that existed before this shipped keeps working. It is the device's
 // own account: it stays signed in for as long as it always has.
 //
+// Switching into another open account is one click only for an owner or
+// manager going to their level or below; anyone else, and anyone on the
+// login page, must type that account's password (switchNeedsPassword).
+// Otherwise the receptionist on a PC where the owner logged in first could
+// become the owner by clicking his name.
+//
 // Every other slot is a visitor. It counts only while a tab with it is open:
 // tabs write a heartbeat, and a slot whose heartbeat has gone quiet is neither
 // offered in the switcher nor joined by a new tab, and its stored login is
@@ -26,12 +32,31 @@
 const SLOT_KEY = 'malibora_staff_slot'          // sessionStorage: this tab's slot
 const LAST_SLOT_KEY = 'malibora_staff_last_slot' // localStorage: what a new tab joins
 const ALIVE_PREFIX = 'malibora_staff_alive--'    // localStorage: last heartbeat per slot
+const ROLE_PREFIX = 'malibora_staff_role--'      // localStorage: role signed in per slot
 const SLOT_SEP = '--'
 
 export const HEARTBEAT_MS = 30 * 1000
 // Wide enough that a phone throttling a background tab's timers does not make
 // a live account look dead.
 export const LIVE_MS = 3 * 60 * 1000
+
+// Only owner and manager carry powers the rest do not (costs, reports, staff
+// admin), so every other role ranks the same.
+const ELEVATED = { owner: 3, manager: 2 }
+const rankOf = (role) => (role ? (ELEVATED[role] ?? 1) : 0)
+
+// currentRole: this tab's role, or null when nobody is signed in here.
+// targetRole: the other account's role, or null when it could not be read —
+// assumed to be the highest, so an unreadable role never opens a door.
+export function switchNeedsPassword(currentRole, targetRole) {
+  const mine = rankOf(currentRole)
+  const theirs = targetRole ? rankOf(targetRole) : ELEVATED.owner
+  return !(mine >= ELEVATED.manager && mine >= theirs)
+}
+
+// Would handing `role`'s account to whoever last used `otherRole` give them
+// more power? Unknown `role` counts as the highest, for the same reason.
+const outranks = (role, otherRole) => (role ? rankOf(role) : ELEVATED.owner) > rankOf(otherRole)
 
 const memoryStorage = () => {
   const m = new Map()
@@ -96,10 +121,14 @@ export function createSlotStore({ projectRef, session, local, navigate, newId, n
 
   // Forget visitor slots nobody has open any more: the session, the PKCE
   // side file supabase-js keeps next to it, and the heartbeat itself.
+  // The role of the slot a new tab would otherwise have joined is kept: it
+  // is what currentSlot() needs to decide whether falling back to the device
+  // account would hand someone more power than they had.
   const dropSlot = (slot) => {
     ls.removeItem(storageKeyFor(slot))
     ls.removeItem(`${storageKeyFor(slot)}-code-verifier`)
     ls.removeItem(ALIVE_PREFIX + slot)
+    if (slot !== ls.getItem(LAST_SLOT_KEY)) ls.removeItem(ROLE_PREFIX + slot)
   }
   const slotOfKey = (key) => {
     if (!key.startsWith(baseKey)) return null
@@ -115,6 +144,7 @@ export function createSlotStore({ projectRef, session, local, navigate, newId, n
       const key = ls.key(i) || ''
       let slot = slotOfKey(key)
       if (slot === null && key.startsWith(ALIVE_PREFIX)) slot = key.slice(ALIVE_PREFIX.length)
+      if (slot === null && key.startsWith(ROLE_PREFIX)) slot = key.slice(ROLE_PREFIX.length)
       if (slot && !isAlive(slot) && !stale.includes(slot)) stale.push(slot)
     }
     stale.forEach(dropSlot)
@@ -122,16 +152,34 @@ export function createSlotStore({ projectRef, session, local, navigate, newId, n
   }
 
   // The slot this tab lives in. A tab that has none yet joins the slot used
-  // most recently on this browser — if that account is still open somewhere;
-  // otherwise the device's own account, so a stale default cannot strand
-  // anyone on a login page — and keeps it from then on.
+  // most recently on this browser while some tab still has it open — even
+  // if whoever used it has just signed out, so a new tab opens on the login
+  // page rather than dropping into the device's own account.
+  //
+  // Once that slot's tabs are closed, a new tab falls back to the device's
+  // own account — unless that account outranks whoever was here last. The
+  // receptionist who closes her tab on a PC where the owner logged in first
+  // must get a login page, not the owner. The reverse (the owner visited and
+  // left) falls back as normal, so the receptionist is never stranded.
+  // The tab keeps its slot from then on.
   const currentSlot = () => {
     const own = ss.getItem(SLOT_KEY)
     if (own !== null) return own
     let slot = ls.getItem(LAST_SLOT_KEY) || ''
-    if (slot !== '' && !(isAlive(slot) && parseSession(slot))) slot = ''
+    if (slot !== '' && !isAlive(slot)) {
+      const deviceRole = ls.getItem(ROLE_PREFIX)
+      const lastRole = ls.getItem(ROLE_PREFIX + slot)
+      slot = parseSession('') && outranks(deviceRole, lastRole) ? makeId() : ''
+    }
     ss.setItem(SLOT_KEY, slot)
     return slot
+  }
+
+  // What this tab is signed in as, for the decision above. Only the role
+  // name, never a token.
+  const recordRole = (role) => {
+    if (role) ls.setItem(ROLE_PREFIX + currentSlot(), role)
+    else ls.removeItem(ROLE_PREFIX + currentSlot())
   }
 
   const rememberAsDefault = (slot = currentSlot()) => { ls.setItem(LAST_SLOT_KEY, slot) }
@@ -195,7 +243,7 @@ export function createSlotStore({ projectRef, session, local, navigate, newId, n
   }
 
   return {
-    storageKeyFor, currentSlot, rememberAsDefault, startHeartbeat,
+    storageKeyFor, currentSlot, rememberAsDefault, recordRole, startHeartbeat,
     listAccounts, pruneStale, switchTo, addAccount,
   }
 }

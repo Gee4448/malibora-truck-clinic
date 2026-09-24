@@ -101,6 +101,18 @@ export async function createStaffAccount({ username, password, fullName, phone, 
   return profile
 }
 
+// Proves the person at the keyboard knows an account's password, without
+// touching this tab's own login: signs in on the throwaway client, then ends
+// that server session straight away. Used before switching a tab into an
+// account that outranks it (src/lib/accountSlots.js).
+export async function verifyStaffPassword(email, password) {
+  const client = getEnrolmentClient()
+  const { error } = await client.auth.signInWithPassword({ email, password })
+  if (error) return false
+  await client.auth.signOut({ scope: 'local' }).catch(() => {})
+  return true
+}
+
 // Editing someone who already exists — role, branch, name, active. The
 // password is not touched here: it is theirs to change in Settings, and the
 // browser cannot reset another user's password without a service-role key.

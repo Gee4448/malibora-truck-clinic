@@ -127,6 +127,13 @@ export function AuthProvider({ children }) {
     setProfile(null)
   }
 
+  // Note who this tab is, so a later tab never falls back into an account
+  // that outranks the last person here (src/lib/accountSlots.js). Kept on
+  // sign-out on purpose: "who was here last" is exactly what it answers.
+  useEffect(() => {
+    if (profile?.role) accountSlots.recordRole(profile.role)
+  }, [profile?.role])
+
   const isOwner = profile?.role === 'owner'
   const isManager = profile?.role === 'manager' || isOwner
   const canViewInternal = isManager // Only owner/manager sees internal costs
