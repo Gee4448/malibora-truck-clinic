@@ -34,7 +34,7 @@ export default function ClientInvoiceView() {
       // profit columns (internal_cost_*, profit_*) to the client portal.
       const { data: inv } = await supabase
         .from('invoices')
-        .select('id, invoice_number, invoice_type, status, job_card_id, subtotal_parts, subtotal_labour, subtotal_additional, vat_amount, discount_amount, total_amount, amount_paid, deposit_percentage, deposit_amount, customer_agreed_at, agreed_total, approval_reset_at, paid_at, payment_method, created_at, customers(full_name, phone, company_name, address), job_cards(job_number, vehicles(registration_number, make, model))')
+        .select('id, invoice_number, invoice_type, status, job_card_id, subtotal_parts, subtotal_labour, subtotal_additional, vat_amount, discount_amount, total_amount, amount_paid, deposit_percentage, deposit_amount, customer_agreed_at, agreed_total, approval_reset_at, paid_at, payment_method, created_at, subject, customers(full_name, phone, company_name, address), job_cards(job_number, vehicles(registration_number, make, model)), vehicles(registration_number, make, model)')
         .eq('id', id)
         .single()
 
@@ -236,8 +236,22 @@ export default function ClientInvoiceView() {
           </div>
           <div>
             <p className="text-gray-400 text-xs">{t('customerView.vehicle')}</p>
-            <p className="font-medium text-gray-900">{invoice.job_cards?.vehicles?.registration_number}</p>
-            <p className="text-xs text-gray-500">{invoice.job_cards?.vehicles?.make} {invoice.job_cards?.vehicles?.model}</p>
+            {/* A quotation with no job card names its vehicle directly, or
+                only what it is for when there is no vehicle (041). */}
+            {(() => {
+              const veh = invoice.job_cards?.vehicles || invoice.vehicles
+              return veh ? (
+                <>
+                  <p className="font-medium text-gray-900">{veh.registration_number}</p>
+                  <p className="text-xs text-gray-500">{veh.make} {veh.model}</p>
+                </>
+              ) : (
+                <p className="font-medium text-gray-900">{invoice.subject || '—'}</p>
+              )
+            })()}
+            {invoice.subject && (invoice.job_cards?.vehicles || invoice.vehicles) && (
+              <p className="text-xs text-gray-500">{invoice.subject}</p>
+            )}
           </div>
           <div>
             <p className="text-gray-400 text-xs">{t('invoices.job')}</p>

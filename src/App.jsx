@@ -314,6 +314,9 @@ function App() {
               <Route path="job-cards" element={<JobCards />} />
               <Route path="job-cards/:id" element={<JobCardDetail />} />
               <Route path="invoices" element={<Invoices />} />
+              {/* The same list, narrowed to quotations, with "New quotation"
+                  on it — the menu entry Antony asked for (25 Sep 2026). */}
+              <Route path="quotations" element={<Invoices mode="quotations" />} />
               <Route path="invoices/:id" element={<InvoiceDetail />} />
               <Route path="inventory" element={<Inventory />} />
               <Route path="labour" element={<LabourRates />} />

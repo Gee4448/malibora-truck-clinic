@@ -16,6 +16,7 @@ import {
   LogOut,
   X,
   MessageSquare,
+  FilePlus,
 } from 'lucide-react'
 import { useTeamBadge } from '../../lib/team'
 
@@ -33,6 +34,9 @@ export default function Sidebar({ isOpen, onClose }) {
     { to: '/admin/customers', icon: Users, label: t('nav.customers') },
     { to: '/admin/inspections', icon: ClipboardCheck, label: t('nav.inspections') },
     { to: '/admin/job-cards', icon: ClipboardList, label: t('nav.jobCards') },
+    // Quotations before Invoices: a quote can now start from the customer,
+    // with no job card and no vehicle (Antony, 25 Sep 2026; migration 041).
+    { to: '/admin/quotations', icon: FilePlus, label: t('nav.quotations') },
     { to: '/admin/invoices', icon: FileText, label: t('nav.invoices') },
     ...(canViewInternal ? [{ to: '/admin/inventory', icon: Package, label: t('nav.inventory') }] : []),
     ...(canViewInternal ? [{ to: '/admin/labour', icon: Wrench, label: t('nav.labour') }] : []),

@@ -127,9 +127,13 @@ export async function generateInvoicePDF(invoice, items, showInternal = false) {
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(9)
   y += 10
-  const veh = invoice.job_cards?.vehicles
-  doc.text(`${veh?.registration_number || ''} - ${veh?.make || ''} ${veh?.model || ''} ${veh?.year || ''}`, 14, y)
-  doc.text(`Job: ${invoice.job_cards?.job_number || ''}`, 14, y + 5)
+  // A quotation with no job card carries its vehicle directly, or only a
+  // subject when the customer has no vehicle on file (041).
+  const veh = invoice.job_cards?.vehicles || invoice.vehicles
+  doc.text(veh
+    ? `${veh.registration_number || ''} - ${veh.make || ''} ${veh.model || ''} ${veh.year || ''}`
+    : (invoice.subject || '-'), 14, y)
+  doc.text(invoice.job_cards?.job_number ? `Job: ${invoice.job_cards.job_number}` : (veh && invoice.subject ? invoice.subject : ''), 14, y + 5)
 
   // Items table
   const partItems = items.filter(i => i.item_type === 'part')

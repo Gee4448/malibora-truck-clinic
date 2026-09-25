@@ -49,6 +49,11 @@ export default function InvoiceDetail() {
   // was still in flight.
   const [savingPayment, setSavingPayment] = useState(false)
   const [refundForm, setRefundForm] = useState({ amount: '', method: 'cash', reference: '', reason: '' })
+  // Quotation with no job card (041): the customer's vehicles to pick from,
+  // and the in-flight state of turning it into a job card.
+  const [customerVehicles, setCustomerVehicles] = useState([])
+  const [savingVehicle, setSavingVehicle] = useState(false)
+  const [creatingJob, setCreatingJob] = useState(false)
 
   useEffect(() => { fetchInvoice() }, [id])
 
@@ -73,12 +78,23 @@ export default function InvoiceDetail() {
           job_cards(
             job_number, description, section,
             vehicles(registration_number, make, model, year)
-          )
+          ),
+          vehicles(id, registration_number, make, model, year)
         `)
         .eq('id', id)
         .single()
       if (error) throw error
       setInvoice(data)
+
+      // A quotation with no job card (041) can be given a vehicle from the
+      // customer's list, so the job card can be created from it later.
+      if (!data.job_card_id) {
+        const { data: vs } = await supabase.from('vehicles')
+          .select('id, registration_number, make, model')
+          .eq('customer_id', data.customer_id)
+          .order('created_at', { ascending: false })
+        setCustomerVehicles(vs || [])
+      }
 
       // Line items: a final invoice generated from a proforma has a frozen
       // snapshot in invoice_items; otherwise fall back to the job's shared items.
@@ -89,6 +105,10 @@ export default function InvoiceDetail() {
         .order('sort_order', { ascending: true })
       if (snapItems && snapItems.length > 0) {
         setItems(snapItems)
+        setItemsSource('invoice_items')
+      } else if (!data.job_card_id) {
+        // No job card to share lines with: a quotation's lines are its own.
+        setItems([])
         setItemsSource('invoice_items')
       } else {
         const { data: jobItems } = await supabase
@@ -304,6 +324,77 @@ export default function InvoiceDetail() {
       toast.error(err.message)
     } finally {
       setGeneratingFinal(false)
+    }
+  }
+
+  // Put a vehicle on a quotation that started without one (041).
+  const saveQuotationVehicle = async (vehicleId) => {
+    setSavingVehicle(true)
+    try {
+      const { error } = await supabase.from('invoices')
+        .update({ vehicle_id: vehicleId || null }).eq('id', id)
+      if (error) throw error
+      toast.success(t('invoices.quotationVehicleSaved'))
+      fetchInvoice()
+    } catch (err) {
+      toast.error(err.message)
+    } finally {
+      setSavingVehicle(false)
+    }
+  }
+
+  // The truck has arrived: make the job card this quotation was waiting for.
+  // The lines move from invoice_items onto the job card and the two are
+  // linked, so from here on it is an ordinary job-card proforma — edited on
+  // the job card, re-totalled by syncProformaTotals, worked by the mechanics.
+  //
+  // Order matters: link first, then copy, then drop the snapshot. If the copy
+  // fails after the link, the snapshot still exists and still wins on the
+  // next load, so the quote never shows up empty.
+  const createJobCardFromQuotation = async () => {
+    if (!invoice.vehicle_id) { toast.error(t('invoices.needsVehicleForJob')); return }
+    if (!confirm(t('invoices.createJobCardConfirm'))) return
+    setCreatingJob(true)
+    try {
+      const { data: job, error } = await supabase.from('job_cards').insert({
+        customer_id: invoice.customer_id,
+        vehicle_id: invoice.vehicle_id,
+        section: 'service',
+        priority: 'normal',
+        status: 'open',
+        description: invoice.subject
+          || items.map(i => i.description).filter(Boolean).join(', ')
+          || invoice.invoice_number,
+      }).select('id').single()
+      if (error) throw error
+
+      const { error: linkErr } = await supabase.from('invoices')
+        .update({ job_card_id: job.id }).eq('id', invoice.id)
+      if (linkErr) throw linkErr
+
+      if (items.length > 0) {
+        const rows = items.map(it => ({
+          job_card_id: job.id,
+          item_type: it.item_type,
+          description: it.description,
+          quantity: Number(it.quantity) || 0,
+          cost_price: Number(it.cost_price) || 0,
+          selling_price: Number(it.selling_price) || 0,
+          is_additional: false,
+          requires_approval: false,
+          approval_status: 'approved',
+        }))
+        const { error: copyErr } = await supabase.from('job_card_items').insert(rows)
+        if (copyErr) throw copyErr
+        const { error: dropErr } = await supabase.from('invoice_items').delete().eq('invoice_id', invoice.id)
+        if (dropErr) throw dropErr
+      }
+      toast.success(t('invoices.jobCardCreated'))
+      navigate(`/admin/job-cards/${job.id}`)
+    } catch (err) {
+      toast.error(err.message)
+    } finally {
+      setCreatingJob(false)
     }
   }
 
@@ -559,10 +650,11 @@ export default function InvoiceDetail() {
       return
     }
     const phone = invoice.customers.phone.replace(/[^0-9]/g, '')
+    const vehicleLine = (invoice.job_cards?.vehicles || invoice.vehicles)?.registration_number || invoice.subject || '-'
     const msg = encodeURIComponent(
       `Habari ${invoice.customers.full_name},\n\n` +
       `Invoice: ${invoice.invoice_number}\n` +
-      `Vehicle: ${invoice.job_cards?.vehicles?.registration_number}\n` +
+      `Vehicle: ${vehicleLine}\n` +
       `Total: ${formatTZS(invoice.total_amount)}\n\n` +
       `Asante - Malibora Truck Clinic`
     )
@@ -589,9 +681,16 @@ export default function InvoiceDetail() {
   // is about the WORK, and runs through the job card and syncProformaTotals,
   // which no longer refuse once money has moved.
   const isProforma = invoice.invoice_type === 'proforma'
-  const docEditable = isProforma
-    ? !['approved', 'partial', 'paid', 'cancelled'].includes(invoice.status)
-    : !['partial', 'paid', 'cancelled'].includes(invoice.status)
+  // A quotation with no job card (041) owns its lines, so they are edited
+  // right here — and stay editable after approval, because an edit then is
+  // exactly what voids the approval and sends it back for a fresh one (040).
+  const standalone = !invoice.job_card_id
+  const docEditable = standalone
+    ? !['paid', 'cancelled'].includes(invoice.status)
+    : isProforma
+      ? !['approved', 'partial', 'paid', 'cancelled'].includes(invoice.status)
+      : !['partial', 'paid', 'cancelled'].includes(invoice.status)
+  const vehicle = invoice.job_cards?.vehicles || invoice.vehicles
 
   const typeLabels = { proforma: t('invoices.proforma'), final: t('invoices.final'), internal: t('invoices.internal') }
   const handleSendStaffMessage = async () => {
@@ -681,6 +780,13 @@ export default function InvoiceDetail() {
                 overpaid > 0 ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}>
               <Undo2 className="w-4 h-4" /> {t('invoices.recordRefund')}
+            </button>
+          )}
+          {/* Quotation -> job card, once the truck is actually here (041). */}
+          {standalone && isProforma && invoice.status !== 'cancelled' && !linkedFinal && (
+            <button onClick={createJobCardFromQuotation} disabled={creatingJob}
+              className="tap flex items-center gap-1.5 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium disabled:opacity-40">
+              <FileText className="w-4 h-4" /> {t('invoices.createJobCard')}
             </button>
           )}
           {/* A1: proforma -> final invoice */}
@@ -859,19 +965,49 @@ export default function InvoiceDetail() {
           </div>
           <div>
             <h3 className="text-xs font-semibold text-gray-500 uppercase mb-2">{t('jobs.vehicle')}</h3>
-            <p className="font-semibold text-gray-900">{invoice.job_cards?.vehicles?.registration_number}</p>
-            <p className="text-sm text-gray-600">{invoice.job_cards?.vehicles?.make} {invoice.job_cards?.vehicles?.model}</p>
-            {invoice.job_cards?.vehicles?.year && <p className="text-sm text-gray-600">Year: {invoice.job_cards.vehicles.year}</p>}
-            <p className="text-sm text-gray-600 mt-1">Job: <Link to={`/admin/job-cards/${invoice.job_card_id}`} className="text-blue-600">{invoice.job_cards?.job_number}</Link></p>
+            {vehicle ? (
+              <>
+                <p className="font-semibold text-gray-900">{vehicle.registration_number}</p>
+                <p className="text-sm text-gray-600">{vehicle.make} {vehicle.model}</p>
+                {vehicle.year && <p className="text-sm text-gray-600">Year: {vehicle.year}</p>}
+              </>
+            ) : (
+              /* A quotation for a customer with no vehicle on file (041). */
+              <p className="font-semibold text-gray-900">{invoice.subject || '—'}</p>
+            )}
+            {vehicle && invoice.subject && <p className="text-sm text-gray-600">{invoice.subject}</p>}
+            {invoice.job_card_id && (
+              <p className="text-sm text-gray-600 mt-1">Job: <Link to={`/admin/job-cards/${invoice.job_card_id}`} className="text-blue-600">{invoice.job_cards?.job_number}</Link></p>
+            )}
           </div>
         </div>
+
+        {/* Pick or change the vehicle on a quotation that has no job card
+            (041). Needed before "Create job card", which cannot exist
+            without one. */}
+        {standalone && invoice.status !== 'cancelled' && (
+          <div className="no-print flex flex-wrap items-center gap-2 mb-4 -mt-2 text-sm">
+            <span className="text-gray-500">{t('invoices.quotationVehicle')}:</span>
+            <select value={invoice.vehicle_id || ''} disabled={savingVehicle}
+              onChange={e => saveQuotationVehicle(e.target.value)}
+              className="px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50">
+              <option value="">{t('invoices.noVehicle')}</option>
+              {customerVehicles.map(v => (
+                <option key={v.id} value={v.id}>{v.registration_number} — {v.make} {v.model || ''}</option>
+              ))}
+            </select>
+            <Link to={`/admin/customers/${invoice.customer_id}`} className="text-blue-600 hover:text-blue-800 text-xs">
+              {t('customers.detail.addVehicle')} →
+            </Link>
+          </div>
+        )}
 
         {/* A proforma's lines are the JOB CARD's lines — the table above reads
             job_card_items directly. Editing them from here worked but split the
             job in two places, so the customer's quote could disagree with the
             work order. Antony, 28 Jul 2026: "the details of proforma cannot be
             editable. We can edit those things only in job cards." */}
-        {isProforma && (
+        {isProforma && !standalone && (
           <div className="no-print flex justify-end mb-2">
             <Link
               to={`/admin/job-cards/${invoice.job_card_id}`}
@@ -883,7 +1019,7 @@ export default function InvoiceDetail() {
         )}
 
         {/* Items edit toolbar (no-print) */}
-        {docEditable && !isProforma && (
+        {docEditable && (!isProforma || standalone) && (
           <div className="no-print flex items-center justify-between gap-3 mb-2">
             {/* Live profit while editing, for whoever may see cost (Antony,
                 25 Sep 2026: "the place to write price and actual cost so as

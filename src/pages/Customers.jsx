@@ -23,7 +23,8 @@ export default function Customers() {
   const [statusFilter, setStatusFilter] = useState('approved')
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState(null)
-  const [step, setStep] = useState(1) // 1 = personal info, 2 = vehicles (new clients only)
+  const [editingVehicleCount, setEditingVehicleCount] = useState(0) // vehicles already on file (edit mode)
+  const [step, setStep] = useState(1) // 1 = personal info, 2 = vehicles
   const [submitting, setSubmitting] = useState(false)
   const [vehicles, setVehicles] = useState([])
   // { customer, kind: 'approved' | 'rejected' } — drives the notify modal that
@@ -60,6 +61,9 @@ export default function Customers() {
   }
 
   // Step 1 (personal info) submit: validate, then either save (edit mode) or advance to vehicles.
+  // In edit mode the vehicles step is reachable too, by its own button —
+  // Antony, 25 Sep 2026: "I registered the customer without a vehicle, and
+  // when I edit him there is no way to add one."
   const handlePersonalSubmit = (e) => {
     e.preventDefault()
     if (editingId) {
@@ -83,26 +87,43 @@ export default function Customers() {
         'region', 'district', 'street', 'po_box', 'id_type', 'id_number', 'notes']
       optionalFields.forEach(f => { if (!payload[f]) payload[f] = null })
 
+      // Validate any in-progress vehicles before touching the customer — avoids
+      // leaving an orphan (or half-updated) customer if vehicle entry is half-filled.
+      const cleanVehicles = vehicles.filter(v => v.make || v.registration_number)
+      const invalidVehicle = cleanVehicles.find(v =>
+        !v.make?.trim() || !v.registration_number?.trim()
+      )
+      if (invalidVehicle) {
+        toast.error(t('customers.vehicleRequired'))
+        setStep(2)
+        setSubmitting(false)
+        return
+      }
+      const vehicleRows = (customerId) => cleanVehicles.map(v => ({
+        customer_id: customerId,
+        vehicle_type: v.vehicle_type,
+        make: v.make.trim(),
+        model: v.model?.trim() || null,
+        registration_number: v.registration_number.toUpperCase().trim(),
+        chassis_number: v.chassis_number || null,
+        year: v.year ? parseInt(v.year) : null,
+        color: v.color?.trim() || null,
+        mileage_km: v.mileage_km ? parseInt(v.mileage_km) : null,
+      }))
+
       if (editingId) {
         const { error } = await supabase.from('customers').update(payload).eq('id', editingId)
         if (error) throw error
+        // Vehicles entered on the edit form's second step are added to the
+        // existing customer (existing ones are managed on the profile page).
+        if (cleanVehicles.length > 0) {
+          const { error: vErr } = await supabase.from('vehicles').insert(vehicleRows(editingId))
+          if (vErr) throw vErr
+        }
         toast.success(t('customers.updated'))
       } else {
         payload.status = 'approved'
         payload.registered_via = 'walk_in'
-
-        // Validate any in-progress vehicles before creating the customer — avoids
-        // leaving an orphan customer if vehicle entry is half-filled.
-        const cleanVehicles = vehicles.filter(v => v.make || v.registration_number)
-        const invalidVehicle = cleanVehicles.find(v =>
-          !v.make?.trim() || !v.registration_number?.trim()
-        )
-        if (invalidVehicle) {
-          toast.error(t('customers.vehicleRequired'))
-          setStep(2)
-          setSubmitting(false)
-          return
-        }
 
         const { data: newCustomer, error } = await supabase
           .from('customers').insert(payload).select().single()
@@ -160,6 +181,7 @@ export default function Customers() {
     })
     setVehicles([])
     setEditingId(customer.id)
+    setEditingVehicleCount(customer.vehicles?.[0]?.count || 0)
     setStep(1)
     setShowForm(true)
   }
@@ -484,12 +506,10 @@ export default function Customers() {
             <div className="flex items-center justify-between p-5 border-b">
               <div>
                 <h2 className="text-lg font-bold">{editingId ? t('customers.edit') : t('customers.addNew')}</h2>
-                {!editingId && (
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    {step === 1 ? t('customers.stepPersonal') : t('customers.stepVehicles')}
-                    <span className="ml-2 text-gray-400">{step}/2</span>
-                  </p>
-                )}
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {step === 1 ? t('customers.stepPersonal') : t('customers.stepVehicles')}
+                  {!editingId && <span className="ml-2 text-gray-400">{step}/2</span>}
+                </p>
               </div>
               <button onClick={closeForm} className="tap p-1 rounded hover:bg-gray-100">
                 <X className="w-5 h-5" />
@@ -583,13 +603,24 @@ export default function Customers() {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none" />
                   </div>
                 </div>
-                <div className="flex gap-3 pt-2">
+                <div className="flex flex-wrap gap-3 pt-2">
                   <button type="submit" disabled={submitting}
                     className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-blue-700 text-white font-medium rounded-lg hover:bg-blue-800 transition disabled:opacity-50">
                     {editingId ? (submitting ? t('common.saving') : t('common.save')) : (
                       <>{t('customers.nextVehicles')} <ArrowRight className="w-4 h-4" /></>
                     )}
                   </button>
+                  {/* Edit mode: vehicles were unreachable from here; the
+                      customer had to be found again on their profile page. */}
+                  {editingId && (
+                    <button type="button" onClick={() => setStep(2)} disabled={submitting}
+                      className="tap flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-50 text-blue-700 font-medium rounded-lg hover:bg-blue-100 transition disabled:opacity-50">
+                      <Car className="w-4 h-4" /> {t('customers.addVehiclesButton')}
+                      {vehicles.filter(v => v.make || v.registration_number).length > 0 && (
+                        <span className="text-xs bg-blue-600 text-white rounded-full px-1.5">{vehicles.filter(v => v.make || v.registration_number).length}</span>
+                      )}
+                    </button>
+                  )}
                   <button type="button" onClick={closeForm}
                     className="px-6 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition">
                     {t('common.cancel')}
@@ -598,9 +629,20 @@ export default function Customers() {
               </form>
             )}
 
-            {/* Step 2: vehicles (new clients only) */}
-            {step === 2 && !editingId && (
+            {/* Step 2: vehicles — new clients, and adding to an existing one */}
+            {step === 2 && (
               <form onSubmit={handleFinalSubmit} className="p-5 space-y-4">
+                {editingId && (
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                    <span className="text-gray-600">
+                      {t('customers.vehiclesOnFile').replace('{n}', editingVehicleCount)}
+                      <span className="block text-gray-400 mt-0.5">{t('customers.editVehiclesHint')}</span>
+                    </span>
+                    <Link to={`/admin/customers/${editingId}`} className="text-blue-600 hover:text-blue-800 font-medium whitespace-nowrap">
+                      {t('customers.openProfile')} →
+                    </Link>
+                  </div>
+                )}
                 {vehicles.length === 0 ? (
                   <div className="text-center py-6 px-4 bg-gray-50 rounded-xl border border-dashed border-gray-300">
                     <Car className="w-8 h-8 text-gray-400 mx-auto mb-2" />

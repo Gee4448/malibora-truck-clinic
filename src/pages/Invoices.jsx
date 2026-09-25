@@ -8,17 +8,23 @@ import { Search, Filter, Eye, FileText, CreditCard } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Reveal from '../components/common/Reveal'
 import { receivableOn, needsReapproval, staffApprovalUpdate } from '../lib/proforma'
+import NewQuotationModal from '../components/admin/NewQuotationModal'
 
-export default function Invoices() {
+// mode="quotations": the Quotations menu entry — proformas only, no section
+// tabs, and the "New quotation" button (migration 041).
+export default function Invoices({ mode }) {
   const { t } = useLanguage()
   const { canViewInternal, user } = useAuth()
+  const quotationsOnly = mode === 'quotations'
   const [invoices, setInvoices] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [showNewQuotation, setShowNewQuotation] = useState(false)
   // #2: proforma and final invoices live in their own sections (Antony: "don't mix them").
   // Remember the last section the user was on; ignore a stale 'internal' pref for
   // non-managers (that tab isn't rendered for them).
   const [activeTab, setActiveTab] = useState(() => {
+    if (quotationsOnly) return 'proforma'
     const saved = localStorage.getItem('malibora_invoice_tab')
     if (saved === 'internal' && !canViewInternal) return 'proforma'
     return saved || 'proforma'
@@ -35,7 +41,7 @@ export default function Invoices() {
   // First visit only (no saved preference): if the default Proforma section is empty,
   // land on the first section that actually has invoices instead of a blank list.
   useEffect(() => {
-    if (loading || localStorage.getItem('malibora_invoice_tab')) return
+    if (quotationsOnly || loading || localStorage.getItem('malibora_invoice_tab')) return
     const order = ['proforma', 'final', ...(canViewInternal ? ['internal'] : [])]
     const firstNonEmpty = order.find(k => invoices.some(i => i.invoice_type === k))
     if (firstNonEmpty) setActiveTab(firstNonEmpty)
@@ -48,7 +54,8 @@ export default function Invoices() {
         .select(`
           *,
           customers(full_name, phone),
-          job_cards(job_number, vehicles(registration_number))
+          job_cards(job_number, vehicles(registration_number)),
+          vehicles(registration_number)
         `)
         .order('created_at', { ascending: false })
       if (error) throw error
@@ -120,11 +127,21 @@ export default function Invoices() {
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold text-gray-900">{t('invoices.title')}</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{quotationsOnly ? t('nav.quotations') : t('invoices.title')}</h1>
+        {/* A quote that starts from the customer, with or without a vehicle,
+            and with none of the job card's workshop fields (041). */}
+        {(quotationsOnly || activeTab === 'proforma') && (
+          <button onClick={() => setShowNewQuotation(true)}
+            className="tap flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-700 text-white rounded-lg hover:bg-blue-800 text-sm font-medium">
+            <FileText className="w-4 h-4" /> {t('invoices.newQuotation')}
+          </button>
+        )}
       </div>
 
+      {showNewQuotation && <NewQuotationModal onClose={() => setShowNewQuotation(false)} t={t} />}
+
       {/* #2: separate Proforma / Final (/ Internal) sections */}
-      <div className="flex gap-1 border-b border-gray-200 overflow-x-auto">
+      {!quotationsOnly && <div className="flex gap-1 border-b border-gray-200 overflow-x-auto">
         {tabs.map(tab => (
           <button key={tab.key} onClick={() => selectTab(tab.key)}
             className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 -mb-px transition ${
@@ -138,7 +155,7 @@ export default function Invoices() {
             }`}>{counts[tab.key]}</span>
           </button>
         ))}
-      </div>
+      </div>}
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
@@ -192,9 +209,16 @@ export default function Invoices() {
                     </td>
                     <td className="p-3 text-gray-700">{inv.customers?.full_name}</td>
                     <td className="p-3 hidden md:table-cell">
-                      <Link to={`/admin/job-cards/${inv.job_card_id}`} className="text-blue-600 hover:text-blue-700 text-xs">
-                        {inv.job_cards?.job_number}
-                      </Link>
+                      {inv.job_card_id ? (
+                        <Link to={`/admin/job-cards/${inv.job_card_id}`} className="text-blue-600 hover:text-blue-700 text-xs">
+                          {inv.job_cards?.job_number}
+                        </Link>
+                      ) : (
+                        /* A quotation with no job card yet: what it is for. */
+                        <span className="text-xs text-gray-500">
+                          {inv.vehicles?.registration_number || inv.subject || t('invoices.quotationNoJob')}
+                        </span>
+                      )}
                     </td>
                     <td className="p-3 text-right font-semibold">{formatTZS(inv.total_amount)}</td>
                     {canViewInternal && (
