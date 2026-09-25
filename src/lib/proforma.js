@@ -1,5 +1,6 @@
-import { supabase } from './supabase'
+import { supabase, formatTZS } from './supabase'
 import { proformaUpdateFor } from './billing'
+import { sendSMS, smsTemplates } from './sms'
 
 // The arithmetic lives in billing.js (import-free, so it can be unit tested).
 // Re-exported here because every caller already imports it from this module.
@@ -12,15 +13,24 @@ export {
   proformaUpdateFor,
   invoiceAfterRefund,
   refundLimitFor,
+  agreedTotalOf,
+  approvalAfterRetotal,
+  needsReapproval,
+  staffApprovalUpdate,
+  customerApprovalUpdate,
+  receivableOn,
 } from './billing'
 
 // The one live proforma for a job card, or null. Cancelled ones are superseded
 // history and deliberately ignored — same rule as the unique index in
 // migration 023, so the app and the constraint agree on what "the" proforma is.
+//
+// Carries the approval columns (040) so a re-total can tell whether it just
+// voided an agreement, and the customer's phone so it can say so to them.
 export async function findLiveProforma(jobCardId) {
   const { data, error } = await supabase
     .from('invoices')
-    .select('id, invoice_number, status, vat_rate, amount_paid, total_amount, paid_at, deposit_percentage')
+    .select('id, invoice_number, status, vat_rate, amount_paid, total_amount, paid_at, deposit_percentage, deposit_amount, customer_id, customer_agreed_at, agreed_total, approval_reset_at, approved_by, customers(full_name, phone)')
     .eq('job_card_id', jobCardId)
     .eq('invoice_type', 'proforma')
     .neq('status', 'cancelled')
@@ -63,6 +73,19 @@ export async function syncProformaTotals(jobCardId) {
       .update(update)
       .eq('id', proforma.id)
     if (updErr) throw updErr
+
+    // This edit just voided the customer's agreement (040): tell them, so the
+    // quote does not sit unapproved until they happen to open the portal.
+    // Fire-and-forget; the SMS channel may be dormant, in which case it logs.
+    if (update.approval_reset_at && !proforma.approval_reset_at) {
+      sendSMS({
+        to: proforma.customers?.phone,
+        message: smsTemplates.proforma_changed(
+          proforma.customers?.full_name, proforma.invoice_number, formatTZS(update.total_amount)),
+        event: 'proforma_changed',
+        customerId: proforma.customer_id,
+      })
+    }
 
     return { ...proforma, ...update }
   } catch (err) {

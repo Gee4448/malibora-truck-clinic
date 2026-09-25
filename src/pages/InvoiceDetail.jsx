@@ -1,13 +1,16 @@
 import { useState, useEffect, Fragment } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { useLanguage } from '../contexts/LanguageContext'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase, formatTZS, formatDate } from '../lib/supabase'
 import { COMPANY, documentAddressLines } from '../lib/company'
-import { ArrowLeft, Printer, Download, MessageCircle, CheckCircle, CreditCard, Send, MessageSquare, Save, Pencil, Trash2, Plus, FileText, Undo2 } from 'lucide-react'
+import { ArrowLeft, Printer, Download, MessageCircle, CheckCircle, CreditCard, Send, MessageSquare, Save, Pencil, Trash2, Plus, FileText, Undo2, AlertTriangle, ShieldCheck } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { generateInvoicePDF } from '../lib/pdf'
-import { syncProformaTotals, statusAfterRetotal, depositAfterRetotal, overpaymentOn, invoiceAfterRefund, refundLimitFor } from '../lib/proforma'
+import {
+  syncProformaTotals, statusAfterRetotal, depositAfterRetotal, overpaymentOn, invoiceAfterRefund, refundLimitFor,
+  approvalAfterRetotal, needsReapproval, staffApprovalUpdate, receivableOn,
+} from '../lib/proforma'
 import { sendSMS, smsTemplates } from '../lib/sms'
 import Reveal from '../components/common/Reveal'
 
@@ -48,6 +51,16 @@ export default function InvoiceDetail() {
   const [refundForm, setRefundForm] = useState({ amount: '', method: 'cash', reference: '', reason: '' })
 
   useEffect(() => { fetchInvoice() }, [id])
+
+  // A link straight to the money: /admin/invoices/:id?pay=1 opens the
+  // receive-payment form on arrival (from the job card and the invoice list).
+  const [searchParams, setSearchParams] = useSearchParams()
+  useEffect(() => {
+    if (loading || !invoice) return
+    if (searchParams.get('pay') !== '1') return
+    setSearchParams({}, { replace: true })
+    if (receivableOn(invoice) > 0) openPayment()
+  }, [loading, invoice]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchInvoice = async () => {
     try {
@@ -135,9 +148,15 @@ export default function InvoiceDetail() {
     }
   }
 
-  const updateStatus = async (status) => {
+  // "Approve" from the office: the same agreement the customer gives from the
+  // portal, signed by whoever pressed it (migration 040). This is also how a
+  // quote that changed after the customer agreed gets approved "by the admin"
+  // (Antony, 25 Sep 2026) instead of waiting on the customer.
+  const approveAsStaff = async () => {
     try {
-      await supabase.from('invoices').update({ status }).eq('id', id)
+      const { error } = await supabase.from('invoices')
+        .update(staffApprovalUpdate(invoice, user?.id)).eq('id', id)
+      if (error) throw error
       toast.success(t('invoices.updated'))
       fetchInvoice()
     } catch (err) {
@@ -187,6 +206,8 @@ export default function InvoiceDetail() {
         // The total just moved, so what's still owed moved with it.
         ...statusAfterRetotal(invoice.status, invoice.amount_paid, totalAmount, invoice.paid_at),
         ...depositAfterRetotal(invoice.deposit_percentage, totalAmount),
+        // ...and an agreement given for the old total no longer stands (040).
+        ...approvalAfterRetotal(invoice, totalAmount),
       }).eq('id', id)
       if (error) throw error
       notifyClientInvoiceChanged(totalAmount)
@@ -221,6 +242,9 @@ export default function InvoiceDetail() {
   // A1: create a final invoice from this approved proforma, snapshotting the
   // current line items so later proforma edits don't change the issued invoice.
   const generateFinalFromProforma = async () => {
+    // The quote moved after the customer agreed and nobody has agreed to the
+    // new figure: billing it as final is probably premature. Ask, don't block.
+    if (needsReapproval(invoice) && !confirm(t('invoices.finalWhileUnapprovedConfirm'))) return
     setGeneratingFinal(true)
     try {
       // Carry any money already taken against the proforma (typically the 70%
@@ -377,6 +401,8 @@ export default function InvoiceDetail() {
         // The total just moved, so what's still owed moved with it.
         ...statusAfterRetotal(invoice.status, invoice.amount_paid, totalAmount, invoice.paid_at),
         ...depositAfterRetotal(invoice.deposit_percentage, totalAmount),
+        // ...and an agreement given for the old total no longer stands (040).
+        ...approvalAfterRetotal(invoice, totalAmount),
       }).eq('id', id)
       if (invErr) throw invErr
       // A final invoice with no frozen snapshot edits the JOB CARD's items, so
@@ -396,7 +422,8 @@ export default function InvoiceDetail() {
   }
 
   const openPayment = () => {
-    setPaymentForm({ method: 'cash', reference: '', amount: balanceOwed > 0 ? String(balanceOwed) : '' })
+    const owed = receivableOn(invoice)
+    setPaymentForm({ method: 'cash', reference: '', amount: owed > 0 ? String(owed) : '' })
     setShowPayment(true)
   }
 
@@ -548,6 +575,9 @@ export default function InvoiceDetail() {
   const invoiceTotal = Number(invoice.total_amount) || 0
   const amountPaid = Number(invoice.amount_paid) || 0
   const balanceOwed = Math.max(0, invoiceTotal - amountPaid)
+  // What can still be received. Drives every "Receive payment" control on this
+  // page — by the money, not by the status word (see receivableOn).
+  const receivable = receivableOn(invoice)
   const overpaid = overpaymentOn(amountPaid, invoiceTotal)
   const vatRate = invoice.vat_rate != null ? Number(invoice.vat_rate) : 18
   // #3 (Antony): "add cost to the same invoice only while not yet approved/paid."
@@ -630,15 +660,17 @@ export default function InvoiceDetail() {
           <button onClick={handleWhatsApp} className="flex items-center gap-1.5 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium">
             <MessageCircle className="w-4 h-4" /> WhatsApp
           </button>
-          {invoice.status !== 'paid' && invoice.status !== 'cancelled' && (
-            <>
-              <button onClick={() => updateStatus('approved')} className="flex items-center gap-1.5 px-3 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 text-sm font-medium">
-                <CheckCircle className="w-4 h-4" /> {t('invoices.approve')}
-              </button>
-              <button onClick={openPayment} className="tap flex items-center gap-1.5 px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-medium">
-                <CreditCard className="w-4 h-4" /> {invoice.status === 'partial' ? t('invoices.recordPayment') : t('invoices.markPaid')}
-              </button>
-            </>
+          {/* Approve: until somebody has agreed to the CURRENT figure. A quote
+              that changed after the customer agreed comes back here (040). */}
+          {invoice.status !== 'cancelled' && !invoice.customer_agreed_at && invoice.status !== 'approved' && (
+            <button onClick={approveAsStaff} className="tap flex items-center gap-1.5 px-3 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 text-sm font-medium">
+              <CheckCircle className="w-4 h-4" /> {t('invoices.approve')}
+            </button>
+          )}
+          {receivable > 0 && (
+            <button onClick={openPayment} className="tap flex items-center gap-1.5 px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-medium">
+              <CreditCard className="w-4 h-4" /> {amountPaid > 0 ? t('invoices.recordPayment') : t('invoices.markPaid')}
+            </button>
           )}
           {/* Refund (migration 027). Offered whenever the garage is holding the
               customer's money, not only when over-collected — a cancelled job
@@ -700,6 +732,80 @@ export default function InvoiceDetail() {
         </Reveal>
       )}
 
+      {/* Changed after the customer agreed (migration 040): the old agreement
+          is void, and the figure needs approving again — by the customer from
+          the portal, or by the office right here. */}
+      {needsReapproval(invoice) && (
+        <Reveal className="bg-red-50 border border-red-200 rounded-xl p-4 no-print">
+          <div className="flex items-start gap-2.5">
+            <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-red-800">{t('invoices.reapprovalTitle')}</p>
+              <p className="text-sm text-red-700 mt-0.5">
+                {t('invoices.reapprovalBody')
+                  .replace('{agreed}', formatTZS(invoice.agreed_total))
+                  .replace('{total}', formatTZS(invoiceTotal))}
+              </p>
+              <p className="text-xs text-red-600 mt-1">{formatDate(invoice.approval_reset_at)}</p>
+            </div>
+          </div>
+          <button onClick={approveAsStaff}
+            className="tap mt-3 flex items-center gap-1.5 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium">
+            <ShieldCheck className="w-4 h-4" /> {t('invoices.approveForCustomer')}
+          </button>
+        </Reveal>
+      )}
+
+      {/* Payments. The receive-payment control used to exist only as one chip
+          in the action bar above, where a phone wraps it into a third row and
+          it reads as absent (Antony, 25 Sep 2026: "kipengele cha receive
+          payment naona hakijarudi"). Now it has a panel of its own with the
+          figures it acts on, offered whenever money is still owed — whatever
+          the status word says. */}
+      {invoice.invoice_type !== 'internal' && invoice.status !== 'cancelled' && (
+        <Reveal className="bg-white rounded-2xl border border-gray-200 p-4 no-print">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+            <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-1.5 w-full sm:w-auto">
+              <CreditCard className="w-4 h-4 text-emerald-600" /> {t('invoices.paymentsPanel')}
+            </h3>
+            <div className="text-sm">
+              <p className="text-xs text-gray-500">{t('invoices.total')}</p>
+              <p className="font-semibold text-gray-900">{formatTZS(invoiceTotal)}</p>
+            </div>
+            <div className="text-sm">
+              <p className="text-xs text-gray-500">{t('invoices.amountPaid')}</p>
+              <p className="font-semibold text-emerald-700">{formatTZS(amountPaid)}</p>
+            </div>
+            <div className="text-sm">
+              <p className="text-xs text-gray-500">{t('invoices.balanceOwed')}</p>
+              <p className="font-bold text-gray-900">{formatTZS(receivable)}</p>
+            </div>
+            {isProforma && Number(invoice.deposit_percentage) > 0 && receivable > 0 && amountPaid <= 0 && (
+              <div className="text-sm">
+                <p className="text-xs text-gray-500">{t('invoices.depositDue').replace('{pct}', invoice.deposit_percentage)}</p>
+                <p className="font-semibold text-amber-700">
+                  {formatTZS(invoice.deposit_amount || invoiceTotal * invoice.deposit_percentage / 100)}
+                </p>
+              </div>
+            )}
+            <div className="w-full sm:w-auto sm:ml-auto">
+              {receivable > 0 ? (
+                <button onClick={openPayment}
+                  className="tap w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-semibold">
+                  <CreditCard className="w-4 h-4" /> {t('invoices.receivePayment')}
+                </button>
+              ) : invoiceTotal > 0 ? (
+                <span className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-700">
+                  <CheckCircle className="w-4 h-4" /> {t('invoices.paidInFull')}
+                </span>
+              ) : (
+                <span className="text-xs text-gray-500">{t('invoices.nothingToReceive')}</span>
+              )}
+            </div>
+          </div>
+        </Reveal>
+      )}
+
       {/* Invoice Document */}
       <Reveal className="bg-white rounded-2xl border border-gray-200 p-4 sm:p-8 print:border-0 print:shadow-none print:p-0">
         {/* Header */}
@@ -720,6 +826,16 @@ export default function InvoiceDetail() {
             <span className={`inline-block text-xs px-2.5 py-1 rounded-full font-medium mt-2 ${statusColors[invoice.status]}`}>
               {t(`invoices.statuses.${invoice.status}`)}
             </span>
+            {/* Who agreed to this figure, and when (040). Prints: it is part
+                of the document's story. */}
+            {invoice.customer_agreed_at && (
+              <p className="text-xs text-green-700 mt-2">
+                {invoice.approved_by ? t('invoices.approvedByStaff') : t('invoices.customerAgreed')} — {formatDate(invoice.customer_agreed_at)}
+              </p>
+            )}
+            {needsReapproval(invoice) && (
+              <p className="text-xs text-red-600 font-medium mt-2 no-print">{t('invoices.awaitingReapproval')}</p>
+            )}
             {invoice.source_proforma_id && (
               <p className="text-xs text-gray-400 mt-2 no-print">
                 <Link to={`/admin/invoices/${invoice.source_proforma_id}`} className="hover:text-blue-600">
@@ -768,7 +884,23 @@ export default function InvoiceDetail() {
 
         {/* Items edit toolbar (no-print) */}
         {docEditable && !isProforma && (
-          <div className="no-print flex justify-end mb-2">
+          <div className="no-print flex items-center justify-between gap-3 mb-2">
+            {/* Live profit while editing, for whoever may see cost (Antony,
+                25 Sep 2026: "the place to write price and actual cost so as
+                to see the profit"). Empty spacer otherwise, to keep the
+                buttons on the right. */}
+            {editItems && canViewInternal ? (() => {
+              const sell = draftItems.reduce((s, x) => s + Number(x.quantity || 0) * Number(x.selling_price || 0), 0)
+              const cost = draftItems.reduce((s, x) => s + Number(x.quantity || 0) * Number(x.cost_price || 0), 0)
+              const profit = sell - cost
+              return (
+                <p className="text-sm text-green-700">
+                  <span className="text-gray-500">{t('invoices.editProfit')}:</span>{' '}
+                  <span className="font-semibold">{formatTZS(profit)}</span>
+                  {sell > 0 && <span className="text-xs text-green-600"> ({(profit / sell * 100).toFixed(1)}%)</span>}
+                </p>
+              )
+            })() : <span />}
             {!editItems ? (
               <button onClick={startEditItems}
                 className="tap flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium">
@@ -796,6 +928,9 @@ export default function InvoiceDetail() {
               <th className="text-left p-2.5 font-semibold text-blue-900">#</th>
               <th className="text-left p-2.5 font-semibold text-blue-900">{t('invoices.description')}</th>
               <th className="text-right p-2.5 font-semibold text-blue-900">{t('invoices.qty')}</th>
+              {/* Actual cost beside the price, management only, while editing.
+                  It is never part of the printed document. */}
+              {editItems && canViewInternal && <th className="text-right p-2.5 font-semibold text-yellow-800">{t('common.cost')}</th>}
               <th className="text-right p-2.5 font-semibold text-blue-900">{t('invoices.unitPrice')}</th>
               <th className="text-right p-2.5 font-semibold text-blue-900">{t('invoices.amount')}</th>
               {editItems && <th className="w-8"></th>}
@@ -810,7 +945,7 @@ export default function InvoiceDetail() {
               ].map(section => (
                 <Fragment key={section.type}>
                   <tr>
-                    <td colSpan="6" className="p-2 bg-gray-50 border-b">
+                    <td colSpan={canViewInternal ? 7 : 6} className="p-2 bg-gray-50 border-b">
                       <div className="flex items-center justify-between">
                         <span className="font-semibold text-gray-700">{section.label}</span>
                         <button onClick={() => addDraftLine(section.type)}
@@ -833,6 +968,13 @@ export default function InvoiceDetail() {
                           onChange={e => updateDraft(idx, 'quantity', e.target.value)}
                           className="w-16 px-2 py-1 border border-gray-300 rounded text-right text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
                       </td>
+                      {canViewInternal && (
+                        <td className="p-1.5">
+                          <input type="number" min="0" step="any" value={it.cost_price ?? 0}
+                            onChange={e => updateDraft(idx, 'cost_price', e.target.value)}
+                            className="w-28 px-2 py-1 border border-yellow-300 bg-yellow-50/40 rounded text-right text-sm focus:ring-2 focus:ring-yellow-500 outline-none" />
+                        </td>
+                      )}
                       <td className="p-1.5">
                         <input type="number" min="0" step="any" value={it.selling_price}
                           onChange={e => updateDraft(idx, 'selling_price', e.target.value)}
@@ -973,8 +1115,10 @@ export default function InvoiceDetail() {
             </div>
           </div>
 
-          {/* Internal Cost Breakdown (Management only) */}
-          {canViewInternal && invoice.invoice_type !== 'proforma' && (
+          {/* Internal Cost Breakdown (Management only). Shown on proformas too
+              since 25 Sep 2026: the owner reads the profit off the quote he is
+              about to send, not only off the final invoice weeks later. */}
+          {canViewInternal && (
             <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg no-print">
               <h3 className="font-semibold text-yellow-800 mb-3">{t('invoices.internalBreakdown')}</h3>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
@@ -1098,7 +1242,8 @@ export default function InvoiceDetail() {
           </div>
           {invoice.customer_agreed_at && (
             <p className="text-xs text-green-700 mt-2 flex items-center gap-1">
-              <CheckCircle className="w-3 h-3" /> {t('invoices.customerAgreed')} — {formatDate(invoice.customer_agreed_at)}
+              <CheckCircle className="w-3 h-3" />
+              {invoice.approved_by ? t('invoices.approvedByStaff') : t('invoices.customerAgreed')} — {formatDate(invoice.customer_agreed_at)}
             </p>
           )}
         </Reveal>
@@ -1157,7 +1302,7 @@ export default function InvoiceDetail() {
       {showPayment && (
         <div className="fixed inset-0 glass-overlay z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 modal-card">
-            <h2 className="text-lg font-bold mb-4">{t('invoices.markPaid')}</h2>
+            <h2 className="text-lg font-bold mb-4">{t('invoices.receivePayment')}</h2>
             <div className="space-y-4">
               {/* Amount summary */}
               <div className="bg-gray-50 rounded-lg p-3 text-sm space-y-1">

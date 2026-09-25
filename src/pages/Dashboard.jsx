@@ -45,6 +45,7 @@ const NOTIF_STYLES = {
   invoice_bargain: { Icon: Handshake, color: 'text-amber-700', bg: 'bg-amber-100' },
   inspection_request: { Icon: ClipboardCheck, color: 'text-orange-700', bg: 'bg-orange-100' },
   inspection_decision: { Icon: CheckCircle2, color: 'text-green-700', bg: 'bg-green-100' },
+  proforma_agreed: { Icon: CheckCircle2, color: 'text-green-700', bg: 'bg-green-100' },
   payment_declared: { Icon: CreditCard, color: 'text-green-700', bg: 'bg-green-100' },
   inspection_payment_declared: { Icon: CreditCard, color: 'text-green-700', bg: 'bg-green-100' },
   proforma_request: { Icon: FileText, color: 'text-blue-700', bg: 'bg-blue-100' },

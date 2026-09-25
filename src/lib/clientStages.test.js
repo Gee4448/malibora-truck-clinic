@@ -112,3 +112,16 @@ test('an inspection awaiting payment is waiting on the customer', () => {
   assert.equal(isInspectionAwaitingPayment({ status: 'pending_payment' }), true)
   assert.equal(isInspectionAwaitingPayment({ status: 'paid' }), false)
 })
+
+// A quote re-priced after the customer agreed is waiting on them again (040).
+import { isQuoteChangedSinceAgreed } from './clientStages.js'
+
+test('a quote changed since the customer agreed is waiting on the customer again', () => {
+  const changed = { invoice_type: 'proforma', status: 'partial', approval_reset_at: '2026-09-25T10:00:00Z', customer_agreed_at: null }
+  assert.equal(isQuoteChangedSinceAgreed(changed), true)
+  assert.equal(isQuoteAwaitingCustomer(changed), true, 'even though its status is a money status')
+  assert.equal(isQuoteChangedSinceAgreed({ ...changed, customer_agreed_at: '2026-09-25T11:00:00Z' }), false, 're-agreed')
+  assert.equal(isQuoteChangedSinceAgreed({ ...changed, status: 'cancelled' }), false)
+  assert.equal(isQuoteChangedSinceAgreed({ ...changed, invoice_type: 'final' }), false)
+  assert.equal(isQuoteChangedSinceAgreed({ invoice_type: 'proforma', status: 'sent' }), false, 'never agreed, so nothing changed since')
+})

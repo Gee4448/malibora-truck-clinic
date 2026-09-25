@@ -229,3 +229,97 @@ test('refund: sub-cent remainder settles to zero rather than leaving a dust bala
   assert.equal(after.amount_paid, 0)
   assert.equal(after.status, 'approved')
 })
+
+// ---------------------------------------------------------------------------
+// Customer approval survives only while the figure it was given for does
+// (migration 040; Antony, 25 Sep 2026)
+// ---------------------------------------------------------------------------
+
+import {
+  agreedTotalOf,
+  approvalAfterRetotal,
+  needsReapproval,
+  staffApprovalUpdate,
+  customerApprovalUpdate,
+  receivableOn,
+} from './billing.js'
+
+const AGREED = { status: 'approved', customer_agreed_at: OLD_DATE, agreed_total: 635000, total_amount: 635000, amount_paid: 0 }
+
+test('approval: a total that moves off the agreed figure voids the agreement', () => {
+  const out = approvalAfterRetotal(AGREED, 700000)
+  assert.equal(out.customer_agreed_at, null)
+  assert.equal(out.agreed_total, 635000, 'the OLD figure is kept for the "was X" banner')
+  assert.ok(out.approval_reset_at)
+  assert.equal(out.approved_by, null)
+  assert.equal(out.status, 'sent', 'unpaid approved quote goes back to waiting for an answer')
+})
+
+test('approval: an unchanged total keeps the agreement', () => {
+  assert.deepEqual(approvalAfterRetotal(AGREED, 635000), {})
+  assert.deepEqual(approvalAfterRetotal(AGREED, 635000.004), {})
+})
+
+test('approval: nothing to void when the customer never agreed', () => {
+  assert.deepEqual(approvalAfterRetotal({ status: 'sent', total_amount: 100 }, 200), {})
+  assert.deepEqual(approvalAfterRetotal(null, 200), {})
+})
+
+test('approval: a pre-040 agreement (no stored figure) counts the stored total as agreed', () => {
+  const legacy = { status: 'approved', customer_agreed_at: OLD_DATE, total_amount: 500000, amount_paid: 0 }
+  assert.equal(agreedTotalOf(legacy), 500000)
+  assert.deepEqual(approvalAfterRetotal(legacy, 500000), {})
+  assert.equal(approvalAfterRetotal(legacy, 520000).agreed_total, 500000)
+})
+
+test('approval: with a deposit held, the money status stays and only the approval is reset', () => {
+  const paid = { ...AGREED, status: 'partial', amount_paid: 400000 }
+  const out = approvalAfterRetotal(paid, 700000)
+  assert.equal(out.customer_agreed_at, null)
+  assert.equal('status' in out, false, 'partial/paid is statusAfterRetotal\'s call')
+})
+
+test('approval: proformaUpdateFor voids the approval as part of the same re-total', () => {
+  const items = [{ item_type: 'part', total_selling: 700000, total_cost: 500000 }]
+  const out = proformaUpdateFor({ ...AGREED, vat_rate: 0 }, items)
+  assert.equal(out.total_amount, 700000)
+  assert.equal(out.customer_agreed_at, null)
+  assert.equal(out.status, 'sent')
+  // Same items, same figure: approval untouched.
+  const same = proformaUpdateFor({ ...AGREED, vat_rate: 0 }, [{ item_type: 'part', total_selling: 635000, total_cost: 0 }])
+  assert.equal('customer_agreed_at' in same, false)
+})
+
+test('approval: needsReapproval is the reset-and-not-yet-re-agreed state only', () => {
+  assert.equal(needsReapproval({ approval_reset_at: OLD_DATE, customer_agreed_at: null, status: 'sent' }), true)
+  assert.equal(needsReapproval({ approval_reset_at: OLD_DATE, customer_agreed_at: OLD_DATE, status: 'approved' }), false)
+  assert.equal(needsReapproval({ approval_reset_at: null, customer_agreed_at: null, status: 'sent' }), false)
+  assert.equal(needsReapproval({ approval_reset_at: OLD_DATE, customer_agreed_at: null, status: 'cancelled' }), false)
+})
+
+test('approval: staff approving on the customer\'s behalf signs it and clears the reset', () => {
+  const inv = { status: 'sent', total_amount: 700000, approval_reset_at: OLD_DATE }
+  const out = staffApprovalUpdate(inv, 'staff-1', OLD_DATE)
+  assert.deepEqual(out, {
+    customer_agreed_at: OLD_DATE, agreed_total: 700000, approval_reset_at: null,
+    approved_by: 'staff-1', status: 'approved',
+  })
+  // A deposit already taken is not undone by re-approval.
+  assert.equal('status' in staffApprovalUpdate({ ...inv, status: 'partial' }, 'staff-1'), false)
+})
+
+test('approval: the customer\'s own agreement carries the figure but no staff signature', () => {
+  const out = customerApprovalUpdate({ status: 'sent', total_amount: 700000 }, OLD_DATE)
+  assert.deepEqual(out, { customer_agreed_at: OLD_DATE, agreed_total: 700000, approval_reset_at: null, status: 'approved' })
+  assert.equal('approved_by' in out, false)
+})
+
+test('receivable: what can still be taken, whatever the status says', () => {
+  assert.equal(receivableOn({ status: 'approved', total_amount: 635000, amount_paid: 0 }), 635000)
+  assert.equal(receivableOn({ status: 'partial', total_amount: 635000, amount_paid: 400000 }), 235000)
+  assert.equal(receivableOn({ status: 'paid', total_amount: 635000, amount_paid: 635000 }), 0)
+  assert.equal(receivableOn({ status: 'paid', total_amount: 700000, amount_paid: 635000 }), 65000, 'a "paid" label with money owed still shows the button')
+  assert.equal(receivableOn({ status: 'cancelled', total_amount: 635000, amount_paid: 0 }), 0)
+  assert.equal(receivableOn({ status: 'draft', total_amount: 0, amount_paid: 0 }), 0)
+  assert.equal(receivableOn(null), 0)
+})

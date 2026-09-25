@@ -80,10 +80,18 @@ export function inspectionStage(inspection) {
 // that) rather than making them hunt through lists. These predicates define what
 // counts as waiting on them here.
 
-/** A quote the customer has not yet accepted or rejected. */
+/** A quote whose figure changed after the customer agreed to it (migration 040). */
+export function isQuoteChangedSinceAgreed(invoice) {
+  return invoice?.invoice_type === 'proforma'
+    && !!invoice.approval_reset_at
+    && !invoice.customer_agreed_at
+    && invoice.status !== 'cancelled'
+}
+
+/** A quote the customer has not yet accepted or rejected — or must accept again. */
 export function isQuoteAwaitingCustomer(invoice) {
   return invoice?.invoice_type === 'proforma'
-    && ['sent', 'negotiating'].includes(invoice.status)
+    && (['sent', 'negotiating'].includes(invoice.status) || isQuoteChangedSinceAgreed(invoice))
 }
 
 /** Money still owed on a document the garage has issued. */

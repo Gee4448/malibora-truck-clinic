@@ -128,6 +128,97 @@ export function refundLimitFor(invoice) {
   return Math.max(0, Number(invoice?.amount_paid) || 0)
 }
 
+// ---------------------------------------------------------------------------
+// Customer approval (migration 040)
+// ---------------------------------------------------------------------------
+//
+// Antony, 25 Sep 2026: "if an invoice is edited after it was approved, it has
+// to go back to the customer to approve, or to the admin."
+//
+// An approval is an agreement to a FIGURE. `customer_agreed_at` says when it
+// was given and `agreed_total` what it was for; when the total moves off that
+// figure the agreement is void: `customer_agreed_at` is cleared and
+// `approval_reset_at` stamped, so both portals can say "this changed after you
+// agreed" and ask again. `agreed_total` keeps the OLD figure until someone
+// approves the new one, which is what lets the banner show "was X, now Y".
+//
+// Money and approval are separate questions: a deposit already taken stays
+// taken (statusAfterRetotal), and the status only falls back to `sent` when
+// nothing has been paid — `partial`/`paid` carry the money story and the
+// approval columns carry the approval story.
+
+/** The figure the customer's approval was given for, or null if not approved. */
+export function agreedTotalOf(invoice) {
+  if (!invoice?.customer_agreed_at) return null
+  if (invoice.agreed_total != null && invoice.agreed_total !== '') return Number(invoice.agreed_total)
+  // Approvals given before 040 existed carry no figure; the stored total at
+  // the moment of the edit is the best record of what was agreed.
+  return Number(invoice.total_amount) || 0
+}
+
+/** Columns to write when an approved invoice's total moves off the agreed figure. */
+export function approvalAfterRetotal(invoice, newTotal) {
+  const agreed = agreedTotalOf(invoice)
+  if (agreed == null) return {}
+  if (Math.abs((Number(newTotal) || 0) - agreed) <= PAID_EPSILON) return {}
+  const out = {
+    customer_agreed_at: null,
+    agreed_total: agreed,
+    approval_reset_at: new Date().toISOString(),
+    approved_by: null,
+  }
+  // Nothing paid and the quote was sitting at `approved`: it is back to being a
+  // quote waiting for an answer. With money held, statusAfterRetotal owns status.
+  if (!(Number(invoice?.amount_paid) > 0) && invoice?.status === 'approved') out.status = 'sent'
+  return out
+}
+
+/** Changed after the customer agreed and nobody has agreed to the new figure yet. */
+export function needsReapproval(invoice) {
+  return !!invoice?.approval_reset_at && !invoice?.customer_agreed_at
+    && invoice?.status !== 'cancelled'
+}
+
+/**
+ * Columns to write when a member of staff approves on the customer's behalf
+ * (Antony: "...or the admin"). Same agreement as the customer's, but signed by
+ * `staffId` so the document can say who gave it. The status only becomes
+ * `approved` when there is no money story to preserve.
+ */
+export function staffApprovalUpdate(invoice, staffId, now = new Date().toISOString()) {
+  const out = {
+    customer_agreed_at: now,
+    agreed_total: Number(invoice?.total_amount) || 0,
+    approval_reset_at: null,
+    approved_by: staffId || null,
+  }
+  if (!['partial', 'paid', 'cancelled'].includes(invoice?.status)) out.status = 'approved'
+  return out
+}
+
+/** Columns the customer writes when they agree from the portal. */
+export function customerApprovalUpdate(invoice, now = new Date().toISOString()) {
+  const out = {
+    customer_agreed_at: now,
+    agreed_total: Number(invoice?.total_amount) || 0,
+    approval_reset_at: null,
+  }
+  if (!['partial', 'paid', 'cancelled'].includes(invoice?.status)) out.status = 'approved'
+  return out
+}
+
+// What can still be received against a document. The "Receive payment" button
+// keys off THIS, not the status: Antony reported the button gone on a proforma
+// that still had a balance (25 Sep 2026), and a status that says `paid` while
+// money is still owed is exactly the case the button exists to put right.
+export function receivableOn(invoice) {
+  if (!invoice || invoice.status === 'cancelled') return 0
+  const total = Number(invoice.total_amount) || 0
+  const paid = Number(invoice.amount_paid) || 0
+  const owed = total - paid
+  return owed > PAID_EPSILON ? owed : 0
+}
+
 // The complete set of columns a live proforma should be updated to, given the
 // job card's current items. One function so the "generate/update proforma"
 // button and the automatic refresh after a job-card edit cannot disagree about
@@ -144,5 +235,6 @@ export function proformaUpdateFor(proforma, items) {
       proforma?.paid_at,
     ),
     ...depositAfterRetotal(proforma?.deposit_percentage, totals.total_amount),
+    ...approvalAfterRetotal(proforma, totals.total_amount),
   }
 }

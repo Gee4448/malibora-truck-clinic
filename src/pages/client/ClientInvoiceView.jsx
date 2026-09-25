@@ -4,8 +4,9 @@ import { useLanguage } from '../../contexts/LanguageContext'
 import { supabase, formatTZS, formatDate } from '../../lib/supabase'
 import { useClient } from '../../contexts/ClientAuthContext'
 import { notifyStaff } from '../../lib/notifications'
+import { needsReapproval, customerApprovalUpdate } from '../../lib/billing'
 import PaymentChannels from '../../components/common/PaymentChannels'
-import { ArrowLeft, FileText, CheckCircle2, XCircle, Phone, Send, MessageSquare, CreditCard, Clock } from 'lucide-react'
+import { ArrowLeft, FileText, CheckCircle2, XCircle, Phone, Send, MessageSquare, CreditCard, Clock, AlertTriangle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Reveal from '../../components/common/Reveal'
 
@@ -33,7 +34,7 @@ export default function ClientInvoiceView() {
       // profit columns (internal_cost_*, profit_*) to the client portal.
       const { data: inv } = await supabase
         .from('invoices')
-        .select('id, invoice_number, invoice_type, status, job_card_id, subtotal_parts, subtotal_labour, subtotal_additional, vat_amount, discount_amount, total_amount, amount_paid, deposit_percentage, deposit_amount, customer_agreed_at, paid_at, payment_method, created_at, customers(full_name, phone, company_name, address), job_cards(job_number, vehicles(registration_number, make, model))')
+        .select('id, invoice_number, invoice_type, status, job_card_id, subtotal_parts, subtotal_labour, subtotal_additional, vat_amount, discount_amount, total_amount, amount_paid, deposit_percentage, deposit_amount, customer_agreed_at, agreed_total, approval_reset_at, paid_at, payment_method, created_at, customers(full_name, phone, company_name, address), job_cards(job_number, vehicles(registration_number, make, model))')
         .eq('id', id)
         .single()
 
@@ -533,17 +534,45 @@ export default function ClientInvoiceView() {
         </Reveal>
       )}
 
-      {/* Agree Button */}
-      {invoice.invoice_type === 'proforma' && ['sent', 'negotiating'].includes(invoice.status) && (
+      {/* The garage re-priced this after the customer agreed (migration 040):
+          the old agreement is void and they are asked again, with both figures
+          in front of them. */}
+      {invoice.invoice_type === 'proforma' && needsReapproval(invoice) && (
+        <Reveal className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-2.5">
+          <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold text-red-800 text-sm">{t('client.invoices.reapproveTitle')}</p>
+            <p className="text-sm text-red-700 mt-0.5">
+              {t('client.invoices.reapproveBody')
+                .replace('{agreed}', formatTZS(invoice.agreed_total))
+                .replace('{total}', formatTZS(invoice.total_amount))}
+            </p>
+          </div>
+        </Reveal>
+      )}
+
+      {/* Agree Button — for a fresh quote, and again for one that changed
+          after the customer agreed (which may already carry their deposit). */}
+      {invoice.invoice_type === 'proforma' && !invoice.customer_agreed_at
+        && (['sent', 'negotiating'].includes(invoice.status) || needsReapproval(invoice)) && (
         <button
           onClick={async () => {
             if (!confirm(t('client.invoices.agreeConfirm'))) return
             try {
-              const { error } = await supabase.from('invoices').update({
-                customer_agreed_at: new Date().toISOString(),
-                status: 'approved',
-              }).eq('id', invoice.id)
+              const { error } = await supabase.from('invoices')
+                .update(customerApprovalUpdate(invoice)).eq('id', invoice.id)
               if (error) throw error
+              // Staff used to learn of an agreement only by opening the
+              // document; with re-approval in the loop that silence stalls the
+              // job, so it rings the bell like a declared payment does.
+              notifyStaff({
+                type: 'proforma_agreed',
+                title: t('notifications.proformaAgreed'),
+                body: `${customer?.full_name || ''} — ${invoice.invoice_number} · ${formatTZS(invoice.total_amount)}`,
+                invoiceId: invoice.id,
+                jobCardId: invoice.job_card_id,
+                customerId: customer?.id || null,
+              })
               toast.success(t('client.invoices.agreed'))
               fetchInvoice()
             } catch (err) {

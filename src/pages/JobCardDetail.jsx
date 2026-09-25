@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useLanguage } from '../contexts/LanguageContext'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase, formatTZS, formatDate } from '../lib/supabase'
-import { findLiveProforma, syncProformaTotals, totalsFromJobItems, proformaUpdateFor, overpaymentOn, DEFAULT_VAT_RATE } from '../lib/proforma'
+import { findLiveProforma, syncProformaTotals, totalsFromJobItems, proformaUpdateFor, overpaymentOn, DEFAULT_VAT_RATE, receivableOn, needsReapproval } from '../lib/proforma'
 import { fetchEvidence, evidenceUrl, fetchFindings } from '../lib/evidence'
 import { fetchJobLabour, billLoggedLabour } from '../lib/labour'
-import { Plus, Trash2, FileText, Printer, ArrowLeft, Package, Wrench, DollarSign, X, CheckCircle2, XCircle, UserPlus, AlertCircle, Share2, Pencil, Camera, Flag, Clock } from 'lucide-react'
+import { Plus, Trash2, FileText, Printer, ArrowLeft, Package, Wrench, DollarSign, X, CheckCircle2, XCircle, UserPlus, AlertCircle, Share2, Pencil, Camera, Flag, Clock, CreditCard, AlertTriangle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Reveal from '../components/common/Reveal'
 
@@ -30,6 +30,8 @@ export default function JobCardDetail() {
   const [billingLabour, setBillingLabour] = useState(false)
   const [loading, setLoading] = useState(true)
   const [showAddItem, setShowAddItem] = useState(false)
+  // The line being edited in the item form, or null when adding a new one.
+  const [editingItem, setEditingItem] = useState(null)
   const [showAssignTech, setShowAssignTech] = useState(false)
   const [techName, setTechName] = useState('')
   const [techId, setTechId] = useState('')
@@ -57,9 +59,35 @@ export default function JobCardDetail() {
   // with the mechanic's words already in it.
   const priceFinding = (f) => {
     setPricingFinding(f)
+    setEditingItem(null)
     setItemType('additional')
     setItemForm({ part_id: '', labour_id: '', description: f.description, quantity: 1, cost_price: 0, selling_price: 0 })
     setShowAddItem(true)
+  }
+
+  // Change a line that is already on the card — quantity, price and (for
+  // management) the actual cost — in the same form that added it. Until
+  // 25 Sep 2026 the only way to correct a price was delete and re-add, which
+  // is why the owner reported "no place to write price and actual cost".
+  const startEditItem = (item) => {
+    setPricingFinding(null)
+    setEditingItem(item)
+    setItemType(item.item_type)
+    setItemForm({
+      part_id: item.part_id || '',
+      labour_id: item.labour_id || '',
+      description: item.description || '',
+      quantity: item.quantity ?? 1,
+      cost_price: item.cost_price ?? 0,
+      selling_price: item.selling_price ?? 0,
+    })
+    setShowAddItem(true)
+  }
+
+  const closeItemForm = () => {
+    setShowAddItem(false)
+    setEditingItem(null)
+    setPricingFinding(null)
   }
 
   const declineFinding = async (f) => {
@@ -286,6 +314,33 @@ export default function JobCardDetail() {
   const handleAddItem = async (e) => {
     e.preventDefault()
     try {
+      if (editingItem) {
+        const patch = {
+          description: itemForm.description,
+          quantity: Number(itemForm.quantity),
+          selling_price: Number(itemForm.selling_price),
+          part_id: itemType === 'part' ? itemForm.part_id || null : null,
+          labour_id: itemType === 'labour' ? itemForm.labour_id || null : null,
+        }
+        // Only someone who can see the cost may change it; anyone else's save
+        // leaves the figure they cannot see exactly as it was.
+        if (canViewInternal) patch.cost_price = Number(itemForm.cost_price)
+        // `.select` so an RLS-blocked update is a visible failure, not a
+        // "saved" toast over an unchanged row (see handleDeleteItem).
+        const { data, error } = await supabase
+          .from('job_card_items').update(patch).eq('id', editingItem.id).select('id')
+        if (error) throw error
+        if (!data || data.length === 0) throw new Error(t('jobs.itemUpdateBlocked'))
+        toast.success(t('jobs.itemUpdated'))
+        closeItemForm()
+        setItemForm({ part_id: '', labour_id: '', description: '', quantity: 1, cost_price: 0, selling_price: 0 })
+        // Re-price the quote; if the customer had agreed to the old figure,
+        // this is where that agreement is voided (040).
+        await syncProformaTotals(id)
+        fetchJob()
+        return
+      }
+
       // If job is in_progress, new items are additional and need approval
       // A fault the mechanic found is extra work by definition — nobody quoted
       // it and the customer has never seen it — so it always needs approval,
@@ -327,7 +382,7 @@ export default function JobCardDetail() {
       }
 
       toast.success(t('jobs.itemAdded'))
-      setShowAddItem(false)
+      closeItemForm()
       setItemForm({ part_id: '', labour_id: '', description: '', quantity: 1, cost_price: 0, selling_price: 0 })
       // The job card is the only place these lines are edited, so it is also
       // the only place that can keep the quote honest.
@@ -538,6 +593,57 @@ export default function JobCardDetail() {
           customer is still here and take the difference). Standing warning
           rather than a prompt per line, so staff can see what he owes while
           they work instead of dismissing the same dialog five times. */}
+      {/* The job's quote and its money, right where the pricing happens. The
+          owner looked for "receive payment" here after quoting and found only
+          the proforma button (25 Sep 2026); the figures and the way to the
+          receive-payment form now sit under it. */}
+      {liveProforma && (
+        <Reveal className="bg-white rounded-2xl border border-gray-200 p-4">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+            <div className="min-w-0">
+              <p className="text-xs text-gray-500">{t('invoices.proforma')}</p>
+              <p className="flex items-center gap-2">
+                <Link to={`/admin/invoices/${liveProforma.id}`} className="font-semibold text-blue-700 hover:text-blue-800">
+                  {liveProforma.invoice_number}
+                </Link>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                  {t(`invoices.statuses.${liveProforma.status}`)}
+                </span>
+              </p>
+            </div>
+            <div className="text-sm">
+              <p className="text-xs text-gray-500">{t('invoices.total')}</p>
+              <p className="font-semibold text-gray-900">{formatTZS(liveProforma.total_amount)}</p>
+            </div>
+            <div className="text-sm">
+              <p className="text-xs text-gray-500">{t('invoices.amountPaid')}</p>
+              <p className="font-semibold text-emerald-700">{formatTZS(liveProforma.amount_paid)}</p>
+            </div>
+            <div className="text-sm">
+              <p className="text-xs text-gray-500">{t('invoices.balanceOwed')}</p>
+              <p className="font-bold text-gray-900">{formatTZS(receivableOn(liveProforma))}</p>
+            </div>
+            <div className="w-full sm:w-auto sm:ml-auto flex gap-2">
+              <Link to={`/admin/invoices/${liveProforma.id}`}
+                className="tap flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium">
+                <FileText className="w-4 h-4" /> {t('jobs.openProforma')}
+              </Link>
+              {receivableOn(liveProforma) > 0 && (
+                <Link to={`/admin/invoices/${liveProforma.id}?pay=1`}
+                  className="tap flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-medium">
+                  <CreditCard className="w-4 h-4" /> {t('invoices.receivePayment')}
+                </Link>
+              )}
+            </div>
+          </div>
+          {needsReapproval(liveProforma) && (
+            <p className="mt-3 flex items-center gap-1.5 text-sm text-red-700">
+              <AlertTriangle className="w-4 h-4 shrink-0" /> {t('jobs.proformaNeedsReapproval')}
+            </p>
+          )}
+        </Reveal>
+      )}
+
       {proformaPaid > 0 && (
         <div className={`flex items-start gap-2.5 p-4 border rounded-xl text-sm ${
           retotalledRefund > 0 ? 'bg-red-50 border-red-200' : 'bg-amber-50 border-amber-200'
@@ -780,6 +886,11 @@ export default function JobCardDetail() {
                             </button>
                           </>
                         )}
+                        {job.status !== 'completed' && job.status !== 'cancelled' && (
+                          <button onClick={() => startEditItem(item)} className="tap p-1 rounded hover:bg-blue-50" title={t('jobs.editItem')}>
+                            <Pencil className="w-3.5 h-3.5 text-blue-600" />
+                          </button>
+                        )}
                         {job.status !== 'completed' && (
                           <button onClick={() => handleDeleteItem(item.id)} className="p-1 rounded hover:bg-red-50">
                             <Trash2 className="w-3.5 h-3.5 text-red-500" />
@@ -1002,9 +1113,10 @@ export default function JobCardDetail() {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md modal-card">
             <div className="flex items-center justify-between p-5 border-b">
               <h2 className="text-lg font-bold capitalize">
-                {itemType === 'part' ? t('jobs.addPart') : itemType === 'labour' ? t('jobs.addLabour') : t('jobs.addAdditional')}
+                {editingItem ? t('jobs.editItem')
+                  : itemType === 'part' ? t('jobs.addPart') : itemType === 'labour' ? t('jobs.addLabour') : t('jobs.addAdditional')}
               </h2>
-              <button onClick={() => setShowAddItem(false)} className="tap p-1 rounded hover:bg-gray-100">
+              <button onClick={closeItemForm} className="tap p-1 rounded hover:bg-gray-100">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1073,7 +1185,7 @@ export default function JobCardDetail() {
                 <button type="submit" className="flex-1 py-2.5 bg-blue-700 text-white font-medium rounded-lg hover:bg-blue-800 transition">
                   {t('common.save')}
                 </button>
-                <button type="button" onClick={() => setShowAddItem(false)}
+                <button type="button" onClick={closeItemForm}
                   className="px-6 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition">
                   {t('common.cancel')}
                 </button>

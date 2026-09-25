@@ -6,6 +6,7 @@ import { supabase, formatTZS, formatDate } from '../../lib/supabase'
 import { FileText, ArrowRight } from 'lucide-react'
 import { ListSkeleton } from '../../components/common/Skeleton'
 import Reveal from '../../components/common/Reveal'
+import { isQuoteChangedSinceAgreed } from '../../lib/clientStages'
 
 export default function ClientInvoices() {
   const { t } = useLanguage()
@@ -30,7 +31,7 @@ export default function ClientInvoices() {
       // cost/profit columns into the client's browser.
       const { data } = await supabase
         .from('invoices')
-        .select('id, invoice_number, invoice_type, status, total_amount, created_at, job_cards(job_number, vehicles(registration_number))')
+        .select('id, invoice_number, invoice_type, status, total_amount, customer_agreed_at, approval_reset_at, created_at, job_cards(job_number, vehicles(registration_number))')
         .eq('customer_id', customer.id)
         .in('invoice_type', ['proforma', 'final'])
         .order('created_at', { ascending: false })
@@ -141,6 +142,11 @@ export default function ClientInvoices() {
                   {t(`invoices.statuses.${inv.status}`)}
                 </span>
               </div>
+              {isQuoteChangedSinceAgreed(inv) && (
+                <p className="text-xs font-medium text-red-700 bg-red-50 border border-red-100 rounded-lg px-2 py-1 mb-2">
+                  {t('client.invoices.reapproveBadge')}
+                </p>
+              )}
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs text-gray-500">{inv.job_cards?.vehicles?.registration_number} · {inv.job_cards?.job_number}</p>

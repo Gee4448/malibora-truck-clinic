@@ -269,6 +269,11 @@
     "change": "Change",
     "itemAdded": "Item added",
     "itemRemoved": "Item removed",
+    "editItem": "Edit Item",
+    "itemUpdated": "Item updated",
+    "itemUpdateBlocked": "Item not changed — your account has no permission. Nothing was altered.",
+    "openProforma": "Open proforma",
+    "proformaNeedsReapproval": "Changed after the customer agreed — needs approving again",
     "itemRemoveBlocked": "The item was not removed — your account doesn't have permission. Nothing was changed.",
     "allApproved": "All items approved",
     "mustApproveOne": "At least one item must be approved",
@@ -440,7 +445,19 @@
     "depositSaved": "Deposit settings saved",
     "receipt": "Payment Receipt",
     "depositPaid": "Deposit Paid",
-    "messageSent": "Message sent"
+    "messageSent": "Message sent",
+    "paymentsPanel": "Payments",
+    "receivePayment": "Receive Payment",
+    "paidInFull": "Paid in full",
+    "depositDue": "Deposit due ({pct}%)",
+    "nothingToReceive": "No amount on this document yet — add the prices on the job card.",
+    "reapprovalTitle": "Changed after approval",
+    "reapprovalBody": "The customer agreed to {agreed}; the total is now {total}. It needs approving again — by the customer from their portal, or by you here.",
+    "approveForCustomer": "Approve on customer's behalf",
+    "approvedByStaff": "Approved by staff",
+    "awaitingReapproval": "Awaiting re-approval",
+    "finalWhileUnapprovedConfirm": "This proforma changed after the customer agreed and has not been approved again. Generate the final invoice anyway?",
+    "editProfit": "Profit on these lines"
   },
   "inventory": {
     "title": "Parts Inventory",
@@ -748,7 +765,8 @@
     "proformaRequest": "Proforma requested",
     "paymentDeclared": "Payment declared",
     "inspectionRequest": "Inspection requested",
-    "invoiceBargain": "Message on invoice"
+    "invoiceBargain": "Message on invoice",
+    "proformaAgreed": "Customer agreed to proforma"
   },
   "payments": {
     "title": "Payment Channels",
@@ -1200,6 +1218,7 @@
       "handovers": "Handovers",
       "amountDue": "Amount due",
       "actionApproveQuote": "Quotation waiting for your approval",
+      "actionReapproveQuote": "Quotation changed — please approve again",
       "actionPayInvoice": "Invoice waiting for payment",
       "actionPayInspection": "Inspection waiting for payment",
       "trackTitle": "Where your vehicle is",
@@ -1318,7 +1337,10 @@
       "amountPaid": "Amount paid",
       "balanceOwed": "Balance owed",
       "exceedsBalance": "Amount is more than the balance owed",
-      "payHint": "After you pay by M-Pesa, cash or bank, submit here and Malibora will confirm it."
+      "payHint": "After you pay by M-Pesa, cash or bank, submit here and Malibora will confirm it.",
+      "reapproveTitle": "This quotation changed after you agreed",
+      "reapproveBody": "You agreed to {agreed}. The total is now {total}. Please look through it and agree again.",
+      "reapproveBadge": "Needs your approval again"
     },
     "profile": {
       "title": "My Profile",

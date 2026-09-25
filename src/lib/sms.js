@@ -61,6 +61,10 @@ export const smsTemplates = {
     `Habari ${name || ''}, ankara yako ${number || ''} iko tayari. Jumla: ${total || ''}. Malibora Truck Clinic.`.trim(),
   invoice_updated: (name, number, total) =>
     `Habari ${name || ''}, ankara yako ${number || ''} imesasishwa. Jumla mpya: ${total || ''}. Malibora Truck Clinic.`.trim(),
+  // A quote the customer had agreed to was re-priced (migration 040): the old
+  // agreement no longer stands and they are asked to look again.
+  proforma_changed: (name, number, total) =>
+    `Habari ${name || ''}, proforma yako ${number || ''} imebadilishwa baada ya kukubaliwa. Jumla mpya: ${total || ''}. Tafadhali ingia kuipitia na kuikubali tena. Malibora Truck Clinic.`.trim(),
   car_ready: (name, vehicle) =>
     `Habari ${name || ''}, gari lako ${vehicle || ''} liko tayari kuchukuliwa. Asante - Malibora Truck Clinic.`.trim(),
   // Account approved: must carry the next step, not just the fact. A bare

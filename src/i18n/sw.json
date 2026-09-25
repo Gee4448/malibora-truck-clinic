@@ -269,6 +269,11 @@
     "change": "Badilisha",
     "itemAdded": "Kipengele kimeongezwa",
     "itemRemoved": "Kipengele kimeondolewa",
+    "editItem": "Hariri Kipengele",
+    "itemUpdated": "Kipengele kimesasishwa",
+    "itemUpdateBlocked": "Kipengele hakikubadilishwa — akaunti yako haina ruhusa. Hakuna kilichobadilika.",
+    "openProforma": "Fungua proforma",
+    "proformaNeedsReapproval": "Imebadilishwa baada ya mteja kukubali — inahitaji kuidhinishwa tena",
     "itemRemoveBlocked": "Kipengele hakikuondolewa — akaunti yako haina ruhusa. Hakuna kilichobadilika.",
     "allApproved": "Vipengele vyote vimeidhinishwa",
     "mustApproveOne": "Angalau kipengele kimoja lazima kiidhinishwe",
@@ -440,7 +445,19 @@
     "depositSaved": "Mipangilio ya amana imehifadhiwa",
     "receipt": "Risiti ya Malipo",
     "depositPaid": "Amana Imelipwa",
-    "messageSent": "Ujumbe umetumwa"
+    "messageSent": "Ujumbe umetumwa",
+    "paymentsPanel": "Malipo",
+    "receivePayment": "Pokea Malipo",
+    "paidInFull": "Imelipwa yote",
+    "depositDue": "Amana inayotakiwa ({pct}%)",
+    "nothingToReceive": "Hati hii bado haina kiasi — weka bei kwenye kadi ya kazi.",
+    "reapprovalTitle": "Imebadilishwa baada ya kuidhinishwa",
+    "reapprovalBody": "Mteja alikubali {agreed}; sasa jumla ni {total}. Inahitaji kuidhinishwa tena — na mteja kupitia lango lake, au na wewe hapa.",
+    "approveForCustomer": "Idhinisha kwa niaba ya mteja",
+    "approvedByStaff": "Imeidhinishwa na ofisi",
+    "awaitingReapproval": "Inasubiri kuidhinishwa tena",
+    "finalWhileUnapprovedConfirm": "Proforma hii imebadilishwa baada ya mteja kukubali na bado haijaidhinishwa tena. Tengeneza ankara kamili hata hivyo?",
+    "editProfit": "Faida ya vipengele hivi"
   },
   "inventory": {
     "title": "Vipuri",
@@ -748,7 +765,8 @@
     "proformaRequest": "Proforma imeombwa",
     "paymentDeclared": "Malipo yametangazwa",
     "inspectionRequest": "Ukaguzi umeombwa",
-    "invoiceBargain": "Ujumbe kuhusu ankara"
+    "invoiceBargain": "Ujumbe kuhusu ankara",
+    "proformaAgreed": "Mteja amekubali proforma"
   },
   "payments": {
     "title": "Njia za Malipo",
@@ -1200,6 +1218,7 @@
       "handovers": "Makabidhiano",
       "amountDue": "Kiasi kinachodaiwa",
       "actionApproveQuote": "Proforma inasubiri idhini yako",
+      "actionReapproveQuote": "Proforma imebadilika — tafadhali kubali tena",
       "actionPayInvoice": "Ankara inasubiri malipo",
       "actionPayInspection": "Ukaguzi unasubiri malipo",
       "trackTitle": "Gari lako lipo wapi",
@@ -1318,7 +1337,10 @@
       "amountPaid": "Kiasi kilicholipwa",
       "balanceOwed": "Salio linalodaiwa",
       "exceedsBalance": "Kiasi ni zaidi ya salio linalodaiwa",
-      "payHint": "Baada ya kulipa kwa M-Pesa, taslimu au benki, wasilisha hapa na Malibora watathibitisha."
+      "payHint": "Baada ya kulipa kwa M-Pesa, taslimu au benki, wasilisha hapa na Malibora watathibitisha.",
+      "reapproveTitle": "Proforma hii imebadilika baada ya kukubali",
+      "reapproveBody": "Ulikubali {agreed}. Sasa jumla ni {total}. Tafadhali ipitie na ukubali tena.",
+      "reapproveBadge": "Inahitaji ukubali tena"
     },
     "profile": {
       "title": "Wasifu Wangu",

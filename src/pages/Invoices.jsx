@@ -4,13 +4,14 @@ import { useLanguage } from '../contexts/LanguageContext'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase, formatTZS, formatDate } from '../lib/supabase'
 import { sendSMS, smsTemplates } from '../lib/sms'
-import { Search, Filter, Eye, FileText } from 'lucide-react'
+import { Search, Filter, Eye, FileText, CreditCard } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Reveal from '../components/common/Reveal'
+import { receivableOn, needsReapproval, staffApprovalUpdate } from '../lib/proforma'
 
 export default function Invoices() {
   const { t } = useLanguage()
-  const { canViewInternal } = useAuth()
+  const { canViewInternal, user } = useAuth()
   const [invoices, setInvoices] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -61,7 +62,10 @@ export default function Invoices() {
 
   const updateStatus = async (id, status) => {
     try {
-      const update = { status }
+      const target = invoices.find(i => i.id === id)
+      // Approving from the list is the same signed agreement as on the invoice
+      // page (040), so a re-approval here clears the "changed" flag too.
+      const update = status === 'approved' && target ? staffApprovalUpdate(target, user?.id) : { status }
       if (status === 'paid') update.paid_at = new Date().toISOString()
       await supabase.from('invoices').update(update).eq('id', id)
       // Notify the customer when an invoice is sent to them (non-blocking).
@@ -204,10 +208,20 @@ export default function Invoices() {
                       <span className={`text-xs px-2 py-1 rounded-full font-medium ${statusColors[inv.status]}`}>
                         {t(`invoices.statuses.${inv.status}`)}
                       </span>
+                      {needsReapproval(inv) && (
+                        <p className="text-[10px] text-red-600 font-medium mt-1">{t('invoices.awaitingReapproval')}</p>
+                      )}
                     </td>
                     <td className="p-3 hidden lg:table-cell text-gray-500 text-xs">{formatDate(inv.created_at)}</td>
                     <td className="p-3 text-right">
                       <div className="flex items-center justify-end gap-1">
+                        {/* Straight to the money: opens the receive-payment
+                            form on the invoice page. */}
+                        {receivableOn(inv) > 0 && (
+                          <Link to={`/admin/invoices/${inv.id}?pay=1`} className="tap p-1.5 rounded hover:bg-emerald-50" title={t('invoices.receivePayment')}>
+                            <CreditCard className="w-4 h-4 text-emerald-600" />
+                          </Link>
+                        )}
                         <Link to={`/admin/invoices/${inv.id}`} className="p-1.5 rounded hover:bg-blue-50">
                           <Eye className="w-4 h-4 text-blue-600" />
                         </Link>

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { useNotifications } from '../../hooks/useNotifications'
 import { formatDateTime } from '../../lib/supabase'
-import { Menu, Bell, Globe, FileText, CreditCard, CheckCheck } from 'lucide-react'
+import { Menu, Bell, Globe, FileText, CreditCard, CheckCheck, CheckCircle2 } from 'lucide-react'
 import AccountMenu from './AccountMenu'
 
 export default function Header({ onMenuToggle }) {
@@ -98,14 +98,15 @@ export default function Header({ onMenuToggle }) {
                   <p className="text-center text-xs text-gray-400 py-8">{t('notifications.empty')}</p>
                 ) : (
                   items.map((n) => {
-                    const Icon = n.type === 'payment_declared' ? CreditCard : FileText
+                    const Icon = n.type === 'payment_declared' ? CreditCard
+                      : n.type === 'proforma_agreed' ? CheckCircle2 : FileText
                     return (
                       <button
                         key={n.id}
                         onClick={() => handleOpen(n)}
                         className={`w-full text-left px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition flex gap-3 ${n.is_read ? '' : 'bg-blue-50/40'}`}
                       >
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${n.type === 'payment_declared' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}`}>
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${['payment_declared', 'proforma_agreed'].includes(n.type) ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}`}>
                           <Icon className="w-4 h-4" />
                         </div>
                         <div className="min-w-0 flex-1">

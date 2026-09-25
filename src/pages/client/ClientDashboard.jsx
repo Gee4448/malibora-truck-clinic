@@ -15,7 +15,7 @@ import { useSpotlight } from '../../hooks/useSpotlight'
 import { DashboardSkeleton } from '../../components/common/Skeleton'
 import {
   JOB_STAGE_KEYS, INSPECTION_STAGE_KEYS, jobStage, inspectionStage,
-  isQuoteAwaitingCustomer, amountOutstanding, isInspectionAwaitingPayment,
+  isQuoteAwaitingCustomer, isQuoteChangedSinceAgreed, amountOutstanding, isInspectionAwaitingPayment,
 } from '../../lib/clientStages'
 
 // Client portal home, organised the way Odoo's customer portal is:
@@ -60,7 +60,7 @@ export default function ClientDashboard() {
         // Customer-safe columns only — never pull internal cost/profit here.
         // `amount_paid` is needed to work out what is still owed.
         supabase.from('invoices')
-          .select('id, invoice_number, invoice_type, status, total_amount, amount_paid, job_card_id, created_at')
+          .select('id, invoice_number, invoice_type, status, total_amount, amount_paid, job_card_id, customer_agreed_at, approval_reset_at, created_at')
           .eq('customer_id', customer.id)
           .in('invoice_type', ['proforma', 'final'])
           .order('created_at', { ascending: false }),
@@ -112,7 +112,8 @@ export default function ClientDashboard() {
   const actions = [
     ...openQuotes.map(q => ({
       id: `q-${q.id}`, to: `/client/invoices/${q.id}`, icon: FileText,
-      label: t('client.dashboard.actionApproveQuote'), ref: q.invoice_number, amount: q.total_amount,
+      label: isQuoteChangedSinceAgreed(q) ? t('client.dashboard.actionReapproveQuote') : t('client.dashboard.actionApproveQuote'),
+      ref: q.invoice_number, amount: q.total_amount,
     })),
     ...unpaidInvoices.map(i => ({
       id: `i-${i.id}`, to: `/client/invoices/${i.id}`, icon: ReceiptText,
