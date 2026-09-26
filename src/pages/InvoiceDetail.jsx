@@ -12,6 +12,7 @@ import {
   approvalAfterRetotal, needsReapproval, staffApprovalUpdate, receivableOn,
 } from '../lib/proforma'
 import { sendSMS, smsTemplates } from '../lib/sms'
+import { fetchCatalog, rememberCatalogItem } from '../lib/catalog'
 import Reveal from '../components/common/Reveal'
 
 export default function InvoiceDetail() {
@@ -54,6 +55,10 @@ export default function InvoiceDetail() {
   const [customerVehicles, setCustomerVehicles] = useState([])
   const [savingVehicle, setSavingVehicle] = useState(false)
   const [creatingJob, setCreatingJob] = useState(false)
+  // Parts/services catalog for the line editor: typing a known name fills its
+  // price, and a new name is remembered for next time (see lib/catalog.js).
+  const [catalog, setCatalog] = useState({ parts: [], labour: [] })
+  useEffect(() => { fetchCatalog().then(setCatalog).catch(() => {}) }, [])
 
   useEffect(() => { fetchInvoice() }, [id])
 
@@ -414,6 +419,24 @@ export default function InvoiceDetail() {
     setDraftItems(d => d.map((it, i) => i === idx ? { ...it, [field]: value } : it))
   }
 
+  // Description typed on a line: if it names a catalog entry, take its price
+  // (and cost) as an editable default — same behaviour as the job card picker.
+  const updateDraftDescription = (idx, value) => {
+    const key = String(value || '').trim().toLowerCase()
+    setDraftItems(d => d.map((it, i) => {
+      if (i !== idx) return it
+      const next = { ...it, description: value }
+      if (it.item_type === 'part') {
+        const p = catalog.parts.find(x => String(x.name || '').trim().toLowerCase() === key)
+        if (p) { next.selling_price = p.selling_price ?? 0; next.cost_price = p.cost_price ?? 0 }
+      } else if (it.item_type === 'labour') {
+        const l = catalog.labour.find(x => String(x.service_name || '').trim().toLowerCase() === key)
+        if (l) { next.selling_price = l.selling_rate ?? 0; next.cost_price = l.cost_rate ?? 0 }
+      }
+      return next
+    }))
+  }
+
   const addDraftLine = (item_type) => {
     setDraftItems(d => [...d, {
       id: null,
@@ -500,6 +523,15 @@ export default function InvoiceDetail() {
       // this job's proforma would silently fall out of step with them.
       if (itemsSource === 'job_card_items') await syncProformaTotals(invoice.job_card_id)
       notifyClientInvoiceChanged(totalAmount)
+      // New names typed on these lines join the catalog (fire-and-forget).
+      Promise.all(draftItems.map(it => rememberCatalogItem({
+        item_type: it.item_type,
+        description: it.description,
+        selling_price: it.selling_price,
+        cost_price: canViewInternal ? it.cost_price : 0,
+        quantity: it.quantity,
+        known: it.item_type === 'part' ? catalog.parts : catalog.labour,
+      }))).then(added => { if (added.some(Boolean)) fetchCatalog().then(setCatalog).catch(() => {}) })
       toast.success(t('invoices.updated'))
       setEditItems(false)
       setDraftItems([])
@@ -692,7 +724,12 @@ export default function InvoiceDetail() {
       : !['partial', 'paid', 'cancelled'].includes(invoice.status)
   const vehicle = invoice.job_cards?.vehicles || invoice.vehicles
 
-  const typeLabels = { proforma: t('invoices.proforma'), final: t('invoices.final'), internal: t('invoices.internal') }
+  // A proforma with no job card is a QUOTATION on the document (Antony, 26 Sep 2026).
+  const typeLabels = {
+    proforma: standalone ? t('invoices.quotation') : t('invoices.proforma'),
+    final: t('invoices.final'),
+    internal: t('invoices.internal'),
+  }
   const handleSendStaffMessage = async () => {
     if (!newMessage.trim()) return
     setSendingMessage(true)
@@ -964,7 +1001,7 @@ export default function InvoiceDetail() {
             {invoice.customers?.tin_number && <p className="text-sm text-gray-600">TIN: {invoice.customers.tin_number}</p>}
           </div>
           <div>
-            <h3 className="text-xs font-semibold text-gray-500 uppercase mb-2">{t('jobs.vehicle')}</h3>
+            <h3 className="text-xs font-semibold text-gray-500 uppercase mb-2">{vehicle ? t('jobs.vehicle') : t('invoices.summary')}</h3>
             {vehicle ? (
               <>
                 <p className="font-semibold text-gray-900">{vehicle.registration_number}</p>
@@ -1057,6 +1094,18 @@ export default function InvoiceDetail() {
           </div>
         )}
 
+        {/* Catalog suggestions for the line editor */}
+        {editItems && (
+          <>
+            <datalist id="inv-parts-catalog">
+              {catalog.parts.map(p => <option key={p.id} value={p.name} />)}
+            </datalist>
+            <datalist id="inv-labour-catalog">
+              {catalog.labour.map(l => <option key={l.id} value={l.service_name} />)}
+            </datalist>
+          </>
+        )}
+
         {/* Items Table */}
         <table className="w-full text-sm mb-6">
           <thead>
@@ -1096,7 +1145,8 @@ export default function InvoiceDetail() {
                       <td className="p-1.5 text-gray-500">{i + 1}</td>
                       <td className="p-1.5">
                         <input type="text" value={it.description}
-                          onChange={e => updateDraft(idx, 'description', e.target.value)}
+                          list={it.item_type === 'part' ? 'inv-parts-catalog' : it.item_type === 'labour' ? 'inv-labour-catalog' : undefined}
+                          onChange={e => updateDraftDescription(idx, e.target.value)}
                           className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
                       </td>
                       <td className="p-1.5">

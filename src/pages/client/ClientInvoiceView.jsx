@@ -214,7 +214,9 @@ export default function ClientInvoiceView() {
             <div>
               <p className="font-bold text-gray-900">{invoice.invoice_number}</p>
               <p className="text-xs text-gray-500">
-                {invoice.invoice_type === 'proforma' ? t('invoices.proforma') : t('invoices.final')}
+                {invoice.invoice_type === 'proforma'
+                  ? (invoice.job_card_id ? t('invoices.proforma') : t('invoices.quotation'))
+                  : t('invoices.final')}
               </p>
             </div>
           </div>
@@ -235,7 +237,9 @@ export default function ClientInvoiceView() {
             {invoice.customers?.company_name && <p className="text-xs text-gray-500">{invoice.customers.company_name}</p>}
           </div>
           <div>
-            <p className="text-gray-400 text-xs">{t('customerView.vehicle')}</p>
+            <p className="text-gray-400 text-xs">
+              {(invoice.job_cards?.vehicles || invoice.vehicles) ? t('customerView.vehicle') : t('invoices.summary')}
+            </p>
             {/* A quotation with no job card names its vehicle directly, or
                 only what it is for when there is no vehicle (041). */}
             {(() => {

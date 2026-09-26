@@ -135,7 +135,7 @@ export default function ClientInvoices() {
                 <div className="flex items-center gap-2">
                   <p className="font-semibold text-gray-900 text-sm">{inv.invoice_number}</p>
                   <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
-                    {typeLabels[inv.invoice_type] || inv.invoice_type}
+                    {inv.invoice_type === 'proforma' && !inv.job_cards ? t('invoices.quotation') : (typeLabels[inv.invoice_type] || inv.invoice_type)}
                   </span>
                 </div>
                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColors[inv.status] || 'bg-gray-100 text-gray-600'}`}>

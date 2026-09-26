@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf'
-import { pdfSubtitle } from './company'
+import { COMPANY, documentAddressLines } from './company'
 import autoTable from 'jspdf-autotable'
 
 const formatTZS = (amount) => {
@@ -13,10 +13,11 @@ const formatDate = (dateStr) => {
 }
 
 // Load the real Malibora logo from /malibora-logo.png and crop to just the
-// lockup (same crop box as the on-screen Logo component — the asset is a lockup
-// on a padded white disc). Cached, and resolves to null if the file is missing
-// so the PDF header falls back to plain text. Runs in the browser (canvas).
-const LOGO_CROP = { x: 41, y: 135, w: 366, h: 113 }
+// orange MARK (the asset is a "Malibora INTERTRADE" lockup on a padded white
+// disc; the wordmark is drawn as text, see drawPdfHeader). Cached, and
+// resolves to null if the file is missing so the header falls back to text
+// only. Runs in the browser (canvas). Crop box measured on the 447x400 asset.
+const LOGO_CROP = { x: 46, y: 136, w: 116, h: 108 }
 let _logoPromise
 function loadLogo() {
   if (_logoPromise) return _logoPromise
@@ -40,33 +41,50 @@ function loadLogo() {
   return _logoPromise
 }
 
-// Shared PDF header: real logo on a white band with a brand rule when available,
-// otherwise the original orange band with the wordmark as a safe fallback.
-async function drawPdfHeader(doc, pageWidth, subtitle) {
+// Shared PDF header. The brand mark, then "Malibora / TRUCK CLINIC" as text —
+// the logo asset's own wordmark reads "INTERTRADE" (the parent company) and
+// Antony wants the paper to say Truck Clinic (26 Sep 2026). Under it the
+// tagline and every location, so a customer in Iringa or Mafinga sees his own
+// branch on the document. Returns the y of the rule under the header, so the
+// callers lay the rest out below it.
+async function drawPdfHeader(doc, pageWidth) {
   const brand = [201, 92, 12]
-  const logo = await loadLogo()
-  if (logo) {
-    const wMM = 52
-    const hMM = wMM * logo.h / logo.w
-    doc.addImage(logo.dataUrl, 'PNG', 14, 11, wMM, hMM)
-    doc.setTextColor(107, 114, 128)
-    doc.setFontSize(9)
-    doc.setFont('helvetica', 'normal')
-    doc.text(subtitle, 14, 11 + hMM + 5)
-    doc.setDrawColor(...brand)
-    doc.setLineWidth(1)
-    doc.line(14, 35, pageWidth - 14, 35)
-  } else {
-    doc.setFillColor(...brand)
-    doc.rect(0, 0, pageWidth, 35, 'F')
-    doc.setTextColor(255, 255, 255)
-    doc.setFontSize(20)
-    doc.setFont('helvetica', 'bold')
-    doc.text('MALIBORA TRUCK CLINIC', 14, 18)
-    doc.setFontSize(9)
-    doc.setFont('helvetica', 'normal')
-    doc.text(subtitle, 14, 26)
+  const gray = [107, 114, 128]
+  const dark = [55, 65, 81]
+  const top = 10
+  let x = 14
+  const mark = await loadLogo()
+  if (mark) {
+    const hMM = 15
+    const wMM = hMM * mark.w / mark.h
+    doc.addImage(mark.dataUrl, 'PNG', x, top, wMM, hMM)
+    x += wMM + 4
   }
+  doc.setTextColor(...dark)
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(20)
+  doc.text('Malibora', x, top + 8.5)
+  doc.setTextColor(...brand)
+  doc.setFontSize(8.5)
+  doc.text('TRUCK CLINIC', x + 0.5, top + 14, { charSpace: 1.6 })
+
+  doc.setTextColor(...gray)
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(8)
+  doc.text(COMPANY.tagline, 14, top + 21)
+  // Four locations, two per line, so the header stays a header.
+  doc.setFontSize(7)
+  const rows = [
+    documentAddressLines.slice(0, 2).join('   ·   '),
+    documentAddressLines.slice(2).join('   ·   '),
+  ].filter(Boolean)
+  rows.forEach((row, i) => doc.text(row, 14, top + 25.5 + i * 4))
+
+  const ruleY = top + 26 + rows.length * 4
+  doc.setDrawColor(...brand)
+  doc.setLineWidth(1)
+  doc.line(14, ruleY, pageWidth - 14, ruleY)
+  return ruleY
 }
 
 export async function generateInvoicePDF(invoice, items, showInternal = false) {
@@ -78,26 +96,29 @@ export async function generateInvoicePDF(invoice, items, showInternal = false) {
   const darkGray = [55, 65, 81]
   const lightGray = [156, 163, 175]
 
-  // Header (real logo, with orange-band text fallback)
-  await drawPdfHeader(doc, pageWidth, pdfSubtitle)
+  // Header (brand mark + wordmark + every address)
+  const headerBottom = await drawPdfHeader(doc, pageWidth)
+  const top = headerBottom + 12
 
-  // Invoice type & number
-  const typeLabel = invoice.invoice_type === 'proforma' ? 'PROFORMA INVOICE' :
-    invoice.invoice_type === 'internal' ? 'INTERNAL INVOICE' : 'INVOICE'
+  // Invoice type & number. A proforma with no job card is a QUOTATION —
+  // the paper someone gets before there is any job (041; Antony, 26 Sep 2026).
+  const typeLabel = invoice.invoice_type === 'proforma'
+    ? (invoice.job_card_id ? 'PROFORMA INVOICE' : 'QUOTATION')
+    : invoice.invoice_type === 'internal' ? 'INTERNAL INVOICE' : 'INVOICE'
 
   doc.setTextColor(...darkGray)
   doc.setFontSize(16)
   doc.setFont('helvetica', 'bold')
-  doc.text(typeLabel, pageWidth - 14, 48, { align: 'right' })
+  doc.text(typeLabel, pageWidth - 14, top, { align: 'right' })
   doc.setFontSize(11)
   doc.setTextColor(...blue)
-  doc.text(invoice.invoice_number, pageWidth - 14, 56, { align: 'right' })
+  doc.text(invoice.invoice_number, pageWidth - 14, top + 8, { align: 'right' })
   doc.setTextColor(...lightGray)
   doc.setFontSize(9)
-  doc.text(`Date: ${formatDate(invoice.created_at)}`, pageWidth - 14, 63, { align: 'right' })
+  doc.text(`Date: ${formatDate(invoice.created_at)}`, pageWidth - 14, top + 15, { align: 'right' })
 
   // Bill To
-  let y = 48
+  let y = top
   doc.setTextColor(...darkGray)
   doc.setFontSize(8)
   doc.setFont('helvetica', 'bold')
@@ -107,7 +128,11 @@ export async function generateInvoicePDF(invoice, items, showInternal = false) {
   y += 7
   doc.text(invoice.customers?.full_name || '', 14, y)
   y += 5
-  if (invoice.customers?.company_name) { doc.setFontSize(9); doc.text(invoice.customers.company_name, 14, y); y += 5 }
+  // A company registered under its own name as the contact ("RE TRUCK / RE
+  // TRUCK") printed twice; once is enough.
+  const company = invoice.customers?.company_name
+  const sameAsName = company && company.trim().toLowerCase() === String(invoice.customers?.full_name || '').trim().toLowerCase()
+  if (company && !sameAsName) { doc.setFontSize(9); doc.text(company, 14, y); y += 5 }
   doc.setFontSize(9)
   doc.text(invoice.customers?.phone || '', 14, y); y += 5
   if (invoice.customers?.email) { doc.text(invoice.customers.email, 14, y); y += 5 }
@@ -123,7 +148,9 @@ export async function generateInvoicePDF(invoice, items, showInternal = false) {
   // Vehicle info
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(8)
-  doc.text('VEHICLE:', 14, y + 3)
+  // No vehicle on a quotation: the line under it is what the quote is FOR, and
+  // the label says so (Antony, 26 Sep 2026: "hii isome summary").
+  doc.text((invoice.job_cards?.vehicles || invoice.vehicles) ? 'VEHICLE:' : 'SUMMARY:', 14, y + 3)
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(9)
   y += 10
@@ -199,8 +226,8 @@ export async function generateInvoicePDF(invoice, items, showInternal = false) {
   })
 
   // Totals
-  const finalY = doc.lastAutoTable.finalY + 8
   const totalsX = pageWidth - 80
+  const pageHeight = doc.internal.pageSize.getHeight()
 
   const drawTotalLine = (label, value, yPos, bold = false) => {
     doc.setFont('helvetica', bold ? 'bold' : 'normal')
@@ -210,7 +237,28 @@ export async function generateInvoicePDF(invoice, items, showInternal = false) {
     doc.text(value, pageWidth - 14, yPos, { align: 'right' })
   }
 
-  let ty = finalY
+  // Money already received, and what a proforma asks for up front.
+  const amountPaid = Number(invoice.amount_paid) || 0
+  const totalAmount = Number(invoice.total_amount) || 0
+  const balance = Math.max(0, totalAmount - amountPaid)
+  const depositPct = Number(invoice.deposit_percentage) || 0
+  const showDeposit = invoice.invoice_type === 'proforma' && depositPct > 0 && amountPaid <= 0 && balance > 0
+  const showPayment = amountPaid > 0 || showDeposit
+
+  // The closing block (subtotals, TOTAL, payment, internal figures, footer)
+  // stays on one sheet. It used to start wherever the table ended and run
+  // straight into the fixed-position footer — a 20-line proforma printed
+  // "Thank you for choosing…" across its subtotals (Antony, 26 Sep 2026).
+  let needed = 3 * 6 + 8 + 12
+  if (Number(invoice.subtotal_additional) > 0) needed += 6
+  if (Number(invoice.discount_amount) > 0) needed += 6
+  if (showPayment) needed += 22
+  if (showInternal) needed += 36
+  let ty = doc.lastAutoTable.finalY + 8
+  if (ty + needed > pageHeight - 24) {
+    doc.addPage()
+    ty = 20
+  }
   drawTotalLine('Parts Subtotal:', formatTZS(invoice.subtotal_parts), ty)
   ty += 6
   drawTotalLine('Labour Subtotal:', formatTZS(invoice.subtotal_labour), ty)
@@ -229,8 +277,28 @@ export async function generateInvoicePDF(invoice, items, showInternal = false) {
   doc.text('TOTAL:', totalsX, ty + 3)
   doc.text(formatTZS(invoice.total_amount), pageWidth - 14, ty + 3, { align: 'right' })
 
-  // Internal breakdown (if manager)
-  if (showInternal && invoice.invoice_type !== 'proforma') {
+  // Payment status: what has been received and what is still owed, or the
+  // deposit a proforma asks for. Antony recorded a payment and the PDF said
+  // nothing about it.
+  if (showPayment) {
+    ty += 16
+    if (amountPaid > 0) {
+      drawTotalLine('Amount Paid:', formatTZS(amountPaid), ty)
+      ty += 6
+      drawTotalLine(balance > 0 ? 'Balance Due:' : 'Balance:', formatTZS(balance), ty, true)
+      if (balance <= 0 && invoice.paid_at) {
+        ty += 5
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...lightGray)
+        doc.text(`Paid in full on ${formatDate(invoice.paid_at)}`, pageWidth - 14, ty, { align: 'right' })
+      }
+    } else {
+      drawTotalLine(`Deposit required (${depositPct}%):`,
+        formatTZS(invoice.deposit_amount || totalAmount * depositPct / 100), ty, true)
+    }
+  }
+
+  // Internal breakdown (if manager) — on proformas too, like the screen.
+  if (showInternal) {
     ty += 20
     doc.setFillColor(255, 251, 235)
     doc.rect(14, ty - 4, pageWidth - 28, 30, 'F')
@@ -265,20 +333,24 @@ export async function generateHandoverPDF(handover) {
   const doc = new jsPDF()
   const pageWidth = doc.internal.pageSize.getWidth()
 
-  // Header (real logo, with orange-band text fallback)
-  await drawPdfHeader(doc, pageWidth, 'VEHICLE HANDOVER CARD')
+  // Header (brand mark + wordmark + every address)
+  const headerBottom = await drawPdfHeader(doc, pageWidth)
+  const top = headerBottom + 12
 
-  // Handover number
+  // Title, number, date
   doc.setTextColor(55, 65, 81)
   doc.setFontSize(14)
   doc.setFont('helvetica', 'bold')
-  doc.text(handover.handover_number, pageWidth - 14, 48, { align: 'right' })
+  doc.text('VEHICLE HANDOVER CARD', pageWidth - 14, top, { align: 'right' })
+  doc.setFontSize(11)
+  doc.setTextColor(201, 92, 12)
+  doc.text(handover.handover_number, pageWidth - 14, top + 8, { align: 'right' })
   doc.setFontSize(9)
   doc.setTextColor(156, 163, 175)
-  doc.text(`Date: ${formatDate(handover.handover_date)}`, pageWidth - 14, 56, { align: 'right' })
+  doc.text(`Date: ${formatDate(handover.handover_date)}`, pageWidth - 14, top + 15, { align: 'right' })
 
   // Customer & Vehicle
-  let y = 48
+  let y = top
   doc.setTextColor(55, 65, 81)
   doc.setFontSize(9)
   doc.setFont('helvetica', 'bold')

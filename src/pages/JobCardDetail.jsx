@@ -6,6 +6,7 @@ import { supabase, formatTZS, formatDate } from '../lib/supabase'
 import { findLiveProforma, syncProformaTotals, totalsFromJobItems, proformaUpdateFor, overpaymentOn, DEFAULT_VAT_RATE, receivableOn, needsReapproval } from '../lib/proforma'
 import { fetchEvidence, evidenceUrl, fetchFindings } from '../lib/evidence'
 import { fetchJobLabour, billLoggedLabour } from '../lib/labour'
+import { rememberCatalogItem } from '../lib/catalog'
 import { Plus, Trash2, FileText, Printer, ArrowLeft, Package, Wrench, DollarSign, X, CheckCircle2, XCircle, UserPlus, AlertCircle, Share2, Pencil, Camera, Flag, Clock, CreditCard, AlertTriangle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Reveal from '../components/common/Reveal'
@@ -311,6 +312,24 @@ export default function JobCardDetail() {
     }
   }
 
+  // A part or service typed in (not picked from the catalog) goes INTO the
+  // catalog, with its price, so it is in the picker next time (Antony,
+  // 26 Sep 2026: "jana nimeweka vingi sana, sivioni kwa list hapa").
+  // Fire-and-forget; the picker refreshes when it lands.
+  const rememberTyped = (type, form) => {
+    if (type === 'part' && form.part_id) return
+    if (type === 'labour' && form.labour_id) return
+    if (type !== 'part' && type !== 'labour') return
+    rememberCatalogItem({
+      item_type: type,
+      description: form.description,
+      selling_price: form.selling_price,
+      cost_price: canViewInternal ? form.cost_price : 0,
+      quantity: form.quantity,
+      known: type === 'part' ? parts : labourRates,
+    }).then(added => { if (added) { fetchParts(); fetchLabourRates() } })
+  }
+
   const handleAddItem = async (e) => {
     e.preventDefault()
     try {
@@ -332,6 +351,7 @@ export default function JobCardDetail() {
         if (error) throw error
         if (!data || data.length === 0) throw new Error(t('jobs.itemUpdateBlocked'))
         toast.success(t('jobs.itemUpdated'))
+        rememberTyped(itemType, itemForm)
         closeItemForm()
         setItemForm({ part_id: '', labour_id: '', description: '', quantity: 1, cost_price: 0, selling_price: 0 })
         // Re-price the quote; if the customer had agreed to the old figure,
@@ -382,6 +402,7 @@ export default function JobCardDetail() {
       }
 
       toast.success(t('jobs.itemAdded'))
+      rememberTyped(itemType, itemForm)
       closeItemForm()
       setItemForm({ part_id: '', labour_id: '', description: '', quantity: 1, cost_price: 0, selling_price: 0 })
       // The job card is the only place these lines are edited, so it is also

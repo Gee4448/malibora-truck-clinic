@@ -50,16 +50,25 @@ export const headOffice = COMPANY.locations[0]
 /** "Majumba Sita, opp. Majumba Sita BRT Station, Dar es Salaam" */
 export const headOfficeLine = `${headOffice.address}, ${headOffice.city}`
 
+// Documents are printed in English whatever the screen language, so the role
+// words are fixed here rather than pulled through i18n.
+const ROLE_LABEL = {
+  'company.mainOffice': 'Main office',
+  'company.garage': 'Garage',
+  'company.branchOffice': 'Branch office',
+  'company.branch': 'Branch',
+}
+
+/** "Main office — Dar es Salaam: Majumba Sita, opp. Majumba Sita BRT Station" */
+export const locationLine = (loc) => `${ROLE_LABEL[loc.roleKey] || ''} — ${loc.city}: ${loc.address}`
+
 /**
- * The address block on a printed document. Two lines rather than one: a
- * customer needs the office to send paperwork to and the yard to bring a truck
- * to, and they are on opposite sides of Dar. Kept short — this sits under the
- * company name in a header that also has to hold the invoice number and date.
+ * The address block on a printed document: every location, one per line.
+ * Antony, 26 Sep 2026: "hii address ipatikane pia kwa proforma na invoice na
+ * handover" — the customer in Mafinga or Iringa should see his own branch on
+ * the paper, not only the Dar head office with "Branches: Iringa, Mafinga".
  */
-export const documentAddressLines = [
-  headOfficeLine,
-  `Garage: ${COMPANY.locations[1].address}  ·  Branches: Iringa, Mafinga`,
-]
+export const documentAddressLines = COMPANY.locations.map(locationLine)
 
 /** One line, for the band under the logo in the generated PDF. */
 export const pdfSubtitle = `${COMPANY.tagline} | ${headOffice.address}, ${headOffice.city}`

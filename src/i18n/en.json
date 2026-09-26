@@ -463,6 +463,8 @@
     "awaitingReapproval": "Awaiting re-approval",
     "finalWhileUnapprovedConfirm": "This proforma changed after the customer agreed and has not been approved again. Generate the final invoice anyway?",
     "editProfit": "Profit on these lines",
+    "quotation": "Quotation",
+    "summary": "Summary",
     "newQuotation": "New Quotation",
     "createQuotation": "Create Quotation",
     "quotationCreated": "Quotation created — add the lines below",
