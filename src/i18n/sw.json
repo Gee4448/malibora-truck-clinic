@@ -140,6 +140,25 @@
       "noPhone": "Hakuna namba ya simu",
       "noPhoneHint": "Mteja huyu hana namba ya simu inayotumika, hivyo WhatsApp haiwezi kufunguliwa. Ongeza namba kwenye taarifa zake kwanza."
     },
+    "login": {
+      "sectionTitle": "Akaunti ya mteja (portal)",
+      "username": "Jina la mtumiaji (namba ya simu)",
+      "usernameIsPhone": "Ni namba yake ya simu",
+      "password": "Nenosiri",
+      "generate": "Tengeneza nenosiri lingine",
+      "hint": "Mteja ataingia kwa namba yake ya simu na nenosiri hili, na anaweza kulibadilisha baadaye. Futa nenosiri ukitaka kumsajili bila akaunti.",
+      "tooShort": "Nenosiri liwe na herufi angalau {n}",
+      "create": "Mpe mteja huyu akaunti ya portal",
+      "reset": "Badilisha nenosiri la mteja",
+      "resetConfirm": "Umpe {name} nenosiri jipya? La zamani halitafanya kazi tena.",
+      "created": "Akaunti ya mteja imetengenezwa",
+      "resetDone": "Nenosiri jipya limewekwa",
+      "modalTitle": "Mpe mteja taarifa zake za kuingia",
+      "modalSubtitle": "Msomee, au mtumie kwa WhatsApp. Haliwezi kuonekana tena ukifunga hapa — badilisha nenosiri kupata jipya.",
+      "done": "Nimemaliza",
+      "forbidden": "Akaunti yako hairuhusiwi kuweka nenosiri la mteja",
+      "migrationMissing": "Akaunti za wateja bado hazijawashwa (migration 043 haijawekwa kwenye database)"
+    },
     "registeredOnline": "Mtandaoni",
     "registeredWalkIn": "Ametembelea",
     "location": "Eneo",
@@ -1374,7 +1393,18 @@
       "address": "Anwani",
       "save": "Hifadhi Mabadiliko",
       "updated": "Wasifu umebadilishwa!",
-      "updateError": "Imeshindikana kubadilisha wasifu"
+      "updateError": "Imeshindikana kubadilisha wasifu",
+      "passwordTitle": "Nenosiri",
+      "passwordHint": "Kama ulipewa nenosiri na ofisi, unaweza kuweka lako mwenyewe hapa.",
+      "currentPassword": "Nenosiri la sasa",
+      "newPassword": "Nenosiri jipya",
+      "confirmPassword": "Rudia nenosiri jipya",
+      "changePassword": "Badilisha nenosiri",
+      "passwordChanged": "Nenosiri limebadilishwa!",
+      "passwordWrong": "Nenosiri la sasa si sahihi",
+      "passwordMismatch": "Manenosiri mapya mawili hayafanani",
+      "passwordTooShort": "Nenosiri liwe na herufi angalau {n}",
+      "passwordError": "Imeshindikana kubadilisha nenosiri. Tafadhali piga simu ofisini."
     }
   },
   "branches": {

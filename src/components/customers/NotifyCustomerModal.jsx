@@ -14,12 +14,18 @@ import { whatsappLink, portalUrl } from '../../lib/whatsapp'
 // The SMS for the same event has already been attempted by the caller. It is
 // silently skipped while Africa's Talking is unprovisioned, which is exactly why
 // this WhatsApp step is the one that actually reaches the customer today.
-export default function NotifyCustomerModal({ customer, kind, onClose, t }) {
+//
+// kind 'credentials' is the office handing over a portal login (migration 043).
+// `password` is only ever held here, in memory, for as long as the modal is
+// open: the database keeps a hash, so this is the one moment it can be read.
+export default function NotifyCustomerModal({ customer, kind, password, onClose, t }) {
   const [copied, setCopied] = useState(false)
 
-  const defaultMessage = kind === 'approved'
-    ? smsTemplates.account_approved(customer.full_name, portalUrl())
-    : smsTemplates.account_rejected(customer.full_name)
+  const defaultMessage = kind === 'credentials'
+    ? smsTemplates.account_credentials(customer.full_name, customer.phone, password, portalUrl())
+    : kind === 'approved'
+      ? smsTemplates.account_approved(customer.full_name, portalUrl())
+      : smsTemplates.account_rejected(customer.full_name)
 
   const [message, setMessage] = useState(defaultMessage)
 
@@ -42,9 +48,12 @@ export default function NotifyCustomerModal({ customer, kind, onClose, t }) {
         <div className="flex items-start justify-between p-5 border-b">
           <div>
             <h2 className="text-lg font-bold text-gray-900">
-              {kind === 'approved' ? t('customers.notify.titleApproved') : t('customers.notify.titleRejected')}
+              {kind === 'credentials' ? t('customers.login.modalTitle')
+                : kind === 'approved' ? t('customers.notify.titleApproved') : t('customers.notify.titleRejected')}
             </h2>
-            <p className="text-xs text-gray-500 mt-0.5">{t('customers.notify.subtitle')}</p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              {kind === 'credentials' ? t('customers.login.modalSubtitle') : t('customers.notify.subtitle')}
+            </p>
           </div>
           <button onClick={onClose} className="p-1 rounded hover:bg-gray-100 cursor-pointer">
             <X className="w-5 h-5" />
@@ -58,6 +67,20 @@ export default function NotifyCustomerModal({ customer, kind, onClose, t }) {
             <span className="text-gray-500">{customer.phone || t('customers.notify.noPhone')}</span>
           </div>
 
+          {/* Large enough to read out over the phone. */}
+          {kind === 'credentials' && (
+            <div className="grid grid-cols-2 gap-3 p-3 bg-blue-50 border border-blue-200 rounded-xl">
+              <div>
+                <p className="text-[11px] font-medium text-blue-700">{t('customers.login.username')}</p>
+                <p className="font-mono font-semibold text-gray-900 break-all">{customer.phone}</p>
+              </div>
+              <div>
+                <p className="text-[11px] font-medium text-blue-700">{t('customers.login.password')}</p>
+                <p className="font-mono font-semibold text-gray-900 tracking-wider break-all">{password}</p>
+              </div>
+            </div>
+          )}
+
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1.5">
               {t('customers.notify.messageLabel')}
@@ -65,7 +88,7 @@ export default function NotifyCustomerModal({ customer, kind, onClose, t }) {
             <textarea
               value={message}
               onChange={e => setMessage(e.target.value)}
-              rows={4}
+              rows={kind === 'credentials' ? 6 : 4}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm resize-none"
             />
           </div>
@@ -102,7 +125,7 @@ export default function NotifyCustomerModal({ customer, kind, onClose, t }) {
               onClick={onClose}
               className="px-6 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition cursor-pointer"
             >
-              {t('customers.notify.later')}
+              {kind === 'credentials' ? t('customers.login.done') : t('customers.notify.later')}
             </button>
           </div>
         </div>

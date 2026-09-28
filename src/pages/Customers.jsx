@@ -3,13 +3,14 @@ import { Link } from 'react-router-dom'
 import { useLanguage } from '../contexts/LanguageContext'
 import { supabase, formatDate } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
-import { Plus, Search, Phone, Mail, Car, Edit2, Trash2, X, CheckCircle2, XCircle, ArrowLeft, ArrowRight, UserPlus, Globe, Users, MessageCircle } from 'lucide-react'
+import { Plus, Search, Phone, Mail, Car, Edit2, Trash2, X, CheckCircle2, XCircle, ArrowLeft, ArrowRight, UserPlus, Globe, Users, MessageCircle, KeyRound, RefreshCw } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { emptyVehicle } from '../lib/vehicleOptions'
 import VehicleFormBlock from '../components/vehicles/VehicleFormBlock'
 import NotifyCustomerModal from '../components/customers/NotifyCustomerModal'
 import { sendSMS, smsTemplates } from '../lib/sms'
 import { portalUrl } from '../lib/whatsapp'
+import { generatePassword, setCustomerPassword, MIN_PASSWORD_LENGTH } from '../lib/customerLogin'
 import Reveal from '../components/common/Reveal'
 
 export default function Customers() {
@@ -30,6 +31,10 @@ export default function Customers() {
   // { customer, kind: 'approved' | 'rejected' } — drives the notify modal that
   // opens after a decision, and can be reopened later from the row.
   const [notify, setNotify] = useState(null)
+  // First portal password for a customer registered at the office (043).
+  // Pre-filled with a generated one; staff may type their own or clear it to
+  // register the customer without a login.
+  const [loginPassword, setLoginPassword] = useState('')
   const [form, setForm] = useState({
     full_name: '', phone: '', email: '', company_name: '',
     tin_number: '', vrn_number: '', address: '',
@@ -66,6 +71,10 @@ export default function Customers() {
   // when I edit him there is no way to add one."
   const handlePersonalSubmit = (e) => {
     e.preventDefault()
+    if (!editingId && loginPassword && loginPassword.length < MIN_PASSWORD_LENGTH) {
+      toast.error(t('customers.login.tooShort').replace('{n}', MIN_PASSWORD_LENGTH))
+      return
+    }
     if (editingId) {
       saveCustomer()
     } else {
@@ -129,6 +138,19 @@ export default function Customers() {
           .from('customers').insert(payload).select().single()
         if (error) throw error
 
+        // The customer is saved either way; a login that could not be set is
+        // reported and can be given later from the key button on their row.
+        let credentials = null
+        if (loginPassword) {
+          try {
+            await setCustomerPassword(newCustomer.id, loginPassword)
+            credentials = { customer: newCustomer, kind: 'credentials', password: loginPassword }
+          } catch (pwErr) {
+            toast.error(loginErrorText(pwErr))
+          }
+        }
+        if (credentials) setNotify(credentials)
+
         if (cleanVehicles.length > 0) {
           const vehiclePayloads = cleanVehicles.map(v => ({
             customer_id: newCustomer.id,
@@ -186,6 +208,32 @@ export default function Customers() {
     setShowForm(true)
   }
 
+  const loginErrorText = (err) => {
+    const key = {
+      migration_missing: 'customers.login.migrationMissing',
+      password_too_short: 'customers.login.tooShort',
+      forbidden: 'customers.login.forbidden',
+    }[err.message]
+    return key ? t(key).replace('{n}', MIN_PASSWORD_LENGTH) : err.message
+  }
+
+  // Give a login to a customer who has none, or replace a forgotten password.
+  // The old one cannot be read back (only its hash is stored), so the customer
+  // who phones in gets a fresh one in the same call.
+  const handleResetLogin = async (customer) => {
+    const hasLogin = !!customer.password_hash
+    if (hasLogin && !confirm(t('customers.login.resetConfirm').replace('{name}', customer.full_name))) return
+    const password = generatePassword()
+    try {
+      await setCustomerPassword(customer.id, password)
+      toast.success(t(hasLogin ? 'customers.login.resetDone' : 'customers.login.created'))
+      setNotify({ customer, kind: 'credentials', password })
+      fetchCustomers()
+    } catch (err) {
+      toast.error(loginErrorText(err))
+    }
+  }
+
   const closeForm = () => {
     setShowForm(false)
     resetForm()
@@ -227,6 +275,7 @@ export default function Customers() {
     setEditingId(null)
     setVehicles([])
     setStep(1)
+    setLoginPassword(generatePassword())
   }
 
   // Approving is only ever reachable from a 'pending' row, so this is always the
@@ -473,6 +522,12 @@ export default function Customers() {
                             <MessageCircle className="w-4 h-4 text-green-600" />
                           </button>
                         )}
+                        {customer.status === 'approved' && (
+                          <button onClick={() => handleResetLogin(customer)} className="p-1.5 rounded hover:bg-blue-50"
+                            title={t(customer.password_hash ? 'customers.login.reset' : 'customers.login.create')}>
+                            <KeyRound className={`w-4 h-4 ${customer.password_hash ? 'text-blue-600' : 'text-gray-400'}`} />
+                          </button>
+                        )}
                         <button onClick={() => handleEdit(customer)} className="p-1.5 rounded hover:bg-gray-100" title="Edit">
                           <Edit2 className="w-4 h-4 text-gray-500" />
                         </button>
@@ -494,6 +549,7 @@ export default function Customers() {
         <NotifyCustomerModal
           customer={notify.customer}
           kind={notify.kind}
+          password={notify.password}
           onClose={() => setNotify(null)}
           t={t}
         />
@@ -602,6 +658,37 @@ export default function Customers() {
                     <textarea value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} rows={2}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none" />
                   </div>
+                  {/* Portal login, new customers only. An existing customer
+                      gets theirs from the key button on the list. */}
+                  {!editingId && (
+                    <div className="sm:col-span-2 p-3 bg-blue-50 border border-blue-200 rounded-xl space-y-3">
+                      <div className="flex items-center gap-2 text-sm font-semibold text-blue-900">
+                        <KeyRound className="w-4 h-4" /> {t('customers.login.sectionTitle')}
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">{t('customers.login.username')}</label>
+                          <input type="text" value={form.phone} readOnly tabIndex={-1}
+                            placeholder={t('customers.login.usernameIsPhone')}
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-600 font-mono outline-none" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">{t('customers.login.password')}</label>
+                          <div className="flex gap-2">
+                            <input type="text" value={loginPassword} onChange={e => setLoginPassword(e.target.value.trim())}
+                              autoComplete="off"
+                              className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-mono" />
+                            <button type="button" onClick={() => setLoginPassword(generatePassword())}
+                              title={t('customers.login.generate')}
+                              className="tap px-3 border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-600">
+                              <RefreshCw className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-500">{t('customers.login.hint')}</p>
+                    </div>
+                  )}
                 </div>
                 <div className="flex flex-wrap gap-3 pt-2">
                   <button type="submit" disabled={submitting}

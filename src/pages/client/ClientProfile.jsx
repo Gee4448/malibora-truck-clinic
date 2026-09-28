@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { useClient } from '../../contexts/ClientAuthContext'
 import { supabase } from '../../lib/supabase'
-import { User, Phone, Building2, MapPin, Mail, Save } from 'lucide-react'
+import { User, Phone, Building2, MapPin, Mail, Save, KeyRound } from 'lucide-react'
+import { changeCustomerPassword, MIN_PASSWORD_LENGTH } from '../../lib/customerLogin'
 import toast from 'react-hot-toast'
 import Reveal from '../../components/common/Reveal'
 
@@ -18,6 +19,8 @@ export default function ClientProfile() {
     location: customer?.location || '',
   })
   const [saving, setSaving] = useState(false)
+  const [pw, setPw] = useState({ current: '', next: '', confirm: '' })
+  const [savingPw, setSavingPw] = useState(false)
 
   const handleSave = async () => {
     setSaving(true)
@@ -41,6 +44,31 @@ export default function ClientProfile() {
       toast.error(t('client.profile.updateError'))
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleChangePassword = async () => {
+    if (pw.next.length < MIN_PASSWORD_LENGTH) {
+      toast.error(t('client.profile.passwordTooShort').replace('{n}', MIN_PASSWORD_LENGTH))
+      return
+    }
+    if (pw.next !== pw.confirm) {
+      toast.error(t('client.profile.passwordMismatch'))
+      return
+    }
+    setSavingPw(true)
+    try {
+      await changeCustomerPassword(customer.id, pw.current, pw.next)
+      setPw({ current: '', next: '', confirm: '' })
+      toast.success(t('client.profile.passwordChanged'))
+    } catch (err) {
+      const key = {
+        wrong_password: 'client.profile.passwordWrong',
+        password_too_short: 'client.profile.passwordTooShort',
+      }[err.message]
+      toast.error(key ? t(key).replace('{n}', MIN_PASSWORD_LENGTH) : t('client.profile.passwordError'))
+    } finally {
+      setSavingPw(false)
     }
   }
 
@@ -98,6 +126,41 @@ export default function ClientProfile() {
               {t('client.profile.save')}
             </>
           )}
+        </button>
+      </Reveal>
+
+      {/* Password — the office may have issued the first one (043) */}
+      <Reveal className="bg-white rounded-xl border border-gray-200 p-4 space-y-4">
+        <div>
+          <h2 className="flex items-center gap-1.5 text-sm font-semibold text-gray-900">
+            <KeyRound className="w-4 h-4 text-gray-400" />
+            {t('client.profile.passwordTitle')}
+          </h2>
+          <p className="text-xs text-gray-500 mt-1">{t('client.profile.passwordHint')}</p>
+        </div>
+        {[
+          { key: 'current', label: t('client.profile.currentPassword'), autoComplete: 'current-password' },
+          { key: 'next', label: t('client.profile.newPassword'), autoComplete: 'new-password' },
+          { key: 'confirm', label: t('client.profile.confirmPassword'), autoComplete: 'new-password' },
+        ].map((field) => (
+          <div key={field.key}>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">{field.label}</label>
+            <input
+              type="password"
+              autoComplete={field.autoComplete}
+              value={pw[field.key]}
+              onChange={(e) => setPw(prev => ({ ...prev, [field.key]: e.target.value }))}
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-gray-900"
+            />
+          </div>
+        ))}
+        <button
+          onClick={handleChangePassword}
+          disabled={savingPw || !pw.next}
+          className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-blue-50 text-blue-700 font-medium rounded-xl hover:bg-blue-100 transition disabled:opacity-50 active:scale-[0.98]"
+        >
+          <KeyRound className="w-4 h-4" />
+          {savingPw ? t('common.saving') : t('client.profile.changePassword')}
         </button>
       </Reveal>
 

@@ -672,7 +672,7 @@ export default function InvoiceDetail() {
 
   const handleDownloadPDF = async () => {
     if (!invoice) return
-    await generateInvoicePDF(invoice, items, canViewInternal)
+    await generateInvoicePDF(invoice, items)
     toast.success(t('invoices.pdfDownloaded'))
   }
 

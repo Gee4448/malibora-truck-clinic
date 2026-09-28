@@ -87,7 +87,7 @@ async function drawPdfHeader(doc, pageWidth) {
   return ruleY
 }
 
-export async function generateInvoicePDF(invoice, items, showInternal = false) {
+export async function generateInvoicePDF(invoice, items) {
   const doc = new jsPDF()
   const pageWidth = doc.internal.pageSize.getWidth()
 
@@ -245,7 +245,7 @@ export async function generateInvoicePDF(invoice, items, showInternal = false) {
   const showDeposit = invoice.invoice_type === 'proforma' && depositPct > 0 && amountPaid <= 0 && balance > 0
   const showPayment = amountPaid > 0 || showDeposit
 
-  // The closing block (subtotals, TOTAL, payment, internal figures, footer)
+  // The closing block (subtotals, TOTAL, payment, footer)
   // stays on one sheet. It used to start wherever the table ended and run
   // straight into the fixed-position footer — a 20-line proforma printed
   // "Thank you for choosing…" across its subtotals (Antony, 26 Sep 2026).
@@ -253,7 +253,6 @@ export async function generateInvoicePDF(invoice, items, showInternal = false) {
   if (Number(invoice.subtotal_additional) > 0) needed += 6
   if (Number(invoice.discount_amount) > 0) needed += 6
   if (showPayment) needed += 22
-  if (showInternal) needed += 36
   let ty = doc.lastAutoTable.finalY + 8
   if (ty + needed > pageHeight - 24) {
     doc.addPage()
@@ -297,24 +296,10 @@ export async function generateInvoicePDF(invoice, items, showInternal = false) {
     }
   }
 
-  // Internal breakdown (if manager) — on proformas too, like the screen.
-  if (showInternal) {
-    ty += 20
-    doc.setFillColor(255, 251, 235)
-    doc.rect(14, ty - 4, pageWidth - 28, 30, 'F')
-    doc.setTextColor(161, 98, 7)
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(9)
-    doc.text('INTERNAL COST BREAKDOWN (MANAGEMENT ONLY)', 18, ty + 2)
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(8)
-    doc.setTextColor(...darkGray)
-    doc.text(`Parts Cost: ${formatTZS(invoice.internal_cost_parts)} | Parts Profit: ${formatTZS(invoice.profit_parts)}`, 18, ty + 10)
-    doc.text(`Labour Cost: ${formatTZS(invoice.internal_cost_labour)} | Labour Profit: ${formatTZS(invoice.profit_labour)}`, 18, ty + 16)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(5, 150, 105)
-    doc.text(`Total Profit: ${formatTZS(invoice.profit_total)} (${Number(invoice.profit_margin).toFixed(1)}%)`, 18, ty + 22)
-  }
+  // No cost or profit on the paper, whoever downloads it. This PDF is the
+  // copy that gets sent to the customer, and an owner's download used to
+  // carry the internal breakdown with it (Antony, 28 Sep 2026: "siri za
+  // ofisi zimesomeka huku kwa invoice"). Those figures stay on the screen.
 
   // Footer
   const footerY = doc.internal.pageSize.getHeight() - 15

@@ -140,6 +140,25 @@
       "noPhone": "No phone number",
       "noPhoneHint": "This customer has no usable phone number, so WhatsApp can't be opened. Add one on their record first."
     },
+    "login": {
+      "sectionTitle": "Customer portal login",
+      "username": "Username (phone number)",
+      "usernameIsPhone": "Same as the phone number",
+      "password": "Password",
+      "generate": "Generate another password",
+      "hint": "The customer signs in with their phone number and this password, and can change it later. Clear the password to register them without a login.",
+      "tooShort": "The password needs at least {n} characters",
+      "create": "Give this customer a portal login",
+      "reset": "Reset portal password",
+      "resetConfirm": "Give {name} a new password? The old one will stop working.",
+      "created": "Portal login created",
+      "resetDone": "New password set",
+      "modalTitle": "Give the customer their login",
+      "modalSubtitle": "Read it out, or send it on WhatsApp. It cannot be shown again after you close this — reset it for a new one.",
+      "done": "Done",
+      "forbidden": "Your account is not allowed to set customer passwords",
+      "migrationMissing": "Customer logins are not switched on yet (database migration 043 has not been applied)"
+    },
     "registeredOnline": "Online",
     "registeredWalkIn": "Walk-in",
     "location": "Location",
@@ -1374,7 +1393,18 @@
       "address": "Address",
       "save": "Save Changes",
       "updated": "Profile updated!",
-      "updateError": "Failed to update profile"
+      "updateError": "Failed to update profile",
+      "passwordTitle": "Password",
+      "passwordHint": "If the office gave you your password, you can replace it with your own here.",
+      "currentPassword": "Current password",
+      "newPassword": "New password",
+      "confirmPassword": "Repeat the new password",
+      "changePassword": "Change password",
+      "passwordChanged": "Password changed!",
+      "passwordWrong": "The current password is not correct",
+      "passwordMismatch": "The two new passwords do not match",
+      "passwordTooShort": "The password needs at least {n} characters",
+      "passwordError": "Could not change the password. Please call the office."
     }
   },
   "branches": {

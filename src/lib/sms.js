@@ -76,6 +76,17 @@ export const smsTemplates = {
   // name from silently doubling the cost of every approval.
   account_approved: (name, portalUrl) =>
     `Habari ${firstName(name)}, akaunti yako Malibora Truck Clinic imethibitishwa. Ingia kwa namba ya simu na nenosiri lako: ${portalUrl}`.trim(),
+  // The office opened (or reset) the customer's portal login (migration 043).
+  // Goes out on WhatsApp, so it is laid out on lines rather than squeezed into
+  // one SMS segment.
+  account_credentials: (name, phone, password, portalUrl) =>
+    [
+      `Habari ${firstName(name)}, karibu Malibora Truck Clinic. Akaunti yako iko tayari.`,
+      `Ingia hapa: ${portalUrl}`,
+      `Namba ya simu: ${phone || ''}`,
+      `Nenosiri: ${password || ''}`,
+      'Unaweza kubadilisha nenosiri ukishaingia (Wasifu Wangu).',
+    ].join('\n'),
   account_rejected: (name) =>
     `Habari ${firstName(name)}, samahani, usajili wako Malibora Truck Clinic haujakamilika. Tafadhali wasiliana nasi kwa maelezo zaidi.`.trim(),
 }
