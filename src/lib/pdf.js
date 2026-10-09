@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf'
 import { COMPANY, documentAddressLines } from './company'
 import autoTable from 'jspdf-autotable'
+import { formatQty } from './units'
 
 const formatTZS = (amount) => {
   if (!amount && amount !== 0) return 'TZS 0'
@@ -87,7 +88,8 @@ async function drawPdfHeader(doc, pageWidth) {
   return ruleY
 }
 
-export async function generateInvoicePDF(invoice, items) {
+// `history` is paymentHistory() from billing.js: the dated payments (044).
+export async function generateInvoicePDF(invoice, items, history = null) {
   const doc = new jsPDF()
   const pageWidth = doc.internal.pageSize.getWidth()
 
@@ -157,10 +159,19 @@ export async function generateInvoicePDF(invoice, items) {
   // A quotation with no job card carries its vehicle directly, or only a
   // subject when the customer has no vehicle on file (041).
   const veh = invoice.job_cards?.vehicles || invoice.vehicles
-  doc.text(veh
-    ? `${veh.registration_number || ''} - ${veh.make || ''} ${veh.model || ''} ${veh.year || ''}`
-    : (invoice.subject || '-'), 14, y)
-  doc.text(invoice.job_cards?.job_number ? `Job: ${invoice.job_cards.job_number}` : (veh && invoice.subject ? invoice.subject : ''), 14, y + 5)
+  // A quotation may be for several jobs, one per line (044); on paper they
+  // run on as one wrapped line.
+  const subject = String(invoice.subject || '').split('\n').map(s => s.trim()).filter(Boolean).join(', ')
+  const wrapW = pageWidth - 28
+  const first = veh
+    ? [`${veh.registration_number || ''} - ${veh.make || ''} ${veh.model || ''} ${veh.year || ''}`]
+    : doc.splitTextToSize(subject || '-', wrapW)
+  doc.text(first, 14, y)
+  y += (first.length - 1) * 5
+  const second = invoice.job_cards?.job_number ? [`Job: ${invoice.job_cards.job_number}`]
+    : (veh && subject ? doc.splitTextToSize(subject, wrapW) : [])
+  if (second.length) doc.text(second, 14, y + 5)
+  y += Math.max(0, second.length - 1) * 5
 
   // Items table
   const partItems = items.filter(i => i.item_type === 'part')
@@ -175,7 +186,7 @@ export async function generateInvoicePDF(invoice, items) {
       tableData.push([
         i + 1,
         item.description,
-        item.quantity,
+        formatQty(item.quantity, item.unit),
         formatTZS(item.selling_price),
         formatTZS(item.total_selling),
       ])
@@ -188,7 +199,8 @@ export async function generateInvoicePDF(invoice, items) {
       tableData.push([
         i + 1,
         item.description,
-        `${item.quantity} hrs`,
+        // Was always "N hrs"; a whole job is not hours (Antony, 7 Oct 2026).
+        formatQty(item.quantity, item.unit),
         formatTZS(item.selling_price),
         formatTZS(item.total_selling),
       ])
@@ -201,7 +213,7 @@ export async function generateInvoicePDF(invoice, items) {
       tableData.push([
         i + 1,
         item.description,
-        item.quantity,
+        formatQty(item.quantity, item.unit),
         formatTZS(item.selling_price),
         formatTZS(item.total_selling),
       ])
@@ -217,7 +229,7 @@ export async function generateInvoicePDF(invoice, items) {
     columnStyles: {
       0: { cellWidth: 12 },
       1: { cellWidth: 'auto' },
-      2: { cellWidth: 22, halign: 'right' },
+      2: { cellWidth: 26, halign: 'right' },
       3: { cellWidth: 35, halign: 'right' },
       4: { cellWidth: 35, halign: 'right' },
     },
@@ -244,6 +256,19 @@ export async function generateInvoicePDF(invoice, items) {
   const depositPct = Number(invoice.deposit_percentage) || 0
   const showDeposit = invoice.invoice_type === 'proforma' && depositPct > 0 && amountPaid <= 0 && balance > 0
   const showPayment = amountPaid > 0 || showDeposit
+  // The dated payments under the balance: the date and amount on one line,
+  // how it was paid in small grey under it (all three on one line ran into the
+  // amount column), plus one line for money taken before payments were dated.
+  const payLines = amountPaid > 0 && history
+    ? [
+        ...(history.undated > 0 ? [{ label: 'Earlier payments', amount: history.undated, sub: '' }] : []),
+        ...history.rows.map(p => ({
+          label: formatDate(p.paid_on || p.confirmed_at || p.created_at),
+          amount: p.amount,
+          sub: [p.method ? p.method.replace(/_/g, ' ') : null, p.reference].filter(Boolean).join(' · '),
+        })),
+      ]
+    : []
 
   // The closing block (subtotals, TOTAL, payment, footer)
   // stays on one sheet. It used to start wherever the table ended and run
@@ -253,6 +278,7 @@ export async function generateInvoicePDF(invoice, items) {
   if (Number(invoice.subtotal_additional) > 0) needed += 6
   if (Number(invoice.discount_amount) > 0) needed += 6
   if (showPayment) needed += 22
+  if (payLines.length) needed += 8 + payLines.reduce((h, l) => h + (l.sub ? 8 : 4.5), 0)
   let ty = doc.lastAutoTable.finalY + 8
   if (ty + needed > pageHeight - 24) {
     doc.addPage()
@@ -290,6 +316,24 @@ export async function generateInvoicePDF(invoice, items) {
         doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...lightGray)
         doc.text(`Paid in full on ${formatDate(invoice.paid_at)}`, pageWidth - 14, ty, { align: 'right' })
       }
+      if (payLines.length) {
+        ty += 8
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(...darkGray)
+        doc.text('Payments received:', totalsX, ty)
+        doc.setFont('helvetica', 'normal')
+        payLines.forEach(l => {
+          ty += 4.5
+          doc.setFontSize(8); doc.setTextColor(...darkGray)
+          doc.text(l.label, totalsX, ty)
+          doc.text(formatTZS(l.amount), pageWidth - 14, ty, { align: 'right' })
+          if (l.sub) {
+            ty += 3.5
+            doc.setFontSize(7); doc.setTextColor(...lightGray)
+            doc.text(doc.splitTextToSize(l.sub, pageWidth - 14 - totalsX)[0], totalsX, ty)
+          }
+        })
+        doc.setTextColor(...darkGray)
+      }
     } else {
       drawTotalLine(`Deposit required (${depositPct}%):`,
         formatTZS(invoice.deposit_amount || totalAmount * depositPct / 100), ty, true)
@@ -312,6 +356,12 @@ export async function generateInvoicePDF(invoice, items) {
   // Save
   doc.save(`${invoice.invoice_number}.pdf`)
   return doc
+}
+
+export function warrantyText(days, km) {
+  if (km != null && km !== '') return `${Number(km).toLocaleString('en-US')} km`
+  if (days != null && days !== '') return `${days} days`
+  return '-'
 }
 
 export async function generateHandoverPDF(handover) {
@@ -369,9 +419,9 @@ export async function generateHandoverPDF(handover) {
   doc.text(`Mileage Out: ${handover.mileage_out?.toLocaleString() || '-'} km`, 14, y)
   doc.text(`Fuel Level: ${handover.fuel_level_out || '-'}`, 100, y); y += 8
 
-  // Warranty
-  doc.text(`Parts Warranty: ${handover.warranty_parts_days} days`, 14, y)
-  doc.text(`Labour Warranty: ${handover.warranty_labour_days} days`, 100, y); y += 15
+  // Warranty — days or kilometres (044)
+  doc.text(`Parts Warranty: ${warrantyText(handover.warranty_parts_days, handover.warranty_parts_km)}`, 14, y)
+  doc.text(`Labour Warranty: ${warrantyText(handover.warranty_labour_days, handover.warranty_labour_km)}`, 100, y); y += 15
 
   // Signatures
   doc.setDrawColor(200, 200, 200)

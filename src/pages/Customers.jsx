@@ -5,7 +5,7 @@ import { supabase, formatDate } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { Plus, Search, Phone, Mail, Car, Edit2, Trash2, X, CheckCircle2, XCircle, ArrowLeft, ArrowRight, UserPlus, Globe, Users, MessageCircle, KeyRound, RefreshCw } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { emptyVehicle } from '../lib/vehicleOptions'
+import { emptyVehicle, vehicleToForm, vehicleRow } from '../lib/vehicleOptions'
 import VehicleFormBlock from '../components/vehicles/VehicleFormBlock'
 import NotifyCustomerModal from '../components/customers/NotifyCustomerModal'
 import { sendSMS, smsTemplates } from '../lib/sms'
@@ -46,7 +46,7 @@ export default function Customers() {
     setVehicles(prev => prev.map((v, i) => i === index ? { ...v, ...updates } : v))
   const addVehicle = () => setVehicles(prev => [...prev, emptyVehicle()])
   const removeVehicle = (index) =>
-    setVehicles(prev => prev.filter((_, i) => i !== index))
+    setVehicles(prev => prev.filter((v, i) => i !== index || v.id))
 
   useEffect(() => { fetchCustomers() }, [])
 
@@ -108,25 +108,20 @@ export default function Customers() {
         setSubmitting(false)
         return
       }
-      const vehicleRows = (customerId) => cleanVehicles.map(v => ({
-        customer_id: customerId,
-        vehicle_type: v.vehicle_type,
-        make: v.make.trim(),
-        model: v.model?.trim() || null,
-        registration_number: v.registration_number.toUpperCase().trim(),
-        chassis_number: v.chassis_number || null,
-        year: v.year ? parseInt(v.year) : null,
-        color: v.color?.trim() || null,
-        mileage_km: v.mileage_km ? parseInt(v.mileage_km) : null,
-      }))
-
       if (editingId) {
         const { error } = await supabase.from('customers').update(payload).eq('id', editingId)
         if (error) throw error
-        // Vehicles entered on the edit form's second step are added to the
-        // existing customer (existing ones are managed on the profile page).
-        if (cleanVehicles.length > 0) {
-          const { error: vErr } = await supabase.from('vehicles').insert(vehicleRows(editingId))
+        // The edit form's vehicles step lists the vehicles already on file,
+        // editable, plus any new ones (Antony, 7 Oct 2026: editing a vehicle
+        // "inashindikana"). Saved ones are updated, new ones added.
+        for (const v of cleanVehicles.filter(v => v.id)) {
+          const { error: vErr } = await supabase.from('vehicles').update(vehicleRow(v)).eq('id', v.id)
+          if (vErr) throw vErr
+        }
+        const added = cleanVehicles.filter(v => !v.id)
+        if (added.length > 0) {
+          const { error: vErr } = await supabase.from('vehicles')
+            .insert(added.map(v => ({ customer_id: editingId, ...vehicleRow(v) })))
           if (vErr) throw vErr
         }
         toast.success(t('customers.updated'))
@@ -152,17 +147,7 @@ export default function Customers() {
         if (credentials) setNotify(credentials)
 
         if (cleanVehicles.length > 0) {
-          const vehiclePayloads = cleanVehicles.map(v => ({
-            customer_id: newCustomer.id,
-            vehicle_type: v.vehicle_type,
-            make: v.make.trim(),
-            model: v.model?.trim() || null,
-            registration_number: v.registration_number.toUpperCase().trim(),
-            chassis_number: v.chassis_number || null,
-            year: v.year ? parseInt(v.year) : null,
-            color: v.color?.trim() || null,
-            mileage_km: v.mileage_km ? parseInt(v.mileage_km) : null,
-          }))
+          const vehiclePayloads = cleanVehicles.map(v => ({ customer_id: newCustomer.id, ...vehicleRow(v) }))
           const { error: vErr } = await supabase.from('vehicles').insert(vehiclePayloads)
           if (vErr) {
             // Customer was created but vehicles failed — partial success.
@@ -184,7 +169,7 @@ export default function Customers() {
     }
   }
 
-  const handleEdit = (customer) => {
+  const handleEdit = async (customer) => {
     setForm({
       full_name: customer.full_name || '',
       phone: customer.phone || '',
@@ -206,6 +191,10 @@ export default function Customers() {
     setEditingVehicleCount(customer.vehicles?.[0]?.count || 0)
     setStep(1)
     setShowForm(true)
+    // The vehicles already on file, so the vehicles step can edit them.
+    const { data } = await supabase.from('vehicles').select('*')
+      .eq('customer_id', customer.id).order('created_at', { ascending: true })
+    setVehicles((data || []).map(vehicleToForm))
   }
 
   const loginErrorText = (err) => {
@@ -746,6 +735,7 @@ export default function Customers() {
                         total={vehicles.length}
                         updateVehicle={updateVehicle}
                         removeVehicle={removeVehicle}
+                        canRemove={!veh.id}
                         t={t}
                         variant="compact"
                       />

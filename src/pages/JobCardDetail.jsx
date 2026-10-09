@@ -7,7 +7,9 @@ import { findLiveProforma, syncProformaTotals, totalsFromJobItems, proformaUpdat
 import { fetchEvidence, evidenceUrl, fetchFindings } from '../lib/evidence'
 import { fetchJobLabour, billLoggedLabour } from '../lib/labour'
 import { rememberCatalogItem } from '../lib/catalog'
-import { Plus, Trash2, FileText, Printer, ArrowLeft, Package, Wrench, DollarSign, X, CheckCircle2, XCircle, UserPlus, AlertCircle, Share2, Pencil, Camera, Flag, Clock, CreditCard, AlertTriangle } from 'lucide-react'
+import { defaultUnit, cleanUnit, formatQty } from '../lib/units'
+import UnitInput from '../components/common/UnitInput'
+import { Plus, Trash2, Search, FileText, Printer, ArrowLeft, Package, Wrench, DollarSign, X, CheckCircle2, XCircle, UserPlus, AlertCircle, Share2, Pencil, Camera, Flag, Clock, CreditCard, AlertTriangle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Reveal from '../components/common/Reveal'
 
@@ -43,8 +45,11 @@ export default function JobCardDetail() {
   const [savingDesc, setSavingDesc] = useState(false)
   const [itemForm, setItemForm] = useState({
     part_id: '', labour_id: '', description: '', quantity: 1,
-    cost_price: 0, selling_price: 0,
+    cost_price: 0, selling_price: 0, unit: 'pc',
   })
+  // Find a line in a long job (Antony, 6 Oct 2026: "button ya search ... list
+  // ikiwa ndefu").
+  const [itemSearch, setItemSearch] = useState('')
 
   useEffect(() => {
     fetchJob()
@@ -62,7 +67,7 @@ export default function JobCardDetail() {
     setPricingFinding(f)
     setEditingItem(null)
     setItemType('additional')
-    setItemForm({ part_id: '', labour_id: '', description: f.description, quantity: 1, cost_price: 0, selling_price: 0 })
+    setItemForm({ part_id: '', labour_id: '', description: f.description, quantity: 1, cost_price: 0, selling_price: 0, unit: defaultUnit('additional') })
     setShowAddItem(true)
   }
 
@@ -81,8 +86,26 @@ export default function JobCardDetail() {
       quantity: item.quantity ?? 1,
       cost_price: item.cost_price ?? 0,
       selling_price: item.selling_price ?? 0,
+      unit: item.unit || '',
     })
     setShowAddItem(true)
+  }
+
+  // A fresh Add Part / Add Labour / Add Additional form, in that type's unit.
+  const openAddItem = (type) => {
+    setPricingFinding(null)
+    setEditingItem(null)
+    setItemType(type)
+    setItemForm({ part_id: '', labour_id: '', description: '', quantity: 1, cost_price: 0, selling_price: 0, unit: defaultUnit(type) })
+    setShowAddItem(true)
+  }
+
+  // A line entered as the wrong kind (a service saved as a part, say) is moved
+  // across in Edit instead of deleted and typed again (Antony, 6 Oct 2026).
+  // The catalog link belongs to the old kind, so it is dropped.
+  const changeItemType = (type) => {
+    setItemType(type)
+    setItemForm(f => ({ ...f, part_id: '', labour_id: '' }))
   }
 
   const closeItemForm = () => {
@@ -304,6 +327,8 @@ export default function JobCardDetail() {
         description: name,
         labour_id: labour.id,
         quantity: labour.estimated_hours,
+        // The catalog quantity is the service's estimated hours.
+        unit: 'hrs',
         cost_price: labour.cost_rate ?? 0,
         selling_price: labour.selling_rate ?? 0,
       })
@@ -335,8 +360,10 @@ export default function JobCardDetail() {
     try {
       if (editingItem) {
         const patch = {
+          item_type: itemType,
           description: itemForm.description,
           quantity: Number(itemForm.quantity),
+          unit: cleanUnit(itemForm.unit),
           selling_price: Number(itemForm.selling_price),
           part_id: itemType === 'part' ? itemForm.part_id || null : null,
           labour_id: itemType === 'labour' ? itemForm.labour_id || null : null,
@@ -353,7 +380,7 @@ export default function JobCardDetail() {
         toast.success(t('jobs.itemUpdated'))
         rememberTyped(itemType, itemForm)
         closeItemForm()
-        setItemForm({ part_id: '', labour_id: '', description: '', quantity: 1, cost_price: 0, selling_price: 0 })
+        setItemForm({ part_id: '', labour_id: '', description: '', quantity: 1, cost_price: 0, selling_price: 0, unit: 'pc' })
         // Re-price the quote; if the customer had agreed to the old figure,
         // this is where that agreement is voided (040).
         await syncProformaTotals(id)
@@ -373,6 +400,7 @@ export default function JobCardDetail() {
         item_type: itemType,
         description: itemForm.description,
         quantity: Number(itemForm.quantity),
+        unit: cleanUnit(itemForm.unit),
         cost_price: Number(itemForm.cost_price),
         selling_price: Number(itemForm.selling_price),
         part_id: itemType === 'part' ? itemForm.part_id || null : null,
@@ -404,7 +432,7 @@ export default function JobCardDetail() {
       toast.success(t('jobs.itemAdded'))
       rememberTyped(itemType, itemForm)
       closeItemForm()
-      setItemForm({ part_id: '', labour_id: '', description: '', quantity: 1, cost_price: 0, selling_price: 0 })
+      setItemForm({ part_id: '', labour_id: '', description: '', quantity: 1, cost_price: 0, selling_price: 0, unit: 'pc' })
       // The job card is the only place these lines are edited, so it is also
       // the only place that can keep the quote honest.
       await syncProformaTotals(id)
@@ -525,6 +553,11 @@ export default function JobCardDetail() {
   const totalCost = items.reduce((sum, i) => sum + Number(i.total_cost || 0), 0)
   const totalSelling = items.reduce((sum, i) => sum + Number(i.total_selling || 0), 0)
   const profit = totalSelling - totalCost
+  // The totals below the table are always the whole job; only the rows filter.
+  const searchKey = itemSearch.trim().toLowerCase()
+  const shownItems = searchKey
+    ? items.filter(i => [i.description, i.item_type, i.unit].some(v => String(v || '').toLowerCase().includes(searchKey)))
+    : items
 
   // What the live proforma would say if it were re-totalled right now — from the
   // shared helper, so the warning banner can't drift from the figure the quote
@@ -835,21 +868,32 @@ export default function JobCardDetail() {
           <h3 className="font-semibold text-gray-900">{t('jobs.items')}</h3>
           {job.status !== 'completed' && job.status !== 'cancelled' && (
             <div className="flex gap-2">
-              <button onClick={() => { setItemType('part'); setShowAddItem(true) }}
+              <button onClick={() => openAddItem('part')}
                 className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-100">
                 <Package className="w-3.5 h-3.5" /> {t('jobs.addPart')}
               </button>
-              <button onClick={() => { setItemType('labour'); setShowAddItem(true) }}
+              <button onClick={() => openAddItem('labour')}
                 className="flex items-center gap-1 px-3 py-1.5 bg-green-50 text-green-700 rounded-lg text-sm font-medium hover:bg-green-100">
                 <Wrench className="w-3.5 h-3.5" /> {t('jobs.addLabour')}
               </button>
-              <button onClick={() => { setItemType('additional'); setShowAddItem(true) }}
+              <button onClick={() => openAddItem('additional')}
                 className="flex items-center gap-1 px-3 py-1.5 bg-orange-50 text-orange-700 rounded-lg text-sm font-medium hover:bg-orange-100">
                 <DollarSign className="w-3.5 h-3.5" /> {t('jobs.addAdditional')}
               </button>
             </div>
           )}
         </div>
+
+        {items.length > 5 && (
+          <div className="px-5 pt-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input type="search" value={itemSearch} onChange={e => setItemSearch(e.target.value)}
+                placeholder={t('jobs.searchItems')}
+                className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+            </div>
+          </div>
+        )}
 
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -868,8 +912,10 @@ export default function JobCardDetail() {
             <tbody className="divide-y divide-gray-100">
               {items.length === 0 ? (
                 <tr><td colSpan="8" className="p-8 text-center text-gray-400">{t('common.noData')}</td></tr>
+              ) : shownItems.length === 0 ? (
+                <tr><td colSpan="8" className="p-8 text-center text-gray-400">{t('jobs.noItemsMatch')}</td></tr>
               ) : (
-                items.map((item) => (
+                shownItems.map((item) => (
                   <tr key={item.id} className="hover:bg-gray-50">
                     <td className="p-3">
                       <div className="flex items-center gap-1.5">
@@ -890,7 +936,7 @@ export default function JobCardDetail() {
                       </div>
                     </td>
                     <td className="p-3 text-gray-700">{item.description}</td>
-                    <td className="p-3 text-right text-gray-700">{item.quantity}</td>
+                    <td className="p-3 text-right text-gray-700 whitespace-nowrap">{formatQty(item.quantity, item.unit)}</td>
                     {canViewInternal && <td className="p-3 text-right text-gray-500">{formatTZS(item.cost_price)}</td>}
                     <td className="p-3 text-right text-gray-700">{formatTZS(item.selling_price)}</td>
                     {canViewInternal && <td className="p-3 text-right text-gray-500">{formatTZS(item.total_cost)}</td>}
@@ -1142,6 +1188,25 @@ export default function JobCardDetail() {
               </button>
             </div>
             <form onSubmit={handleAddItem} className="p-5 space-y-4">
+              {editingItem && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('common.type')}</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { type: 'part', label: t('jobs.itemTypes.part') },
+                      { type: 'labour', label: t('jobs.itemTypes.labour') },
+                      { type: 'additional', label: t('jobs.itemTypes.additional') },
+                    ].map(o => (
+                      <button key={o.type} type="button" onClick={() => changeItemType(o.type)}
+                        className={`tap px-2 py-2 rounded-lg border text-sm font-medium transition ${
+                          itemType === o.type ? 'bg-blue-600 border-blue-600 text-white' : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                        }`}>
+                        {o.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
               {itemType === 'part' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">{t('jobs.selectPart')}</label>
@@ -1175,11 +1240,17 @@ export default function JobCardDetail() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
                 </div>
               )}
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">{t('common.quantity')}</label>
                   <input type="number" value={itemForm.quantity} onChange={e => setItemForm({...itemForm, quantity: e.target.value})}
-                    min="0.1" step="0.1" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                    min="0.01" step="any" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('common.unit')}</label>
+                  <UnitInput value={itemForm.unit} onChange={u => setItemForm(f => ({ ...f, unit: u }))}
+                    otherLabel={t('common.otherUnit')}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white" />
                 </div>
                 {canViewInternal && (
                   <div>

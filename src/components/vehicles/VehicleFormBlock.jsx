@@ -17,6 +17,9 @@ const CURRENT_YEAR = new Date().getFullYear()
 export default function VehicleFormBlock({
   index, vehicle, total, updateVehicle, removeVehicle, t,
   variant = 'default',
+  // false for a vehicle already saved: deleting one is done on the profile,
+  // where a vehicle with history is refused.
+  canRemove = true,
 }) {
   const update = (field, value) => updateVehicle(index, { [field]: value })
   const compact = variant === 'compact'
@@ -39,11 +42,11 @@ export default function VehicleFormBlock({
           <span className={compact ? 'text-xs font-semibold text-gray-700' : 'text-sm font-semibold text-gray-700'}>
             {t('client.register.vehicleNumber').replace('{number}', index + 1)}
           </span>
-          <button type="button" onClick={() => removeVehicle(index)}
+          {canRemove && <button type="button" onClick={() => removeVehicle(index)}
             className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 font-medium transition">
             <Trash2 className="w-3.5 h-3.5" />
             {t('client.register.removeVehicle')}
-          </button>
+          </button>}
         </div>
       )}
 

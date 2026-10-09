@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { DEFAULT_VAT_RATE } from '../../lib/billing'
-import { X, FileText } from 'lucide-react'
+import { X, FileText, Plus } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 // A quotation that starts from the customer, not from a job card (migration
@@ -18,6 +18,16 @@ export default function NewQuotationModal({ onClose, t }) {
   const [customers, setCustomers] = useState([])
   const [vehicles, setVehicles] = useState([])
   const [form, setForm] = useState({ customer_id: '', vehicle_id: '', subject: '', vat_rate: String(DEFAULT_VAT_RATE) })
+  // A quote can be for several jobs (Antony, 7 Oct 2026: "ina option ya
+  // kuandika kitu kimoja, tupate add button"). Saved one per line in
+  // invoices.subject; whatever is still in the box counts too.
+  const [subjects, setSubjects] = useState([])
+  const addSubject = () => {
+    const s = form.subject.trim()
+    if (!s) return
+    setSubjects(list => [...list, s])
+    setForm(f => ({ ...f, subject: '' }))
+  }
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -50,7 +60,7 @@ export default function NewQuotationModal({ onClose, t }) {
         status: 'draft',
         customer_id: form.customer_id,
         vehicle_id: form.vehicle_id || null,
-        subject: form.subject.trim() || null,
+        subject: [...subjects, form.subject.trim()].filter(Boolean).join('\n') || null,
         job_card_id: null,
         vat_rate: vat,
         subtotal_parts: 0, subtotal_labour: 0, subtotal_additional: 0,
@@ -73,7 +83,7 @@ export default function NewQuotationModal({ onClose, t }) {
 
   return (
     <div className="fixed inset-0 glass-overlay z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md modal-card">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto modal-card">
         <div className="flex items-center justify-between p-5 border-b">
           <h2 className="text-lg font-bold flex items-center gap-2">
             <FileText className="w-5 h-5 text-blue-700" /> {t('invoices.newQuotation')}
@@ -100,9 +110,31 @@ export default function NewQuotationModal({ onClose, t }) {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">{t('invoices.quotationSubject')}</label>
-            <input type="text" value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })}
-              placeholder={t('invoices.quotationSubjectHint')}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+            <p className="text-xs text-gray-400 mb-1.5 -mt-0.5">{t('invoices.subjectLinesHint')}</p>
+            {subjects.length > 0 && (
+              <ol className="mb-2 space-y-1">
+                {subjects.map((s, i) => (
+                  <li key={i} className="flex items-start gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-sm">
+                    <span className="text-gray-400 font-medium">{i + 1}.</span>
+                    <span className="flex-1">{s}</span>
+                    <button type="button" onClick={() => setSubjects(list => list.filter((_, x) => x !== i))}
+                      className="p-0.5 rounded hover:bg-gray-200 text-gray-400 hover:text-red-500">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </li>
+                ))}
+              </ol>
+            )}
+            <div className="flex gap-2">
+              <input type="text" value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addSubject() } }}
+                placeholder={t('invoices.quotationSubjectHint')}
+                className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+              <button type="button" onClick={addSubject}
+                className="tap flex items-center gap-1 px-3 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition text-sm font-medium">
+                <Plus className="w-4 h-4" /> {t('invoices.addSubjectLine')}
+              </button>
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">{t('invoices.vat')} (%)</label>

@@ -152,7 +152,7 @@ export default function ClientInvoices() {
                   <p className="text-xs text-gray-500">
                     {inv.job_cards
                       ? `${inv.job_cards.vehicles?.registration_number || ''} · ${inv.job_cards.job_number || ''}`
-                      : (inv.vehicles?.registration_number || inv.subject || '')}
+                      : (inv.vehicles?.registration_number || (inv.subject || '').split('\n').join(', '))}
                   </p>
                   <p className="text-xs text-gray-400 mt-0.5">{formatDate(inv.created_at)}</p>
                 </div>

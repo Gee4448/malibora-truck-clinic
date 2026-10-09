@@ -74,3 +74,40 @@ export const emptyVehicle = () => ({
   year: '', color: '', vehicle_type: 'truck', mileage_km: '',
   _customMake: false, _customModel: false, _customType: false,
 })
+
+// A saved vehicle, back into the shape VehicleFormBlock edits. The form picks
+// make/model/type from lists, so a value that is not on the list (typed in
+// when the vehicle was added) has to open in "type your own" mode or the
+// dropdown would show it blank — and saving would wipe it.
+export const vehicleToForm = (v) => {
+  const type = v.vehicle_type || 'truck'
+  const customType = !VEHICLE_TYPES.includes(type)
+  const make = v.make || ''
+  const customMake = customType || (make !== '' && !getMakes(type).includes(make))
+  const model = v.model || ''
+  const knownModels = getModels(type)[make] || []
+  const customModel = customMake || (model !== '' && !knownModels.includes(model))
+  return {
+    id: v.id,
+    registration_number: v.registration_number || '',
+    chassis_number: v.chassis_number || '',
+    make, model,
+    year: v.year ?? '',
+    color: v.color || '',
+    vehicle_type: type,
+    mileage_km: v.mileage_km ?? '',
+    _customMake: customMake, _customModel: customModel, _customType: customType,
+  }
+}
+
+// The columns a vehicle form writes, for insert or update.
+export const vehicleRow = (v) => ({
+  vehicle_type: v.vehicle_type,
+  make: v.make.trim(),
+  model: v.model?.trim() || null,
+  registration_number: v.registration_number.toUpperCase().trim(),
+  chassis_number: v.chassis_number || null,
+  year: v.year ? parseInt(v.year) : null,
+  color: v.color?.trim() || null,
+  mileage_km: v.mileage_km !== '' && v.mileage_km != null ? parseInt(v.mileage_km) : null,
+})

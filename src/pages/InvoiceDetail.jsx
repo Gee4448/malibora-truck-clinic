@@ -4,13 +4,16 @@ import { useLanguage } from '../contexts/LanguageContext'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase, formatTZS, formatDate } from '../lib/supabase'
 import { COMPANY, documentAddressLines } from '../lib/company'
-import { ArrowLeft, Printer, Download, MessageCircle, CheckCircle, CreditCard, Send, MessageSquare, Save, Pencil, Trash2, Plus, FileText, Undo2, AlertTriangle, ShieldCheck } from 'lucide-react'
+import { ArrowLeft, Printer, Download, MessageCircle, CheckCircle, CreditCard, Send, MessageSquare, Save, Pencil, Trash2, Plus, FileText, Undo2, AlertTriangle, ShieldCheck, ChevronDown, Search, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { generateInvoicePDF } from '../lib/pdf'
 import {
   syncProformaTotals, statusAfterRetotal, depositAfterRetotal, overpaymentOn, invoiceAfterRefund, refundLimitFor,
-  approvalAfterRetotal, needsReapproval, staffApprovalUpdate, receivableOn,
+  approvalAfterRetotal, needsReapproval, staffApprovalUpdate, receivableOn, paymentHistory,
 } from '../lib/proforma'
+import { defaultUnit, cleanUnit, formatQty } from '../lib/units'
+import UnitInput from '../components/common/UnitInput'
+import SignaturePad from '../components/common/SignaturePad'
 import { sendSMS, smsTemplates } from '../lib/sms'
 import { fetchCatalog, rememberCatalogItem } from '../lib/catalog'
 import Reveal from '../components/common/Reveal'
@@ -18,7 +21,7 @@ import Reveal from '../components/common/Reveal'
 export default function InvoiceDetail() {
   const { id } = useParams()
   const { t } = useLanguage()
-  const { canViewInternal, user } = useAuth()
+  const { canViewInternal, user, profile } = useAuth()
   const navigate = useNavigate()
   const [invoice, setInvoice] = useState(null)
   const [items, setItems] = useState([])
@@ -26,7 +29,17 @@ export default function InvoiceDetail() {
   // final invoice) or 'job_card_items' (shared with the job card; proformas + legacy).
   const [itemsSource, setItemsSource] = useState('job_card_items')
   const [loading, setLoading] = useState(true)
-  const [paymentForm, setPaymentForm] = useState({ method: 'cash', reference: '', amount: '' })
+  // paid_on / received_by_name / signature (044): the day the money moved, who
+  // checked it arrived, and their mark. `declared` is the customer's portal
+  // declaration being confirmed through this same form, or null.
+  const [paymentForm, setPaymentForm] = useState({ method: 'cash', reference: '', amount: '', paid_on: '', received_by_name: '', signature: null, declared: null })
+  const [paymentRows, setPaymentRows] = useState([])   // confirmed ledger rows, this invoice + its proforma
+  const [showHistory, setShowHistory] = useState(false)
+  // Approving on the customer's behalf asks who is approving (044).
+  const [showApprove, setShowApprove] = useState(false)
+  const [approverName, setApproverName] = useState('')
+  const [approving, setApproving] = useState(false)
+  const [itemSearch, setItemSearch] = useState('')
   const [showPayment, setShowPayment] = useState(false)
   const [editingVat, setEditingVat] = useState(false)
   const [vatInput, setVatInput] = useState('')
@@ -147,14 +160,17 @@ export default function InvoiceDetail() {
         .order('created_at', { ascending: true })
       setMessages(msgs || [])
 
-      // Payments the customer declared from the portal, awaiting staff confirmation.
+      // The payment ledger. Pending rows are the customer's portal declarations
+      // awaiting confirmation; confirmed rows are the dated history (044). A
+      // final invoice carries its proforma's deposit, so its history includes
+      // the money taken on the proforma.
       const { data: pays } = await supabase
         .from('invoice_payments')
         .select('*')
-        .eq('invoice_id', data.id)
-        .eq('status', 'pending')
+        .in('invoice_id', [data.id, data.source_proforma_id].filter(Boolean))
         .order('created_at', { ascending: true })
-      setDeclaredPayments(pays || [])
+      setDeclaredPayments((pays || []).filter(p => p.invoice_id === data.id && p.status === 'pending'))
+      setPaymentRows((pays || []).filter(p => p.status === 'confirmed'))
 
       // Money handed back (migration 027). Selected separately from the invoice
       // so a missing table degrades to "no refunds" rather than 400-ing the
@@ -177,15 +193,29 @@ export default function InvoiceDetail() {
   // portal, signed by whoever pressed it (migration 040). This is also how a
   // quote that changed after the customer agreed gets approved "by the admin"
   // (Antony, 25 Sep 2026) instead of waiting on the customer.
-  const approveAsStaff = async () => {
+  //
+  // Whoever approves types their name (Antony, 7 Oct 2026: "anaye approve
+  // proforma badala ya mteja pia aandike jina lake"), pre-filled with the
+  // signed-in account, because on the office computer that is not always them.
+  const approveAsStaff = () => {
+    setApproverName(profile?.full_name || '')
+    setShowApprove(true)
+  }
+
+  const confirmStaffApproval = async () => {
+    if (!approverName.trim()) { toast.error(t('invoices.approverNameRequired')); return }
+    setApproving(true)
     try {
       const { error } = await supabase.from('invoices')
-        .update(staffApprovalUpdate(invoice, user?.id)).eq('id', id)
+        .update(staffApprovalUpdate(invoice, user?.id, undefined, approverName)).eq('id', id)
       if (error) throw error
       toast.success(t('invoices.updated'))
+      setShowApprove(false)
       fetchInvoice()
     } catch (err) {
       toast.error(err.message)
+    } finally {
+      setApproving(false)
     }
   }
 
@@ -313,6 +343,7 @@ export default function InvoiceDetail() {
           item_type: it.item_type,
           description: it.description,
           quantity: Number(it.quantity) || 0,
+          unit: it.unit || null,
           cost_price: Number(it.cost_price) || 0,
           selling_price: Number(it.selling_price) || 0,
           sort_order: i,
@@ -383,6 +414,7 @@ export default function InvoiceDetail() {
           item_type: it.item_type,
           description: it.description,
           quantity: Number(it.quantity) || 0,
+          unit: it.unit || null,
           cost_price: Number(it.cost_price) || 0,
           selling_price: Number(it.selling_price) || 0,
           is_additional: false,
@@ -444,6 +476,7 @@ export default function InvoiceDetail() {
       item_type,
       description: '',
       quantity: 1,
+      unit: defaultUnit(item_type),
       selling_price: 0,
       cost_price: 0,
     }])
@@ -471,6 +504,7 @@ export default function InvoiceDetail() {
           item_type: it.item_type,
           description: String(it.description).trim(),
           quantity: Number(it.quantity) || 0,
+          unit: cleanUnit(it.unit),
           selling_price: Number(it.selling_price) || 0,
           cost_price: Number(it.cost_price) || 0,
         }
@@ -544,12 +578,28 @@ export default function InvoiceDetail() {
     }
   }
 
+  const today = () => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  }
+
   const openPayment = () => {
     const owed = receivableOn(invoice)
-    setPaymentForm({ method: 'cash', reference: '', amount: owed > 0 ? String(owed) : '' })
+    setPaymentForm({
+      method: 'cash', reference: '', amount: owed > 0 ? String(owed) : '',
+      paid_on: today(), received_by_name: profile?.full_name || '', signature: null, declared: null,
+    })
     setShowPayment(true)
   }
 
+  // Office payments are ledger rows since 044 (before, only amount_paid moved,
+  // so the invoice could say how much but never when). The invoice is written
+  // first: if the ledger row then fails, the money is still counted and shows
+  // in the history as "earlier, undated" rather than going missing.
+  //
+  // A customer's portal declaration is confirmed through this same form, so
+  // its confirmation carries a date and a name too ("anaye hakiki pesa
+  // imeingia aandike jina lake").
   const recordPayment = async () => {
     if (savingPayment) return
     const thisPayment = Number(paymentForm.amount)
@@ -557,9 +607,14 @@ export default function InvoiceDetail() {
       toast.error(t('invoices.enterAmount'))
       return
     }
+    if (!paymentForm.paid_on) { toast.error(t('invoices.paymentDateRequired')); return }
+    if (paymentForm.paid_on > today()) { toast.error(t('invoices.paymentDateFuture')); return }
+    const receivedBy = paymentForm.received_by_name.trim()
+    if (!receivedBy) { toast.error(t('invoices.receivedByRequired')); return }
     setSavingPayment(true)
     const newPaid = amountPaid + thisPayment
     const fullyPaid = newPaid >= invoiceTotal - 0.005 // rounding tolerance
+    const declared = paymentForm.declared
     try {
       const update = {
         amount_paid: newPaid,
@@ -567,12 +622,32 @@ export default function InvoiceDetail() {
         payment_reference: paymentForm.reference || null,
         status: fullyPaid ? 'paid' : 'partial',
       }
-      if (fullyPaid) update.paid_at = new Date().toISOString()
+      // Paid in full on the day the money moved, not the day it was typed in.
+      if (fullyPaid) update.paid_at = new Date(`${paymentForm.paid_on}T12:00:00`).toISOString()
       const { error } = await supabase.from('invoices').update(update).eq('id', id)
       if (error) throw error
+
+      const ledger = {
+        amount: thisPayment,
+        method: paymentForm.method,
+        reference: paymentForm.reference || null,
+        status: 'confirmed',
+        confirmed_at: new Date().toISOString(),
+        confirmed_by: user?.id || null,
+        paid_on: paymentForm.paid_on,
+        received_by_name: receivedBy,
+        signature: paymentForm.signature || null,
+      }
+      const { error: ledgerErr } = declared
+        ? await supabase.from('invoice_payments').update(ledger).eq('id', declared.id)
+        : await supabase.from('invoice_payments').insert({
+          ...ledger, invoice_id: invoice.id, customer_id: invoice.customer_id, declared_by: 'staff',
+        })
+      if (ledgerErr) toast.error(t('invoices.paymentHistoryFailed'))
+
       // Settling a final invoice in full closes the job.
       if (fullyPaid && invoice.invoice_type === 'final') await syncJobStatus('completed')
-      toast.success(fullyPaid ? t('invoices.updated') : t('invoices.paymentRecorded'))
+      toast.success(declared ? t('invoices.paymentConfirmed') : fullyPaid ? t('invoices.updated') : t('invoices.paymentRecorded'))
       setShowPayment(false)
       fetchInvoice()
     } catch (err) {
@@ -626,32 +701,20 @@ export default function InvoiceDetail() {
     }
   }
 
-  // Confirm a customer-declared payment: mark the ledger row confirmed AND apply
-  // the amount to the invoice (the only place money moves — same math as recordPayment).
-  const confirmDeclaredPayment = async (payment) => {
-    try {
-      const newPaid = amountPaid + Number(payment.amount)
-      const fullyPaid = newPaid >= invoiceTotal - 0.005
-      const invUpdate = {
-        amount_paid: newPaid,
-        payment_method: payment.method || invoice.payment_method,
-        payment_reference: payment.reference || invoice.payment_reference,
-        status: fullyPaid ? 'paid' : 'partial',
-      }
-      if (fullyPaid) invUpdate.paid_at = new Date().toISOString()
-      const { error: e1 } = await supabase.from('invoices').update(invUpdate).eq('id', id)
-      if (e1) throw e1
-      const { error: e2 } = await supabase.from('invoice_payments')
-        .update({ status: 'confirmed', confirmed_at: new Date().toISOString() })
-        .eq('id', payment.id)
-      if (e2) throw e2
-      // Settling a final invoice in full closes the job.
-      if (fullyPaid && invoice.invoice_type === 'final') await syncJobStatus('completed')
-      toast.success(t('invoices.paymentConfirmed'))
-      fetchInvoice()
-    } catch (err) {
-      toast.error(err.message)
-    }
+  // Confirm a customer-declared payment: through the Receive Payment form,
+  // pre-filled with what they declared, so whoever checks the money arrived
+  // records the date and their name (044). recordPayment does the rest.
+  const confirmDeclaredPayment = (payment) => {
+    setPaymentForm({
+      method: payment.method || 'cash',
+      reference: payment.reference || '',
+      amount: String(Number(payment.amount) || ''),
+      paid_on: String(payment.created_at || '').slice(0, 10) || today(),
+      received_by_name: profile?.full_name || '',
+      signature: null,
+      declared: payment,
+    })
+    setShowPayment(true)
   }
 
   const rejectDeclaredPayment = async (payment) => {
@@ -672,7 +735,7 @@ export default function InvoiceDetail() {
 
   const handleDownloadPDF = async () => {
     if (!invoice) return
-    await generateInvoicePDF(invoice, items)
+    await generateInvoicePDF(invoice, items, history)
     toast.success(t('invoices.pdfDownloaded'))
   }
 
@@ -682,7 +745,7 @@ export default function InvoiceDetail() {
       return
     }
     const phone = invoice.customers.phone.replace(/[^0-9]/g, '')
-    const vehicleLine = (invoice.job_cards?.vehicles || invoice.vehicles)?.registration_number || invoice.subject || '-'
+    const vehicleLine = (invoice.job_cards?.vehicles || invoice.vehicles)?.registration_number || (invoice.subject || '').split('\n').join(', ') || '-'
     const msg = encodeURIComponent(
       `Habari ${invoice.customers.full_name},\n\n` +
       `Invoice: ${invoice.invoice_number}\n` +
@@ -703,6 +766,10 @@ export default function InvoiceDetail() {
   // page — by the money, not by the status word (see receivableOn).
   const receivable = receivableOn(invoice)
   const overpaid = overpaymentOn(amountPaid, invoiceTotal)
+  const totalRefunded = refunds.reduce((s, r) => s + Number(r.amount || 0), 0)
+  // Dated payments (044), plus whatever was received before payments were dated.
+  const history = paymentHistory(paymentRows, amountPaid, totalRefunded)
+  const historyCount = history.rows.length + (history.undated > 0 ? 1 : 0)
   const vatRate = invoice.vat_rate != null ? Number(invoice.vat_rate) : 18
   // #3 (Antony): "add cost to the same invoice only while not yet approved/paid."
   // This gates the VAT-rate editor (a proforma's LINES are edited on the job
@@ -775,9 +842,15 @@ export default function InvoiceDetail() {
     cancelled: 'bg-red-100 text-red-700',
   }
 
+  // Search narrows the rows on screen (Antony, 6 Oct 2026: "button ya search
+  // ndani ya invoice ... list ikiwa ndefu"). Never on paper: the printed
+  // document always carries every line.
+  const searchKey = itemSearch.trim().toLowerCase()
+  const matches = (i) => !searchKey || String(i.description || '').toLowerCase().includes(searchKey)
   const partItems = items.filter(i => i.item_type === 'part')
   const labourItems = items.filter(i => i.item_type === 'labour')
   const additionalItems = items.filter(i => i.item_type === 'additional')
+  const rowClass = (i) => `border-b border-gray-100${matches(i) ? '' : ' hidden print:table-row'}`
 
   return (
     <div className="max-w-3xl mx-auto space-y-4">
@@ -946,6 +1019,49 @@ export default function InvoiceDetail() {
               )}
             </div>
           </div>
+
+          {/* Every payment with its date (Antony, 6 Oct 2026: "miamala
+              iliyowekwa naipataje hapa, inanipa jumla tu"). */}
+          {historyCount > 0 && (
+            <div className="mt-3 border-t border-gray-100 pt-3">
+              <button onClick={() => setShowHistory(s => !s)}
+                className="tap flex items-center gap-1.5 text-sm font-medium text-gray-700 hover:text-gray-900">
+                <ChevronDown className={`w-4 h-4 transition-transform ${showHistory ? 'rotate-180' : ''}`} />
+                {t('invoices.paymentHistory')} <span className="text-gray-400">({historyCount})</span>
+              </button>
+              {showHistory && (
+                <div className="mt-2 divide-y divide-gray-100">
+                  {history.rows.map(p => (
+                    <div key={p.id} className="flex items-start justify-between gap-3 py-2 text-sm">
+                      <div className="min-w-0">
+                        <p className="font-medium text-gray-900">{formatDate(p.paid_on || p.confirmed_at || p.created_at)}</p>
+                        <p className="text-xs text-gray-500">
+                          {p.method ? t(`paymentMethods.${p.method}`) : '—'}
+                          {p.reference ? ` · ${p.reference}` : ''}
+                          {p.invoice_id !== invoice.id && ` · ${t('invoices.onProforma')}`}
+                        </p>
+                        {p.received_by_name && (
+                          <p className="text-xs text-gray-500">{t('invoices.receivedBy')}: <span className="text-gray-700">{p.received_by_name}</span></p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 flex-shrink-0">
+                        {p.signature && (
+                          <img src={p.signature} alt={t('invoices.signature')} className="h-9 w-20 object-contain rounded border border-gray-200 bg-white" />
+                        )}
+                        <span className="font-semibold text-emerald-700 whitespace-nowrap">{formatTZS(p.amount)}</span>
+                      </div>
+                    </div>
+                  ))}
+                  {history.undated > 0 && (
+                    <div className="flex items-center justify-between gap-3 py-2 text-sm">
+                      <p className="text-gray-500">{t('invoices.undatedPayments')}</p>
+                      <span className="font-semibold text-emerald-700 whitespace-nowrap">{formatTZS(history.undated)}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </Reveal>
       )}
 
@@ -973,7 +1089,9 @@ export default function InvoiceDetail() {
                 of the document's story. */}
             {invoice.customer_agreed_at && (
               <p className="text-xs text-green-700 mt-2">
-                {invoice.approved_by ? t('invoices.approvedByStaff') : t('invoices.customerAgreed')} — {formatDate(invoice.customer_agreed_at)}
+                {invoice.approved_by
+                  ? `${t('invoices.approvedByStaff')}${invoice.approved_by_name ? `: ${invoice.approved_by_name}` : ''}`
+                  : t('invoices.customerAgreed')} — {formatDate(invoice.customer_agreed_at)}
               </p>
             )}
             {needsReapproval(invoice) && (
@@ -1010,9 +1128,9 @@ export default function InvoiceDetail() {
               </>
             ) : (
               /* A quotation for a customer with no vehicle on file (041). */
-              <p className="font-semibold text-gray-900">{invoice.subject || '—'}</p>
+              <p className="font-semibold text-gray-900 whitespace-pre-line">{invoice.subject || '—'}</p>
             )}
-            {vehicle && invoice.subject && <p className="text-sm text-gray-600">{invoice.subject}</p>}
+            {vehicle && invoice.subject && <p className="text-sm text-gray-600 whitespace-pre-line">{invoice.subject}</p>}
             {invoice.job_card_id && (
               <p className="text-sm text-gray-600 mt-1">Job: <Link to={`/admin/job-cards/${invoice.job_card_id}`} className="text-blue-600">{invoice.job_cards?.job_number}</Link></p>
             )}
@@ -1106,6 +1224,15 @@ export default function InvoiceDetail() {
           </>
         )}
 
+        {!editItems && items.length > 5 && (
+          <div className="no-print relative mb-3">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input type="search" value={itemSearch} onChange={e => setItemSearch(e.target.value)}
+              placeholder={t('invoices.searchItems')}
+              className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+          </div>
+        )}
+
         {/* Items Table */}
         <table className="w-full text-sm mb-6">
           <thead>
@@ -1113,6 +1240,7 @@ export default function InvoiceDetail() {
               <th className="text-left p-2.5 font-semibold text-blue-900">#</th>
               <th className="text-left p-2.5 font-semibold text-blue-900">{t('invoices.description')}</th>
               <th className="text-right p-2.5 font-semibold text-blue-900">{t('invoices.qty')}</th>
+              {editItems && <th className="text-left p-2.5 font-semibold text-blue-900">{t('common.unit')}</th>}
               {/* Actual cost beside the price, management only, while editing.
                   It is never part of the printed document. */}
               {editItems && canViewInternal && <th className="text-right p-2.5 font-semibold text-yellow-800">{t('common.cost')}</th>}
@@ -1130,7 +1258,7 @@ export default function InvoiceDetail() {
               ].map(section => (
                 <Fragment key={section.type}>
                   <tr>
-                    <td colSpan={canViewInternal ? 7 : 6} className="p-2 bg-gray-50 border-b">
+                    <td colSpan={canViewInternal ? 8 : 7} className="p-2 bg-gray-50 border-b">
                       <div className="flex items-center justify-between">
                         <span className="font-semibold text-gray-700">{section.label}</span>
                         <button onClick={() => addDraftLine(section.type)}
@@ -1144,6 +1272,15 @@ export default function InvoiceDetail() {
                     <tr key={it.id || it._tmp} className="border-b border-gray-100">
                       <td className="p-1.5 text-gray-500">{i + 1}</td>
                       <td className="p-1.5">
+                        {/* Wrong kind? Move the line across instead of
+                            deleting it and typing it again (Antony, 6 Oct 2026). */}
+                        <select value={it.item_type} onChange={e => updateDraft(idx, 'item_type', e.target.value)}
+                          title={t('common.type')}
+                          className="mb-1 px-1.5 py-0.5 border border-gray-200 rounded text-xs text-gray-600 bg-white outline-none focus:ring-2 focus:ring-blue-500">
+                          <option value="part">{t('jobs.itemTypes.part')}</option>
+                          <option value="labour">{t('jobs.itemTypes.labour')}</option>
+                          <option value="additional">{t('jobs.itemTypes.additional')}</option>
+                        </select>
                         <input type="text" value={it.description}
                           list={it.item_type === 'part' ? 'inv-parts-catalog' : it.item_type === 'labour' ? 'inv-labour-catalog' : undefined}
                           onChange={e => updateDraftDescription(idx, e.target.value)}
@@ -1153,6 +1290,11 @@ export default function InvoiceDetail() {
                         <input type="number" min="0" step="any" value={it.quantity}
                           onChange={e => updateDraft(idx, 'quantity', e.target.value)}
                           className="w-16 px-2 py-1 border border-gray-300 rounded text-right text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                      </td>
+                      <td className="p-1.5">
+                        <UnitInput value={it.unit} onChange={u => updateDraft(idx, 'unit', u)}
+                          otherLabel={t('common.otherUnit')}
+                          className="w-20 px-1.5 py-1 border border-gray-300 rounded text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none" />
                       </td>
                       {canViewInternal && (
                         <td className="p-1.5">
@@ -1185,10 +1327,10 @@ export default function InvoiceDetail() {
                   <>
                     <tr><td colSpan="5" className="p-2 font-semibold text-gray-700 bg-gray-50 border-b">{t('invoices.partsMaterials')}</td></tr>
                     {partItems.map((item, i) => (
-                      <tr key={item.id} className="border-b border-gray-100">
+                      <tr key={item.id} className={rowClass(item)}>
                         <td className="p-2.5 text-gray-500">{i + 1}</td>
                         <td className="p-2.5">{item.description}</td>
-                        <td className="p-2.5 text-right">{item.quantity}</td>
+                        <td className="p-2.5 text-right whitespace-nowrap">{formatQty(item.quantity, item.unit)}</td>
                         <td className="p-2.5 text-right">{formatTZS(item.selling_price)}</td>
                         <td className="p-2.5 text-right font-medium">{formatTZS(item.total_selling)}</td>
                       </tr>
@@ -1200,10 +1342,10 @@ export default function InvoiceDetail() {
                   <>
                     <tr><td colSpan="5" className="p-2 font-semibold text-gray-700 bg-gray-50 border-b">{t('invoices.labourServices')}</td></tr>
                     {labourItems.map((item, i) => (
-                      <tr key={item.id} className="border-b border-gray-100">
+                      <tr key={item.id} className={rowClass(item)}>
                         <td className="p-2.5 text-gray-500">{i + 1}</td>
                         <td className="p-2.5">{item.description}</td>
-                        <td className="p-2.5 text-right">{item.quantity} hrs</td>
+                        <td className="p-2.5 text-right whitespace-nowrap">{formatQty(item.quantity, item.unit)}</td>
                         <td className="p-2.5 text-right">{formatTZS(item.selling_price)}</td>
                         <td className="p-2.5 text-right font-medium">{formatTZS(item.total_selling)}</td>
                       </tr>
@@ -1215,10 +1357,10 @@ export default function InvoiceDetail() {
                   <>
                     <tr><td colSpan="5" className="p-2 font-semibold text-gray-700 bg-gray-50 border-b">{t('invoices.additionalCosts')}</td></tr>
                     {additionalItems.map((item, i) => (
-                      <tr key={item.id} className="border-b border-gray-100">
+                      <tr key={item.id} className={rowClass(item)}>
                         <td className="p-2.5 text-gray-500">{i + 1}</td>
                         <td className="p-2.5">{item.description}</td>
-                        <td className="p-2.5 text-right">{item.quantity}</td>
+                        <td className="p-2.5 text-right whitespace-nowrap">{formatQty(item.quantity, item.unit)}</td>
                         <td className="p-2.5 text-right">{formatTZS(item.selling_price)}</td>
                         <td className="p-2.5 text-right font-medium">{formatTZS(item.total_selling)}</td>
                       </tr>
@@ -1376,6 +1518,32 @@ export default function InvoiceDetail() {
             </div>
           )}
 
+          {/* Payments received, dated — part of the document, so it prints. */}
+          {history.rows.length > 0 && (
+            <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg text-sm print-keep">
+              <p className="font-semibold text-gray-800 mb-1.5">{t('invoices.paymentsReceived')}</p>
+              <div className="space-y-1">
+                {history.undated > 0 && (
+                  <div className="flex justify-between text-gray-600">
+                    <span>{t('invoices.undatedPayments')}</span>
+                    <span className="font-medium text-gray-900 whitespace-nowrap ml-3">{formatTZS(history.undated)}</span>
+                  </div>
+                )}
+                {history.rows.map(p => (
+                  <div key={p.id} className="flex justify-between text-gray-600">
+                    <span>
+                      {formatDate(p.paid_on || p.confirmed_at || p.created_at)}
+                      {p.method && <span> · {t(`paymentMethods.${p.method}`)}</span>}
+                      {p.reference && <span> · {p.reference}</span>}
+                      {p.received_by_name && <span className="text-gray-400"> — {t('invoices.receivedBy')}: {p.received_by_name}</span>}
+                    </span>
+                    <span className="font-medium text-gray-900 whitespace-nowrap ml-3">{formatTZS(p.amount)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Refunds actually handed back — part of the document, so it prints. */}
           {refunds.length > 0 && (
             <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg text-sm">
@@ -1395,7 +1563,7 @@ export default function InvoiceDetail() {
               </div>
               <div className="flex justify-between border-t border-gray-200 mt-1.5 pt-1.5 font-semibold text-gray-900">
                 <span>{t('invoices.totalRefunded')}</span>
-                <span>{formatTZS(refunds.reduce((s, r) => s + Number(r.amount || 0), 0))}</span>
+                <span>{formatTZS(totalRefunded)}</span>
               </div>
             </div>
           )}
@@ -1429,7 +1597,9 @@ export default function InvoiceDetail() {
           {invoice.customer_agreed_at && (
             <p className="text-xs text-green-700 mt-2 flex items-center gap-1">
               <CheckCircle className="w-3 h-3" />
-              {invoice.approved_by ? t('invoices.approvedByStaff') : t('invoices.customerAgreed')} — {formatDate(invoice.customer_agreed_at)}
+              {invoice.approved_by
+                  ? `${t('invoices.approvedByStaff')}${invoice.approved_by_name ? `: ${invoice.approved_by_name}` : ''}`
+                  : t('invoices.customerAgreed')} — {formatDate(invoice.customer_agreed_at)}
             </p>
           )}
         </Reveal>
@@ -1487,8 +1657,8 @@ export default function InvoiceDetail() {
       {/* Payment Modal */}
       {showPayment && (
         <div className="fixed inset-0 glass-overlay z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 modal-card">
-            <h2 className="text-lg font-bold mb-4">{t('invoices.receivePayment')}</h2>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 modal-card max-h-[90vh] overflow-y-auto">
+            <h2 className="text-lg font-bold mb-4">{paymentForm.declared ? t('invoices.confirmDeclared') : t('invoices.receivePayment')}</h2>
             <div className="space-y-4">
               {/* Amount summary */}
               <div className="bg-gray-50 rounded-lg p-3 text-sm space-y-1">
@@ -1542,12 +1712,67 @@ export default function InvoiceDetail() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                   placeholder={t('invoices.refPlaceholder')} />
               </div>
+              {/* "Tarehe ya mwamala ni muhimu" — the day the money moved. */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('invoices.paymentDate')} *</label>
+                <input type="date" value={paymentForm.paid_on} max={today()}
+                  onChange={e => setPaymentForm({ ...paymentForm, paid_on: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('invoices.receivedBy')} *</label>
+                <input type="text" value={paymentForm.received_by_name}
+                  onChange={e => setPaymentForm({ ...paymentForm, received_by_name: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  placeholder={t('invoices.receivedByPlaceholder')} />
+                <p className="text-xs text-gray-400 mt-1">{t('invoices.receivedByHint')}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('invoices.signature')} <span className="text-gray-400 font-normal">({t('common.optional')})</span>
+                </label>
+                <SignaturePad onChange={sig => setPaymentForm(f => ({ ...f, signature: sig }))}
+                  hint={t('invoices.signHere')} clearLabel={t('invoices.clearSignature')} />
+              </div>
               <div className="flex gap-3">
                 <button onClick={recordPayment} disabled={savingPayment}
                   className="flex-1 py-2.5 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 disabled:opacity-50">
                   {savingPayment ? t('common.loading') : t('common.confirm')}
                 </button>
                 <button onClick={() => setShowPayment(false)} className="px-6 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50">
+                  {t('common.cancel')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Approve on the customer's behalf: who is approving (044) */}
+      {showApprove && (
+        <div className="fixed inset-0 glass-overlay z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 modal-card">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold">{t('invoices.approveForCustomer')}</h2>
+              <button onClick={() => setShowApprove(false)} className="tap p-1 rounded hover:bg-gray-100"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="space-y-4">
+              <div className="bg-gray-50 rounded-lg p-3 text-sm flex justify-between">
+                <span className="text-gray-600">{invoice.invoice_number}</span>
+                <span className="font-semibold text-gray-900">{formatTZS(invoiceTotal)}</span>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('invoices.approverName')} *</label>
+                <input type="text" value={approverName} onChange={e => setApproverName(e.target.value)} autoFocus
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                <p className="text-xs text-gray-400 mt-1">{t('invoices.approverNameHint')}</p>
+              </div>
+              <div className="flex gap-3">
+                <button onClick={confirmStaffApproval} disabled={approving}
+                  className="flex-1 py-2.5 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 disabled:opacity-50">
+                  {approving ? t('common.loading') : t('invoices.approve')}
+                </button>
+                <button onClick={() => setShowApprove(false)} className="px-6 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50">
                   {t('common.cancel')}
                 </button>
               </div>

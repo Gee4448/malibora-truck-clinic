@@ -216,7 +216,7 @@ export default function Invoices({ mode }) {
                       ) : (
                         /* A quotation with no job card yet: what it is for. */
                         <span className="text-xs text-gray-500">
-                          {inv.vehicles?.registration_number || inv.subject || t('invoices.quotationNoJob')}
+                          {inv.vehicles?.registration_number || (inv.subject || '').split('\n').join(', ') || t('invoices.quotationNoJob')}
                         </span>
                       )}
                     </td>

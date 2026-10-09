@@ -70,6 +70,7 @@ export async function billLoggedLabour({ jobCardId, entries, rate, cost, descrip
       item_type: 'labour',
       description: description || `Labour — ${hours} hrs (workshop time)`,
       quantity: hours,
+      unit: 'hrs',
       selling_price: Number(rate) || 0,
       cost_price: Number(cost) || 0,
     })

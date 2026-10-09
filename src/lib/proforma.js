@@ -19,6 +19,7 @@ export {
   staffApprovalUpdate,
   customerApprovalUpdate,
   receivableOn,
+  paymentHistory,
 } from './billing'
 
 // The one live proforma for a job card, or null. Cancelled ones are superseded

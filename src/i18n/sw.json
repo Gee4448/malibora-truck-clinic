@@ -10,7 +10,7 @@
     "jobCards": "Kadi za Kazi",
     "invoices": "Ankara",
     "quotations": "Quotation",
-    "inventory":"Vipuri",
+    "inventory": "Vipuri",
     "labour": "Viwango vya Kazi",
     "handover": "Kabidhiano",
     "reports": "Ripoti",
@@ -180,11 +180,11 @@
     },
     "stepPersonal": "Taarifa binafsi",
     "stepVehicles": "Magari",
-    "addVehiclesButton": "Ongeza magari",
+    "addVehiclesButton": "Magari — ongeza / hariri",
     "vehiclesOnFile": "Magari {n} tayari yamesajiliwa",
-    "editVehiclesHint": "Magari mapya unayoweka hapa yanaongezwa kwa mteja huyu ukihifadhi. Yaliyopo yanasimamiwa kwenye wasifu wake.",
+    "editVehiclesHint": "Hariri magari yaliyopo hapa chini, au ongeza mapya. Yote yanahifadhiwa ukibonyeza Hifadhi.",
     "openProfile": "Fungua wasifu",
-    "nextVehicles":"Endelea: Magari",
+    "nextVehicles": "Endelea: Magari",
     "noVehiclesYet": "Hakuna gari lililoongezwa bado.",
     "vehiclesOptional": "Unaweza kuhifadhi mteja bila magari na kuyaongeza baadaye.",
     "addFirstVehicle": "Ongeza gari",
@@ -205,8 +205,11 @@
       "chassis": "Chesisi",
       "noInspections": "Hakuna ukaguzi bado.",
       "noJobCards": "Hakuna kadi za kazi bado.",
-      "noInvoices": "Hakuna ankara bado."
-    }
+      "noInvoices": "Hakuna ankara bado.",
+      "editVehicle": "Hariri gari",
+      "vehicleUpdated": "Gari limesasishwa"
+    },
+    "editExistingVehicles": "Magari yaliyopo — hariri lolote hapa chini"
   },
   "vehicles": {
     "title": "Magari",
@@ -348,7 +351,9 @@
     "billLabour": "Weka bei ya kazi",
     "labourBilled": "Saa {hours} zimewekwa kama laini ya kazi",
     "labourNoneToBill": "Hakuna saa ambazo hazijawekwa bei.",
-    "labourAllBilled": "Muda wote uliorekodiwa umeshawekwa bei."
+    "labourAllBilled": "Muda wote uliorekodiwa umeshawekwa bei.",
+    "searchItems": "Tafuta vipengele…",
+    "noItemsMatch": "Hakuna kipengele kinacholingana"
   },
   "invoices": {
     "title": "Ankara",
@@ -499,7 +504,29 @@
     "jobCardCreated": "Kadi ya kazi imetengenezwa kutoka quotation",
     "needsVehicleForJob": "Kadi ya kazi inahitaji gari. Ongeza gari kwa mteja kwanza, kisha liweke kwenye quotation hii.",
     "quotationVehicle": "Gari la quotation hii",
-    "quotationVehicleSaved": "Gari limehifadhiwa"
+    "quotationVehicleSaved": "Gari limehifadhiwa",
+    "searchItems": "Tafuta mistari kwenye hati hii…",
+    "paymentHistory": "Historia ya malipo",
+    "paymentsReceived": "Malipo yaliyopokelewa",
+    "undatedPayments": "Malipo ya awali (tarehe haikuandikwa)",
+    "onProforma": "yalilipwa kwenye proforma",
+    "paymentDate": "Tarehe ya malipo",
+    "paymentDateRequired": "Weka tarehe pesa ilipolipwa",
+    "paymentDateFuture": "Tarehe ya malipo haiwezi kuwa ya mbeleni",
+    "receivedBy": "Imepokelewa / imehakikiwa na",
+    "receivedByPlaceholder": "Jina kamili",
+    "receivedByHint": "Mtu aliyehakiki kwamba pesa imeingia.",
+    "receivedByRequired": "Andika jina la aliyehakiki pesa",
+    "signature": "Sahihi",
+    "signHere": "Saini hapa kwa kidole au kipanya",
+    "clearSignature": "Futa sahihi",
+    "confirmDeclared": "Thibitisha malipo ya mteja",
+    "paymentHistoryFailed": "Malipo yamehifadhiwa, ila hayakuweza kuingia kwenye historia ya malipo",
+    "approverName": "Jina lako (anayeidhinisha)",
+    "approverNameHint": "Unaidhinisha kwa niaba ya mteja. Jina lako litabaki kwenye hati.",
+    "approverNameRequired": "Andika jina la anayeidhinisha",
+    "addSubjectLine": "Ongeza",
+    "subjectLinesHint": "Ongeza kila kazi ambayo quotation hii inahusu, moja moja."
   },
   "inventory": {
     "title": "Vipuri",
@@ -590,7 +617,12 @@
     "partsWarranty": "Dhamana ya Vipuri",
     "labourWarranty": "Dhamana ya Kazi",
     "nextService": "Huduma Ijayo",
-    "days": "siku"
+    "days": "siku",
+    "workAutoFilled": "Imejazwa kutoka kazi na huduma za job — hariri inapohitajika",
+    "mileageAutoFilled": "Kutoka kwenye job card — badilisha kama ni tofauti",
+    "warrantyPartsLabel": "Dhamana ya Vipuri",
+    "warrantyLabourLabel": "Dhamana ya Kazi",
+    "km": "km"
   },
   "reports": {
     "loadError": "Hitilafu kupakia ripoti",
@@ -782,7 +814,10 @@
     "quantity": "Idadi",
     "cost": "Gharama",
     "price": "Bei",
-    "categories": "Kategoria"
+    "categories": "Kategoria",
+    "unit": "Kipimo",
+    "otherUnit": "Kingine…",
+    "optional": "si lazima"
   },
   "settings": {
     "language": "Language / Lugha",

@@ -7,7 +7,7 @@ import {
   Truck, Plus, X, Trash2, Edit2, ClipboardCheck, ClipboardList, Gauge,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { emptyVehicle } from '../lib/vehicleOptions'
+import { emptyVehicle, vehicleToForm, vehicleRow } from '../lib/vehicleOptions'
 import VehicleFormBlock from '../components/vehicles/VehicleFormBlock'
 import Reveal from '../components/common/Reveal'
 
@@ -22,7 +22,9 @@ export default function CustomerDetail() {
   const [invoices, setInvoices] = useState([])
   const [loading, setLoading] = useState(true)
 
-  // Add-vehicle modal state
+  // Add / edit vehicle modal state. `newVehicle.id` set = editing that one.
+  // Until 9 Oct 2026 a vehicle could be added and deleted but never edited
+  // (Antony: "unakuja kuedit, inashindikana").
   const [showVehicleForm, setShowVehicleForm] = useState(false)
   const [newVehicle, setNewVehicle] = useState(emptyVehicle())
   const [savingVehicle, setSavingVehicle] = useState(false)
@@ -66,19 +68,18 @@ export default function CustomerDetail() {
     }
     setSavingVehicle(true)
     try {
-      const { error } = await supabase.from('vehicles').insert({
-        customer_id: id,
-        vehicle_type: newVehicle.vehicle_type,
-        make: newVehicle.make.trim(),
-        model: newVehicle.model?.trim() || null,
-        registration_number: newVehicle.registration_number.toUpperCase().trim(),
-        chassis_number: newVehicle.chassis_number || null,
-        year: newVehicle.year ? parseInt(newVehicle.year) : null,
-        color: newVehicle.color?.trim() || null,
-        mileage_km: newVehicle.mileage_km ? parseInt(newVehicle.mileage_km) : null,
-      })
-      if (error) throw error
-      toast.success(t('customers.detail.vehicleAdded'))
+      if (newVehicle.id) {
+        // .select() so an update RLS refuses is a visible failure (see 019).
+        const { data, error } = await supabase.from('vehicles')
+          .update(vehicleRow(newVehicle)).eq('id', newVehicle.id).select('id')
+        if (error) throw error
+        if (!data?.length) throw new Error(t('customers.detail.vehicleDeleteBlocked'))
+        toast.success(t('customers.detail.vehicleUpdated'))
+      } else {
+        const { error } = await supabase.from('vehicles').insert({ customer_id: id, ...vehicleRow(newVehicle) })
+        if (error) throw error
+        toast.success(t('customers.detail.vehicleAdded'))
+      }
       setShowVehicleForm(false)
       setNewVehicle(emptyVehicle())
       fetchAll()
@@ -227,18 +228,28 @@ export default function CustomerDetail() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {vehicles.map((v) => (
               <div key={v.id} className="border border-gray-200 rounded-xl p-4 relative group">
-                <button
-                  onClick={() => handleDeleteVehicle(v.id)}
-                  className="absolute top-3 right-3 p-1 rounded hover:bg-red-50 opacity-0 group-hover:opacity-100 transition"
-                  title={t('customers.detail.deleteVehicle')}
-                >
-                  <Trash2 className="w-4 h-4 text-red-500" />
-                </button>
+                {/* Always visible: a phone has no hover to reveal them. */}
+                <div className="absolute top-3 right-3 flex gap-1">
+                  <button
+                    onClick={() => { setNewVehicle(vehicleToForm(v)); setShowVehicleForm(true) }}
+                    className="tap p-1 rounded hover:bg-blue-50"
+                    title={t('customers.detail.editVehicle')}
+                  >
+                    <Edit2 className="w-4 h-4 text-blue-600" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteVehicle(v.id)}
+                    className="tap p-1 rounded hover:bg-red-50"
+                    title={t('customers.detail.deleteVehicle')}
+                  >
+                    <Trash2 className="w-4 h-4 text-red-500" />
+                  </button>
+                </div>
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
                     <Truck className="w-5 h-5 text-blue-600" />
                   </div>
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 pr-14">
                     <p className="font-bold text-gray-900">{v.registration_number}</p>
                     <p className="text-sm text-gray-600">
                       {[v.make, v.model, v.year].filter(Boolean).join(' ')}
@@ -334,7 +345,7 @@ export default function CustomerDetail() {
         <div className="fixed inset-0 glass-overlay z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto modal-card">
             <div className="flex items-center justify-between p-5 border-b">
-              <h2 className="text-lg font-bold">{t('customers.detail.addVehicle')}</h2>
+              <h2 className="text-lg font-bold">{newVehicle.id ? t('customers.detail.editVehicle') : t('customers.detail.addVehicle')}</h2>
               <button onClick={() => setShowVehicleForm(false)} className="tap p-1 rounded hover:bg-gray-100">
                 <X className="w-5 h-5" />
               </button>

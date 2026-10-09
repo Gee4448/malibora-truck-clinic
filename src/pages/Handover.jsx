@@ -3,7 +3,8 @@ import { useLanguage } from '../contexts/LanguageContext'
 import { supabase, formatDate } from '../lib/supabase'
 import { sendSMS, smsTemplates } from '../lib/sms'
 import { Plus, Eye, Download, Search, X, ClipboardCheck } from 'lucide-react'
-import { generateHandoverPDF } from '../lib/pdf'
+import { generateHandoverPDF, warrantyText } from '../lib/pdf'
+import { formatQty } from '../lib/units'
 import toast from 'react-hot-toast'
 import Reveal from '../components/common/Reveal'
 
@@ -51,6 +52,35 @@ function ItemListInput({ label, required, items, onChange, placeholder, addLabel
 
 const numberItems = (items) => items.map((s, i) => `${i + 1}. ${s}`).join('\n')
 
+// A warranty is counted in days OR kilometres (044; Antony, 7 Oct 2026).
+function WarrantyInput({ label, value, mode, onValue, onMode, t }) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+      <div className="flex">
+        <input type="number" min="0" value={value} onChange={e => onValue(e.target.value)}
+          className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+        {['days', 'km'].map(m => (
+          <button key={m} type="button" onClick={() => onMode(m)}
+            className={`tap px-2.5 text-xs font-medium border-y border-r last:rounded-r-lg transition ${
+              mode === m ? 'bg-blue-600 border-blue-600 text-white' : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+            }`}>
+            {m === 'days' ? t('handover.days') : t('handover.km')}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+const BLANK_FORM = {
+  job_card_id: '', next_service_date: '', next_service_mileage: '',
+  mileage_out: '', fuel_level_out: '', received_by: '',
+  warranty_parts: '30', warranty_parts_mode: 'days',
+  warranty_labour: '7', warranty_labour_mode: 'days',
+  notes: '', invoice_id: null,
+}
+
 export default function Handover() {
   const { t } = useLanguage()
   const [handovers, setHandovers] = useState([])
@@ -59,11 +89,7 @@ export default function Handover() {
   const [search, setSearch] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [showDetail, setShowDetail] = useState(null)
-  const [form, setForm] = useState({
-    job_card_id: '', next_service_date: '', next_service_mileage: '',
-    mileage_out: '', fuel_level_out: '', received_by: '',
-    warranty_parts_days: '30', warranty_labour_days: '7', notes: '',
-  })
+  const [form, setForm] = useState(BLANK_FORM)
   const [workItems, setWorkItems] = useState([])
   const [partsItems, setPartsItems] = useState([])
   const [recItems, setRecItems] = useState([])
@@ -96,25 +122,45 @@ export default function Handover() {
   const fetchCompletedJobs = async () => {
     const { data } = await supabase
       .from('job_cards')
-      .select('id, job_number, customer_id, vehicle_id, vehicles(registration_number), customers(full_name, phone)')
+      .select('id, job_number, customer_id, vehicle_id, mileage_in, vehicles(registration_number, mileage_km), customers(full_name, phone)')
       .eq('status', 'completed')
       .order('date_completed', { ascending: false })
     setCompletedJobs(data || [])
   }
 
+  // Picking the job fills in what the job already knows, so nobody types it
+  // again (Antony, 7 Oct 2026): the parts AND the labour/services from the
+  // invoice, and the mileage the truck came in with. All still editable.
   const handleJobSelect = async (jobId) => {
-    setForm(f => ({ ...f, job_card_id: jobId }))
-    if (!jobId) { setPartsItems([]); return }
-    // CB2: auto-fill Parts Used from the job's parts (same rows the invoice uses).
-    const { data } = await supabase
-      .from('job_card_items')
-      .select('description, quantity')
-      .eq('job_card_id', jobId)
-      .eq('item_type', 'part')
-      .order('created_at')
-    setPartsItems((data || []).map(p =>
-      Number(p.quantity) > 1 ? `${p.description} x${Number(p.quantity)}` : p.description
-    ))
+    const job = completedJobs.find(j => j.id === jobId)
+    const mileage = job?.mileage_in ?? job?.vehicles?.mileage_km
+    setForm(f => ({ ...f, job_card_id: jobId, invoice_id: null, mileage_out: mileage ? String(mileage) : '' }))
+    if (!jobId) { setPartsItems([]); setWorkItems([]); return }
+
+    // The final invoice's frozen lines when there is one — that is what the
+    // customer was billed — otherwise the job card's own lines.
+    const { data: fin } = await supabase.from('invoices')
+      .select('id').eq('job_card_id', jobId).eq('invoice_type', 'final').neq('status', 'cancelled')
+      .order('created_at', { ascending: false }).limit(1).maybeSingle()
+    let lines = []
+    if (fin) {
+      const { data } = await supabase.from('invoice_items')
+        .select('item_type, description, quantity, unit').eq('invoice_id', fin.id).order('sort_order')
+      lines = data || []
+    }
+    if (lines.length === 0) {
+      const { data } = await supabase.from('job_card_items')
+        .select('item_type, description, quantity, unit, approval_status')
+        .eq('job_card_id', jobId).order('created_at')
+      lines = (data || []).filter(l => l.approval_status !== 'rejected')
+    }
+    if (fin) setForm(f => ({ ...f, invoice_id: fin.id }))
+
+    const label = (l) => Number(l.quantity) !== 1 || l.unit
+      ? `${l.description} (${formatQty(l.quantity, l.unit)})`
+      : l.description
+    setPartsItems(lines.filter(l => l.item_type === 'part').map(label))
+    setWorkItems(lines.filter(l => l.item_type !== 'part').map(l => l.description))
   }
 
   const handleSubmit = async (e) => {
@@ -136,8 +182,12 @@ export default function Handover() {
         mileage_out: form.mileage_out ? parseInt(form.mileage_out) : null,
         fuel_level_out: form.fuel_level_out || null,
         received_by: form.received_by || null,
-        warranty_parts_days: parseInt(form.warranty_parts_days) || 30,
-        warranty_labour_days: parseInt(form.warranty_labour_days) || 7,
+        invoice_id: form.invoice_id || null,
+        // One of days / km per warranty; the other stays empty.
+        warranty_parts_days: form.warranty_parts_mode === 'days' ? (parseInt(form.warranty_parts) || 0) : null,
+        warranty_parts_km: form.warranty_parts_mode === 'km' ? (parseInt(form.warranty_parts) || 0) : null,
+        warranty_labour_days: form.warranty_labour_mode === 'days' ? (parseInt(form.warranty_labour) || 0) : null,
+        warranty_labour_km: form.warranty_labour_mode === 'km' ? (parseInt(form.warranty_labour) || 0) : null,
         notes: form.notes || null,
       }
 
@@ -167,7 +217,7 @@ export default function Handover() {
   }
 
   const resetForm = () => {
-    setForm({ job_card_id: '', next_service_date: '', next_service_mileage: '', mileage_out: '', fuel_level_out: '', received_by: '', warranty_parts_days: '30', warranty_labour_days: '7', notes: '' })
+    setForm(BLANK_FORM)
     setWorkItems([])
     setPartsItems([])
     setRecItems([])
@@ -249,8 +299,8 @@ export default function Handover() {
               {showDetail.parts_summary && <div><span className="text-gray-500">{t('handover.partsUsed')}:</span><p className="mt-1 whitespace-pre-line">{showDetail.parts_summary}</p></div>}
               {showDetail.recommendations && <div><span className="text-gray-500">{t('handover.recommendations')}:</span><p className="mt-1 whitespace-pre-line">{showDetail.recommendations}</p></div>}
               <div className="grid grid-cols-2 gap-4 pt-2 border-t">
-                <div><span className="text-gray-500">{t('handover.partsWarranty')}:</span><p className="font-medium">{showDetail.warranty_parts_days} {t('handover.days')}</p></div>
-                <div><span className="text-gray-500">{t('handover.labourWarranty')}:</span><p className="font-medium">{showDetail.warranty_labour_days} {t('handover.days')}</p></div>
+                <div><span className="text-gray-500">{t('handover.partsWarranty')}:</span><p className="font-medium">{warrantyText(showDetail.warranty_parts_days, showDetail.warranty_parts_km)}</p></div>
+                <div><span className="text-gray-500">{t('handover.labourWarranty')}:</span><p className="font-medium">{warrantyText(showDetail.warranty_labour_days, showDetail.warranty_labour_km)}</p></div>
                 {showDetail.next_service_date && <div><span className="text-gray-500">{t('handover.nextService')}:</span><p className="font-medium">{formatDate(showDetail.next_service_date)}</p></div>}
                 {showDetail.received_by && <div><span className="text-gray-500">{t('handover.receivedBy')}:</span><p className="font-medium">{showDetail.received_by}</p></div>}
               </div>
@@ -284,7 +334,7 @@ export default function Handover() {
                   ))}
                 </select>
               </div>
-              <ItemListInput label={t('handover.workSummary')} required
+              <ItemListInput label={t('handover.workSummary')} required hint={t('handover.workAutoFilled')}
                 items={workItems} onChange={setWorkItems}
                 placeholder="e.g. Replaced brake pads" addLabel={t('common.add')} />
               <ItemListInput label={t('handover.partsSummary')} hint={t('handover.partsAutoFilled')}
@@ -298,6 +348,7 @@ export default function Handover() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">{t('handover.mileageOut')}</label>
                   <input type="number" value={form.mileage_out} onChange={e => setForm({...form, mileage_out: e.target.value})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                  {form.job_card_id && form.mileage_out && <p className="text-[11px] text-gray-400 mt-1">{t('handover.mileageAutoFilled')}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">{t('handover.fuelLevelOut')}</label>
@@ -321,16 +372,14 @@ export default function Handover() {
                   <input type="text" value={form.received_by} onChange={e => setForm({...form, received_by: e.target.value})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('handover.warrantyParts')}</label>
-                  <input type="number" value={form.warranty_parts_days} onChange={e => setForm({...form, warranty_parts_days: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('handover.warrantyLabour')}</label>
-                  <input type="number" value={form.warranty_labour_days} onChange={e => setForm({...form, warranty_labour_days: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
-                </div>
+                <WarrantyInput t={t} label={t('handover.warrantyPartsLabel')}
+                  value={form.warranty_parts} mode={form.warranty_parts_mode}
+                  onValue={v => setForm(f => ({ ...f, warranty_parts: v }))}
+                  onMode={m => setForm(f => ({ ...f, warranty_parts_mode: m }))} />
+                <WarrantyInput t={t} label={t('handover.warrantyLabourLabel')}
+                  value={form.warranty_labour} mode={form.warranty_labour_mode}
+                  onValue={v => setForm(f => ({ ...f, warranty_labour: v }))}
+                  onMode={m => setForm(f => ({ ...f, warranty_labour_mode: m }))} />
               </div>
               <div className="flex gap-3 pt-2">
                 <button type="submit" className="flex-1 py-2.5 bg-blue-700 text-white font-medium rounded-lg hover:bg-blue-800 transition">{t('common.save')}</button>

@@ -181,9 +181,9 @@
     "stepPersonal": "Personal info",
     "stepVehicles": "Vehicles",
     "nextVehicles": "Next: Vehicles",
-    "addVehiclesButton": "Add vehicles",
+    "addVehiclesButton": "Vehicles — add / edit",
     "vehiclesOnFile": "{n} vehicle(s) already on file",
-    "editVehiclesHint": "New vehicles entered here are added to this customer when you save. Existing ones are managed on the profile.",
+    "editVehiclesHint": "Edit the vehicles on file below, or add new ones. Everything is saved when you press Save.",
     "openProfile": "Open profile",
     "noVehiclesYet": "No vehicles added yet.",
     "vehiclesOptional": "You can save the client without vehicles and add them later.",
@@ -205,8 +205,11 @@
       "chassis": "Chassis",
       "noInspections": "No inspections yet.",
       "noJobCards": "No job cards yet.",
-      "noInvoices": "No invoices yet."
-    }
+      "noInvoices": "No invoices yet.",
+      "editVehicle": "Edit vehicle",
+      "vehicleUpdated": "Vehicle updated"
+    },
+    "editExistingVehicles": "Vehicles on file — edit any of them below"
   },
   "vehicles": {
     "title": "Vehicles",
@@ -348,7 +351,9 @@
     "billLabour": "Bill labour",
     "labourBilled": "{hours} h billed as a labour line",
     "labourNoneToBill": "No unbilled hours to bill.",
-    "labourAllBilled": "All logged time has been billed."
+    "labourAllBilled": "All logged time has been billed.",
+    "searchItems": "Search items…",
+    "noItemsMatch": "No item matches the search"
   },
   "invoices": {
     "title": "Invoices",
@@ -499,7 +504,29 @@
     "jobCardCreated": "Job card created from the quotation",
     "needsVehicleForJob": "A job card needs a vehicle. Add the vehicle to the customer first, then set it on this quotation.",
     "quotationVehicle": "Vehicle on this quotation",
-    "quotationVehicleSaved": "Vehicle saved"
+    "quotationVehicleSaved": "Vehicle saved",
+    "searchItems": "Search lines on this document…",
+    "paymentHistory": "Payment history",
+    "paymentsReceived": "Payments received",
+    "undatedPayments": "Earlier payments (date not recorded)",
+    "onProforma": "paid on the proforma",
+    "paymentDate": "Date of payment",
+    "paymentDateRequired": "Enter the date the money was paid",
+    "paymentDateFuture": "The payment date cannot be in the future",
+    "receivedBy": "Received / checked by",
+    "receivedByPlaceholder": "Full name",
+    "receivedByHint": "The person who confirmed the money has arrived.",
+    "receivedByRequired": "Write the name of the person who checked the money",
+    "signature": "Signature",
+    "signHere": "Sign here with finger or mouse",
+    "clearSignature": "Clear signature",
+    "confirmDeclared": "Confirm customer payment",
+    "paymentHistoryFailed": "Payment saved, but it could not be added to the payment history",
+    "approverName": "Your name (who is approving)",
+    "approverNameHint": "Approving for the customer. Your name is kept on the document.",
+    "approverNameRequired": "Write the name of the person approving",
+    "addSubjectLine": "Add",
+    "subjectLinesHint": "Add each job this quote covers, one at a time."
   },
   "inventory": {
     "title": "Parts Inventory",
@@ -590,7 +617,12 @@
     "partsWarranty": "Parts Warranty",
     "labourWarranty": "Labour Warranty",
     "nextService": "Next Service",
-    "days": "days"
+    "days": "days",
+    "workAutoFilled": "Filled from the job's labour & services — edit as needed",
+    "mileageAutoFilled": "From the job card — change if different",
+    "warrantyPartsLabel": "Parts Warranty",
+    "warrantyLabourLabel": "Labour Warranty",
+    "km": "km"
   },
   "reports": {
     "loadError": "Error loading reports",
@@ -782,7 +814,10 @@
     "quantity": "Qty",
     "cost": "Cost",
     "price": "Price",
-    "categories": "Categories"
+    "categories": "Categories",
+    "unit": "Unit",
+    "otherUnit": "Other…",
+    "optional": "optional"
   },
   "settings": {
     "language": "Language / Lugha",

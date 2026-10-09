@@ -12,6 +12,7 @@ import toast from 'react-hot-toast'
 import Reveal from '../../components/common/Reveal'
 import StatusTracker from '../../components/common/StatusTracker'
 import { JOB_STAGE_KEYS, jobStage } from '../../lib/clientStages'
+import { formatQty } from '../../lib/units'
 
 export default function ClientServiceDetail() {
   const { id } = useParams()
@@ -436,7 +437,7 @@ export default function ClientServiceDetail() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-gray-900 truncate">{item.description}</p>
                   <p className="text-xs text-gray-400 capitalize">
-                    {t(`jobs.itemTypes.${item.item_type}`)} · {item.quantity} × {formatTZS(item.selling_price)}
+                    {t(`jobs.itemTypes.${item.item_type}`)} · {formatQty(item.quantity, item.unit)} × {formatTZS(item.selling_price)}
                   </p>
                 </div>
                 <p className="text-sm font-medium text-gray-900 ml-3">

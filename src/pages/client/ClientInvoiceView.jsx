@@ -9,6 +9,7 @@ import PaymentChannels from '../../components/common/PaymentChannels'
 import { ArrowLeft, FileText, CheckCircle2, XCircle, Phone, Send, MessageSquare, CreditCard, Clock, AlertTriangle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Reveal from '../../components/common/Reveal'
+import { formatQty } from '../../lib/units'
 
 export default function ClientInvoiceView() {
   const { id } = useParams()
@@ -250,11 +251,11 @@ export default function ClientInvoiceView() {
                   <p className="text-xs text-gray-500">{veh.make} {veh.model}</p>
                 </>
               ) : (
-                <p className="font-medium text-gray-900">{invoice.subject || '—'}</p>
+                <p className="font-medium text-gray-900 whitespace-pre-line">{invoice.subject || '—'}</p>
               )
             })()}
             {invoice.subject && (invoice.job_cards?.vehicles || invoice.vehicles) && (
-              <p className="text-xs text-gray-500">{invoice.subject}</p>
+              <p className="text-xs text-gray-500 whitespace-pre-line">{invoice.subject}</p>
             )}
           </div>
           <div>
@@ -279,7 +280,7 @@ export default function ClientInvoiceView() {
               <div key={item.id} className="flex items-center justify-between p-3">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-gray-900 truncate">{item.description}</p>
-                  <p className="text-xs text-gray-400">{item.quantity} x {formatTZS(item.selling_price || item.unit_price)}</p>
+                  <p className="text-xs text-gray-400">{formatQty(item.quantity, item.unit)} x {formatTZS(item.selling_price || item.unit_price)}</p>
                 </div>
                 <p className="text-sm font-medium text-gray-900 ml-3">
                   {formatTZS((item.selling_price || item.unit_price) * item.quantity)}
@@ -300,7 +301,7 @@ export default function ClientInvoiceView() {
               <div key={item.id} className="flex items-center justify-between p-3">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-gray-900 truncate">{item.description}</p>
-                  <p className="text-xs text-gray-400">{item.quantity} x {formatTZS(item.selling_price || item.unit_price)}</p>
+                  <p className="text-xs text-gray-400">{formatQty(item.quantity, item.unit)} x {formatTZS(item.selling_price || item.unit_price)}</p>
                 </div>
                 <p className="text-sm font-medium text-gray-900 ml-3">
                   {formatTZS((item.selling_price || item.unit_price) * item.quantity)}

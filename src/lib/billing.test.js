@@ -242,6 +242,7 @@ import {
   staffApprovalUpdate,
   customerApprovalUpdate,
   receivableOn,
+  paymentHistory,
 } from './billing.js'
 
 const AGREED = { status: 'approved', customer_agreed_at: OLD_DATE, agreed_total: 635000, total_amount: 635000, amount_paid: 0 }
@@ -252,6 +253,7 @@ test('approval: a total that moves off the agreed figure voids the agreement', (
   assert.equal(out.agreed_total, 635000, 'the OLD figure is kept for the "was X" banner')
   assert.ok(out.approval_reset_at)
   assert.equal(out.approved_by, null)
+  assert.equal(out.approved_by_name, null, 'the old approver\'s name goes with the old approval')
   assert.equal(out.status, 'sent', 'unpaid approved quote goes back to waiting for an answer')
 })
 
@@ -302,8 +304,10 @@ test('approval: staff approving on the customer\'s behalf signs it and clears th
   const out = staffApprovalUpdate(inv, 'staff-1', OLD_DATE)
   assert.deepEqual(out, {
     customer_agreed_at: OLD_DATE, agreed_total: 700000, approval_reset_at: null,
-    approved_by: 'staff-1', status: 'approved',
+    approved_by: 'staff-1', approved_by_name: null, status: 'approved',
   })
+  // The approver's typed name travels with it, trimmed.
+  assert.equal(staffApprovalUpdate(inv, 'staff-1', OLD_DATE, '  Antony ').approved_by_name, 'Antony')
   // A deposit already taken is not undone by re-approval.
   assert.equal('status' in staffApprovalUpdate({ ...inv, status: 'partial' }, 'staff-1'), false)
 })
@@ -322,4 +326,22 @@ test('receivable: what can still be taken, whatever the status says', () => {
   assert.equal(receivableOn({ status: 'cancelled', total_amount: 635000, amount_paid: 0 }), 0)
   assert.equal(receivableOn({ status: 'draft', total_amount: 0, amount_paid: 0 }), 0)
   assert.equal(receivableOn(null), 0)
+})
+
+test('payment history: rows in date order, money older than the ledger shown as one undated line', () => {
+  const rows = [
+    { amount: 300000, status: 'confirmed', paid_on: '2026-10-05' },
+    { amount: 999, status: 'pending', created_at: '2026-10-01' },
+    { amount: 200000, status: 'confirmed', paid_on: '2026-10-02' },
+  ]
+  const h = paymentHistory(rows, 700000)
+  assert.deepEqual(h.rows.map(r => r.paid_on), ['2026-10-02', '2026-10-05'], 'pending declarations are not money received')
+  assert.equal(h.recorded, 500000)
+  assert.equal(h.undated, 200000)
+})
+
+test('payment history: a refund does not make recorded payments look like too much', () => {
+  const rows = [{ amount: 500000, status: 'confirmed', paid_on: '2026-10-02' }]
+  assert.equal(paymentHistory(rows, 400000, 100000).undated, 0)
+  assert.equal(paymentHistory([], 0).undated, 0)
 })

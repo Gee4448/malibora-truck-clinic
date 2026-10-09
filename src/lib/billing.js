@@ -166,6 +166,7 @@ export function approvalAfterRetotal(invoice, newTotal) {
     agreed_total: agreed,
     approval_reset_at: new Date().toISOString(),
     approved_by: null,
+    approved_by_name: null,
   }
   // Nothing paid and the quote was sitting at `approved`: it is back to being a
   // quote waiting for an answer. With money held, statusAfterRetotal owns status.
@@ -184,13 +185,18 @@ export function needsReapproval(invoice) {
  * (Antony: "...or the admin"). Same agreement as the customer's, but signed by
  * `staffId` so the document can say who gave it. The status only becomes
  * `approved` when there is no money story to preserve.
+ *
+ * `name` is the person who approved, as they typed it (044; Antony, 7 Oct
+ * 2026: "anaye approve proforma badala ya mteja pia aandike jina lake"). The
+ * login alone does not say who it was on a shared office computer.
  */
-export function staffApprovalUpdate(invoice, staffId, now = new Date().toISOString()) {
+export function staffApprovalUpdate(invoice, staffId, now = new Date().toISOString(), name = null) {
   const out = {
     customer_agreed_at: now,
     agreed_total: Number(invoice?.total_amount) || 0,
     approval_reset_at: null,
     approved_by: staffId || null,
+    approved_by_name: String(name || '').trim() || null,
   }
   if (!['partial', 'paid', 'cancelled'].includes(invoice?.status)) out.status = 'approved'
   return out
@@ -237,4 +243,22 @@ export function proformaUpdateFor(proforma, items) {
     ...depositAfterRetotal(proforma?.deposit_percentage, totals.total_amount),
     ...approvalAfterRetotal(proforma, totals.total_amount),
   }
+}
+
+// The dated list of money received against an invoice (044), and how much of
+// `amount_paid` predates it. Office payments only became ledger rows in 044 —
+// before that the office just raised amount_paid — so older money has no row
+// and no date; it is shown as one "earlier, undated" line rather than left out
+// of a list that would then not add up to Amount Paid.
+//
+// `amount_paid` is net of refunds (027), so refunds are added back before
+// comparing it with the rows, which record money IN.
+export function paymentHistory(rows, amountPaid, refunded = 0) {
+  const received = (rows || []).filter(r => r?.status === 'confirmed')
+  const dateOf = r => r.paid_on || r.confirmed_at || r.created_at || ''
+  received.sort((a, b) => String(dateOf(a)).localeCompare(String(dateOf(b))))
+  const recorded = received.reduce((s, r) => s + (Number(r.amount) || 0), 0)
+  const gross = (Number(amountPaid) || 0) + (Number(refunded) || 0)
+  const undated = gross - recorded
+  return { rows: received, recorded, undated: undated > PAID_EPSILON ? undated : 0 }
 }
