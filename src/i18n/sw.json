@@ -534,7 +534,8 @@
     "approverNameHint": "Unaidhinisha kwa niaba ya mteja. Jina lako litabaki kwenye hati.",
     "approverNameRequired": "Andika jina la anayeidhinisha",
     "addSubjectLine": "Ongeza",
-    "subjectLinesHint": "Ongeza kila kazi ambayo quotation hii inahusu, moja moja."
+    "subjectLinesHint": "Ongeza kila kazi ambayo quotation hii inahusu, moja moja.",
+    "invalidDeposit": "Weka asilimia kamili ya malipo ya awali kati ya 0 na 100"
   },
   "inventory": {
     "title": "Vipuri",

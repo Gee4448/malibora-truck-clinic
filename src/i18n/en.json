@@ -534,7 +534,8 @@
     "approverNameHint": "Approving for the customer. Your name is kept on the document.",
     "approverNameRequired": "Write the name of the person approving",
     "addSubjectLine": "Add",
-    "subjectLinesHint": "Add each job this quote covers, one at a time."
+    "subjectLinesHint": "Add each job this quote covers, one at a time.",
+    "invalidDeposit": "Enter a whole deposit percentage between 0 and 100"
   },
   "inventory": {
     "title": "Parts Inventory",

@@ -137,7 +137,7 @@ export default function InvoiceDetail() {
         setItems(jobItems || [])
         setItemsSource('job_card_items')
       }
-      setDepositPct(data.deposit_percentage || 70)
+      setDepositPct(data.deposit_percentage ?? 70)
 
       // If this is a proforma, see whether a final invoice was already generated from it.
       if (data.invoice_type === 'proforma') {
@@ -817,11 +817,18 @@ export default function InvoiceDetail() {
     }
   }
 
+  // Any whole percentage, typed (Antony, 12 Oct 2026) — it used to be a
+  // choice of 50 or 70. Whole, because the column is an integer.
   const handleSaveDeposit = async () => {
+    const pct = Number(depositPct)
+    if (depositPct === '' || !Number.isInteger(pct) || pct < 0 || pct > 100) {
+      toast.error(t('invoices.invalidDeposit'))
+      return
+    }
     try {
-      const depositAmt = Number(invoice.total_amount) * depositPct / 100
+      const depositAmt = Number(invoice.total_amount) * pct / 100
       const { error } = await supabase.from('invoices').update({
-        deposit_percentage: depositPct,
+        deposit_percentage: pct,
         deposit_amount: depositAmt,
       }).eq('id', invoice.id)
       if (error) throw error
@@ -1580,14 +1587,26 @@ export default function InvoiceDetail() {
       {invoice.invoice_type === 'proforma' && invoice.status !== 'paid' && (
         <Reveal className="bg-amber-50 border border-amber-200 rounded-xl p-4 no-print">
           <h3 className="text-sm font-semibold text-amber-800 mb-3">{t('invoices.setDeposit')}</h3>
-          <div className="flex items-center gap-3">
-            <select value={depositPct} onChange={e => setDepositPct(Number(e.target.value))}
-              className="px-3 py-2 border border-amber-300 rounded-lg bg-white text-sm focus:ring-2 focus:ring-amber-500 outline-none">
-              <option value={50}>50%</option>
-              <option value={70}>70%</option>
-            </select>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-1.5">
+              <input type="number" min="0" max="100" step="1" inputMode="numeric" value={depositPct}
+                onChange={e => setDepositPct(e.target.value)}
+                className="w-20 px-3 py-2 border border-amber-300 rounded-lg bg-white text-sm text-right focus:ring-2 focus:ring-amber-500 outline-none" />
+              <span className="text-sm text-amber-800">%</span>
+            </div>
+            {/* The usual figures, one tap away. */}
+            <div className="flex gap-1">
+              {[30, 50, 70].map(p => (
+                <button key={p} type="button" onClick={() => setDepositPct(p)}
+                  className={`tap px-2 py-1 rounded-md text-xs font-medium border transition ${
+                    Number(depositPct) === p ? 'bg-amber-600 border-amber-600 text-white' : 'border-amber-300 text-amber-800 hover:bg-amber-100'
+                  }`}>
+                  {p}%
+                </button>
+              ))}
+            </div>
             <span className="text-sm text-amber-800">
-              = {formatTZS(Number(invoice.total_amount) * depositPct / 100)}
+              = {formatTZS(Number(invoice.total_amount) * (Number(depositPct) || 0) / 100)}
             </span>
             <button onClick={handleSaveDeposit}
               className="flex items-center gap-1.5 px-3 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm font-medium">
