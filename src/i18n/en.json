@@ -157,7 +157,15 @@
       "modalSubtitle": "Read it out, or send it on WhatsApp. It cannot be shown again after you close this — reset it for a new one.",
       "done": "Done",
       "forbidden": "Your account is not allowed to set customer passwords",
-      "migrationMissing": "Customer logins are not switched on yet (database migration 043 has not been applied)"
+      "migrationMissing": "Customer logins are not switched on yet (database migration 043 has not been applied)",
+      "hasLogin": "Login set",
+      "noLogin": "No login yet",
+      "accountLink": "Account link",
+      "copyLink": "Copy link",
+      "sendLink": "Send account link on WhatsApp",
+      "newPassword": "Give a new password",
+      "passwordHidden": "Set. It is stored locked, so it cannot be shown here — give a new password and it appears once, to read out or send.",
+      "passwordNone": "This customer has no password yet."
     },
     "registeredOnline": "Online",
     "registeredWalkIn": "Walk-in",
@@ -611,8 +619,8 @@
     "created": "Handover card created!",
     "pdfDownloaded": "PDF downloaded!",
     "search": "Search handovers...",
-    "completedJob": "Completed Job Card",
-    "selectCompletedJob": "-- Select completed job --",
+    "completedJob": "Job Card",
+    "selectCompletedJob": "-- Select job --",
     "partsUsed": "Parts Used",
     "partsWarranty": "Parts Warranty",
     "labourWarranty": "Labour Warranty",
@@ -622,7 +630,8 @@
     "mileageAutoFilled": "From the job card — change if different",
     "warrantyPartsLabel": "Parts Warranty",
     "warrantyLabourLabel": "Labour Warranty",
-    "km": "km"
+    "km": "km",
+    "notYetCompleted": "not yet completed"
   },
   "reports": {
     "loadError": "Error loading reports",

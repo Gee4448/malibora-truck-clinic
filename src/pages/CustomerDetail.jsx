@@ -5,11 +5,16 @@ import { supabase, formatDate, formatTZS } from '../lib/supabase'
 import {
   ArrowLeft, Phone, Mail, Building2, CreditCard, MapPin, FileText, User,
   Truck, Plus, X, Trash2, Edit2, ClipboardCheck, ClipboardList, Gauge,
+  KeyRound, Copy, Check, MessageCircle, RefreshCw,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { emptyVehicle, vehicleToForm, vehicleRow } from '../lib/vehicleOptions'
 import VehicleFormBlock from '../components/vehicles/VehicleFormBlock'
 import Reveal from '../components/common/Reveal'
+import NotifyCustomerModal from '../components/customers/NotifyCustomerModal'
+import { generatePassword, setCustomerPassword } from '../lib/customerLogin'
+import { whatsappLink, portalUrl } from '../lib/whatsapp'
+import { smsTemplates } from '../lib/sms'
 
 export default function CustomerDetail() {
   const { id } = useParams()
@@ -28,6 +33,11 @@ export default function CustomerDetail() {
   const [showVehicleForm, setShowVehicleForm] = useState(false)
   const [newVehicle, setNewVehicle] = useState(emptyVehicle())
   const [savingVehicle, setSavingVehicle] = useState(false)
+  // Portal login (043): the link can always be given; the password is only a
+  // hash in the database, so it is shown once, at the moment it is set.
+  const [notify, setNotify] = useState(null)
+  const [linkCopied, setLinkCopied] = useState(false)
+  const [settingLogin, setSettingLogin] = useState(false)
 
   useEffect(() => { fetchAll() }, [id])
 
@@ -87,6 +97,33 @@ export default function CustomerDetail() {
       toast.error(err.message)
     } finally {
       setSavingVehicle(false)
+    }
+  }
+
+  const copyPortalLink = async () => {
+    try {
+      await navigator.clipboard.writeText(portalUrl())
+      setLinkCopied(true)
+      setTimeout(() => setLinkCopied(false), 2000)
+    } catch { /* clipboard blocked: the link is on screen to copy by hand */ }
+  }
+
+  // Give a login, or replace a forgotten password, then show it to hand over.
+  const handleSetLogin = async () => {
+    const hasLogin = !!customer.password_hash
+    if (hasLogin && !confirm(t('customers.login.resetConfirm').replace('{name}', customer.full_name))) return
+    const password = generatePassword()
+    setSettingLogin(true)
+    try {
+      await setCustomerPassword(customer.id, password)
+      toast.success(t(hasLogin ? 'customers.login.resetDone' : 'customers.login.created'))
+      setNotify({ customer, kind: 'credentials', password })
+      setCustomer(c => ({ ...c, password_hash: c.password_hash || 'set' }))
+    } catch (err) {
+      const key = { migration_missing: 'customers.login.migrationMissing', forbidden: 'customers.login.forbidden' }[err.message]
+      toast.error(key ? t(key) : err.message)
+    } finally {
+      setSettingLogin(false)
     }
   }
 
@@ -203,6 +240,56 @@ export default function CustomerDetail() {
             </div>
           </div>
         )}
+      </Reveal>
+
+      {/* Portal login: the account link and the password, from the place the
+          customer is looked up (Antony, 12 Oct 2026: "nikiwa na view customer
+          info ... niweze mpa link ya akaunti yake"). */}
+      <Reveal className="bg-white rounded-2xl border border-gray-200 p-5">
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
+            <KeyRound className="w-4 h-4" /> {t('customers.login.sectionTitle')}
+          </h2>
+          <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${
+            customer.password_hash ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+          }`}>
+            {customer.password_hash ? t('customers.login.hasLogin') : t('customers.login.noLogin')}
+          </span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+          <div>
+            <p className="text-xs text-gray-500">{t('customers.login.accountLink')}</p>
+            <div className="flex items-center gap-2 mt-0.5">
+              <p className="font-medium text-gray-900 break-all">{portalUrl()}</p>
+              <button onClick={copyPortalLink} className="tap p-1 rounded hover:bg-gray-100 flex-shrink-0" title={t('customers.login.copyLink')}>
+                {linkCopied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4 text-gray-500" />}
+              </button>
+            </div>
+          </div>
+          <div>
+            <p className="text-xs text-gray-500">{t('customers.login.username')}</p>
+            <p className="font-medium text-gray-900 mt-0.5">{customer.phone}</p>
+          </div>
+          <div className="sm:col-span-2">
+            <p className="text-xs text-gray-500">{t('customers.login.password')}</p>
+            <p className="text-gray-700 mt-0.5">
+              {customer.password_hash ? t('customers.login.passwordHidden') : t('customers.login.passwordNone')}
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2 mt-4">
+          {whatsappLink(customer.phone, 'x') && (
+            <a href={whatsappLink(customer.phone, smsTemplates.account_link(customer.full_name, customer.phone, portalUrl()))}
+              target="_blank" rel="noreferrer"
+              className="tap flex items-center gap-1.5 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium">
+              <MessageCircle className="w-4 h-4" /> {t('customers.login.sendLink')}
+            </a>
+          )}
+          <button onClick={handleSetLogin} disabled={settingLogin}
+            className="tap flex items-center gap-1.5 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 text-sm font-medium disabled:opacity-50">
+            <RefreshCw className="w-4 h-4" /> {customer.password_hash ? t('customers.login.newPassword') : t('customers.login.create')}
+          </button>
+        </div>
       </Reveal>
 
       {/* Vehicles */}
@@ -339,6 +426,11 @@ export default function CustomerDetail() {
           )}
         />
       </Reveal>
+
+      {notify && (
+        <NotifyCustomerModal customer={notify.customer} kind={notify.kind} password={notify.password}
+          onClose={() => setNotify(null)} t={t} />
+      )}
 
       {/* Add vehicle modal */}
       {showVehicleForm && (

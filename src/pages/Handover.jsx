@@ -119,13 +119,23 @@ export default function Handover() {
     }
   }
 
+  // Jobs that can be handed over: being worked on, or finished — and not
+  // handed over already. This used to be `status = completed` only, and a job
+  // is only marked completed when its final invoice is paid in full, so every
+  // truck leaving with a balance (most of them) was missing from the list
+  // (Antony, 12 Oct 2026: "zinaonekana kazi 4 za zamani tu, hizi mpya
+  // hazionekani").
   const fetchCompletedJobs = async () => {
-    const { data } = await supabase
-      .from('job_cards')
-      .select('id, job_number, customer_id, vehicle_id, mileage_in, vehicles(registration_number, mileage_km), customers(full_name, phone)')
-      .eq('status', 'completed')
-      .order('date_completed', { ascending: false })
-    setCompletedJobs(data || [])
+    const [{ data }, { data: done }] = await Promise.all([
+      supabase
+        .from('job_cards')
+        .select('id, job_number, status, customer_id, vehicle_id, mileage_in, vehicles(registration_number, mileage_km), customers(full_name, phone)')
+        .in('status', ['open', 'in_progress', 'pending_payment', 'completed'])
+        .order('created_at', { ascending: false }),
+      supabase.from('handover_cards').select('job_card_id'),
+    ])
+    const handedOver = new Set((done || []).map(h => h.job_card_id))
+    setCompletedJobs((data || []).filter(j => !handedOver.has(j.id)))
   }
 
   // Picking the job fills in what the job already knows, so nobody types it
@@ -206,6 +216,7 @@ export default function Handover() {
       setShowForm(false)
       resetForm()
       fetchHandovers()
+      fetchCompletedJobs()
     } catch (err) {
       toast.error(err.message)
     }
@@ -329,7 +340,7 @@ export default function Handover() {
                   <option value="">{t('handover.selectCompletedJob')}</option>
                   {completedJobs.map(j => (
                     <option key={j.id} value={j.id}>
-                      {j.job_number} - {j.vehicles?.registration_number} ({j.customers?.full_name})
+                      {j.job_number} - {j.vehicles?.registration_number} ({j.customers?.full_name}){j.status !== 'completed' ? ` — ${t('handover.notYetCompleted')}` : ''}
                     </option>
                   ))}
                 </select>

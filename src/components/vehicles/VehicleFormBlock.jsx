@@ -12,8 +12,10 @@ const CURRENT_YEAR = new Date().getFullYear()
 //   - Client "My Vehicles" page
 // Pass `variant="compact"` for the admin modal styling.
 //
-// Field order (per product): registration number, chassis number, make,
-// model, year, color, vehicle type, mileage.
+// Field order (Antony, 12 Oct 2026: "kinatangulia vehicle type then make then
+// model then chassis number"): vehicle type, make, model, chassis number,
+// registration number, year, color, mileage. Type leads because it decides
+// which makes and models the next two fields offer.
 export default function VehicleFormBlock({
   index, vehicle, total, updateVehicle, removeVehicle, t,
   variant = 'default',
@@ -50,24 +52,32 @@ export default function VehicleFormBlock({
         </div>
       )}
 
-      {/* 1. Registration number */}
+      {/* 1. Vehicle type — first, because it decides which makes are offered */}
       <div>
-        <label className={labelCls}>{t('client.register.plateLabel')} *</label>
-        <input value={vehicle.registration_number}
-          onChange={(e) => update('registration_number', e.target.value)} required
-          placeholder="e.g. T 123 ABC"
-          className={inputCls} style={{ textTransform: 'uppercase' }} />
+        <label className={labelCls}>{t('client.register.vehicleType')} *</label>
+        {vehicle._customType ? (
+          <div className="flex gap-2">
+            <input value={vehicle.vehicle_type} onChange={(e) => update('vehicle_type', e.target.value)} required
+              placeholder={t('client.register.typeType')} className={`flex-1 ${inputCls}`} />
+            <button type="button" onClick={() => updateVehicle(index, { _customType: false, vehicle_type: 'truck', make: '', model: '', _customMake: false, _customModel: false })}
+              className="px-3 py-2 text-xs border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-500">
+              {t('client.register.backToList')}
+            </button>
+          </div>
+        ) : (
+          <select value={vehicle.vehicle_type} onChange={(e) => {
+            if (e.target.value === '__other__') updateVehicle(index, { _customType: true, vehicle_type: '', make: '', model: '', _customMake: false, _customModel: false })
+            else updateVehicle(index, { vehicle_type: e.target.value, make: '', model: '', _customMake: false, _customModel: false })
+          }} className={selectCls}>
+            {VEHICLE_TYPES.map(type => (
+              <option key={type} value={type}>{t(`client.register.types.${type}`)}</option>
+            ))}
+            <option value="__other__">{t('client.register.otherType')}</option>
+          </select>
+        )}
       </div>
 
-      {/* 2. Chassis number */}
-      <div>
-        <label className={labelCls}>{t('client.register.chassisLabel')}</label>
-        <input value={vehicle.chassis_number}
-          onChange={(e) => update('chassis_number', e.target.value)}
-          className={inputCls} />
-      </div>
-
-      {/* 3. Make / brand */}
+      {/* 2. Make / brand */}
       <div>
         <label className={labelCls}>{t('client.register.makeLabel')} *</label>
         {vehicle._customMake ? (
@@ -91,7 +101,7 @@ export default function VehicleFormBlock({
         )}
       </div>
 
-      {/* 4. Model */}
+      {/* 3. Model */}
       <div>
         <label className={labelCls}>{t('client.register.modelLabel')}</label>
         {vehicle._customModel || vehicle._customMake || !getModels(vehicle.vehicle_type)[vehicle.make] ? (
@@ -109,15 +119,32 @@ export default function VehicleFormBlock({
         )}
       </div>
 
+      {/* 4. Chassis number */}
+      <div>
+        <label className={labelCls}>{t('client.register.chassisLabel')}</label>
+        <input value={vehicle.chassis_number}
+          onChange={(e) => update('chassis_number', e.target.value)}
+          className={inputCls} />
+      </div>
+
+      {/* 5. Registration number */}
+      <div>
+        <label className={labelCls}>{t('client.register.plateLabel')} *</label>
+        <input value={vehicle.registration_number}
+          onChange={(e) => update('registration_number', e.target.value)} required
+          placeholder="e.g. T 123 ABC"
+          className={inputCls} style={{ textTransform: 'uppercase' }} />
+      </div>
+
       <div className="grid grid-cols-2 gap-2.5">
-        {/* 5. Year */}
+        {/* 6. Year */}
         <div>
           <label className={labelCls}>{t('client.register.yearLabel')}</label>
           <input type="number" value={vehicle.year} onChange={(e) => update('year', e.target.value)}
             min="1950" max={CURRENT_YEAR + 1} placeholder={String(CURRENT_YEAR)} className={inputCls} />
         </div>
 
-        {/* 6. Color */}
+        {/* 7. Color */}
         <div>
           <label className={labelCls}>{t('client.register.colorLabel')}</label>
           <input list={`colors-${index}`} value={vehicle.color}
@@ -127,31 +154,6 @@ export default function VehicleFormBlock({
             {COLORS.map(c => <option key={c} value={c} />)}
           </datalist>
         </div>
-      </div>
-
-      {/* 7. Vehicle type */}
-      <div>
-        <label className={labelCls}>{t('client.register.vehicleType')} *</label>
-        {vehicle._customType ? (
-          <div className="flex gap-2">
-            <input value={vehicle.vehicle_type} onChange={(e) => update('vehicle_type', e.target.value)} required
-              placeholder={t('client.register.typeType')} className={`flex-1 ${inputCls}`} />
-            <button type="button" onClick={() => updateVehicle(index, { _customType: false, vehicle_type: 'truck', make: '', model: '', _customMake: false, _customModel: false })}
-              className="px-3 py-2 text-xs border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-500">
-              {t('client.register.backToList')}
-            </button>
-          </div>
-        ) : (
-          <select value={vehicle.vehicle_type} onChange={(e) => {
-            if (e.target.value === '__other__') updateVehicle(index, { _customType: true, vehicle_type: '', make: '', model: '', _customMake: false, _customModel: false })
-            else updateVehicle(index, { vehicle_type: e.target.value, make: '', model: '', _customMake: false, _customModel: false })
-          }} className={selectCls}>
-            {VEHICLE_TYPES.map(type => (
-              <option key={type} value={type}>{t(`client.register.types.${type}`)}</option>
-            ))}
-            <option value="__other__">{t('client.register.otherType')}</option>
-          </select>
-        )}
       </div>
 
       {/* 8. Mileage */}

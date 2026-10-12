@@ -157,7 +157,15 @@
       "modalSubtitle": "Msomee, au mtumie kwa WhatsApp. Haliwezi kuonekana tena ukifunga hapa — badilisha nenosiri kupata jipya.",
       "done": "Nimemaliza",
       "forbidden": "Akaunti yako hairuhusiwi kuweka nenosiri la mteja",
-      "migrationMissing": "Akaunti za wateja bado hazijawashwa (migration 043 haijawekwa kwenye database)"
+      "migrationMissing": "Akaunti za wateja bado hazijawashwa (migration 043 haijawekwa kwenye database)",
+      "hasLogin": "Ana akaunti",
+      "noLogin": "Hana akaunti bado",
+      "accountLink": "Link ya akaunti",
+      "copyLink": "Nakili link",
+      "sendLink": "Tuma link ya akaunti kwa WhatsApp",
+      "newPassword": "Mpe nenosiri jipya",
+      "passwordHidden": "Limewekwa. Limehifadhiwa kwa usiri, haliwezi kuonyeshwa hapa — mpe nenosiri jipya nalo litaonekana mara moja, ulisome au ulitume.",
+      "passwordNone": "Mteja huyu hana nenosiri bado."
     },
     "registeredOnline": "Mtandaoni",
     "registeredWalkIn": "Ametembelea",
@@ -611,8 +619,8 @@
     "created": "Kadi ya kabidhiano imetengenezwa!",
     "pdfDownloaded": "PDF imepakuliwa!",
     "search": "Tafuta kabidhiano...",
-    "completedJob": "Kadi ya Kazi Iliyokamilika",
-    "selectCompletedJob": "-- Chagua kazi iliyokamilika --",
+    "completedJob": "Kadi ya Kazi",
+    "selectCompletedJob": "-- Chagua kazi --",
     "partsUsed": "Vipuri Vilivyotumika",
     "partsWarranty": "Dhamana ya Vipuri",
     "labourWarranty": "Dhamana ya Kazi",
@@ -622,7 +630,8 @@
     "mileageAutoFilled": "Kutoka kwenye job card — badilisha kama ni tofauti",
     "warrantyPartsLabel": "Dhamana ya Vipuri",
     "warrantyLabourLabel": "Dhamana ya Kazi",
-    "km": "km"
+    "km": "km",
+    "notYetCompleted": "bado haijakamilika"
   },
   "reports": {
     "loadError": "Hitilafu kupakia ripoti",

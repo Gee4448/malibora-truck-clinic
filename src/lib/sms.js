@@ -76,6 +76,15 @@ export const smsTemplates = {
   // name from silently doubling the cost of every approval.
   account_approved: (name, portalUrl) =>
     `Habari ${firstName(name)}, akaunti yako Malibora Truck Clinic imethibitishwa. Ingia kwa namba ya simu na nenosiri lako: ${portalUrl}`.trim(),
+  // Just the way in — for a customer who already has a password and has lost
+  // the address, not the password.
+  account_link: (name, phone, portalUrl) =>
+    [
+      `Habari ${firstName(name)}, hii ni akaunti yako ya Malibora Truck Clinic.`,
+      `Ingia hapa: ${portalUrl}`,
+      `Namba ya simu: ${phone || ''}`,
+      'Tumia nenosiri lako. Ukilisahau, tupigie tukupe jipya.',
+    ].join('\n'),
   // The office opened (or reset) the customer's portal login (migration 043).
   // Goes out on WhatsApp, so it is laid out on lines rather than squeezed into
   // one SMS segment.
